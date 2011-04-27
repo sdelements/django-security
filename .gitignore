@@ -1,0 +1,8 @@
+# python compiled files
+*.pyc
+*.pyo
+
+# back up files from VIM / Emacs
+*~
+*.swp
+
