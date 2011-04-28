@@ -7,6 +7,6 @@ setup(name="django-security",
       maintainer="SD Elements",
       maintainer_email="django-security@sdelements.com",
       version="0.1",
-      packages=["security", "security.auth_throttling"]
+      packages=["security", "security.migrations", "security.auth_throttling"],
       )
 
