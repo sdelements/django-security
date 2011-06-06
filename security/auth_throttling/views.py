@@ -1,4 +1,4 @@
-# Copyright (c) 2011, SD Elements. See ../LICENSE.txt for details.
+# Copyright (c) 2011, SD Elements. See ../LICENSE file for details.
 
 import logging
 

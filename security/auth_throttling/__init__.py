@@ -1,4 +1,4 @@
-# Copyright (c) 2011, SD Elements. See ../LICENSE.txt for details.
+# Copyright (c) 2011, SD Elements. See ../LICENSE file for details.
 
 import logging
 from math import ceil
@@ -110,7 +110,9 @@ class Middleware:
         try:
             config = settings.AUTHENTICATION_THROTTLING
             self.delay_function = config["DELAY_FUNCTION"]
-            self.logins = list(config["LOGIN_URLS_WITH_TEMPLATES"])
+            self.logins = [(re.compile(url), template_path)
+                           for (url, template_path)
+                           in config["LOGIN_URLS_WITH_TEMPLATES"]]
             self.redirect_field_name = config.get("REDIRECT_FIELD_NAME",
                                                   REDIRECT_FIELD_NAME)
             # TODO: Test the validity of the list items?
@@ -139,7 +141,7 @@ class Middleware:
         """
         if request.method != "POST": return
         for url, template_name in self.logins:
-            if request.path[1:] != url: continue
+            if not url.match(request.path_info.lstrip("/")): continue
             delay = self._throttling_delay(request)
             if delay <= 0:
                 request.META["login_request_permitted"] = True

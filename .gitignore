@@ -1,8 +1,16 @@
-# python compiled files
+# Compiled Python files.
 *.pyc
 *.pyo
 
-# back up files from VIM / Emacs
+# Vim and Emacs backup files.
 *~
 *.swp
+
+# Directories resulting from use of virtualenv, pip and setuptools.
+/bin
+/build
+/dist
+/django_security.egg-info
+/include
+/lib
 
