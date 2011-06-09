@@ -1,1 +1,17 @@
+# django-security
+
 A collection of tools for improving the security of a Django project.
+
+## Testing
+
+You can test the project via the include test project. Within this
+directoy, inside a virutalenv, you can run the following command to
+install django-security and its dependencies:
+
+    pip install -e .
+
+You can then run our tests by using the django testrunner:
+
+    python manage.py test tests
+
+
