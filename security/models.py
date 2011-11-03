@@ -29,3 +29,6 @@ class PasswordExpiry(models.Model):
         self.password_expiry_date = datetime(MAXYEAR, 12, 31)
         self.save()
 
+    class Meta:
+        verbose_name_plural = "PasswordExpiries"
+
