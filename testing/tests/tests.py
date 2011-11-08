@@ -13,6 +13,7 @@ from django.test import TestCase
 
 from security.auth import min_length
 from security.auth_throttling import *
+from security.middleware import MandatoryPasswordChangeMiddleware
 from security.middleware import SessionExpiryPolicyMiddleware
 from security.models import PasswordExpiry
 from security.password_expiry import never_expire_password
@@ -54,11 +55,10 @@ class RequirePasswordChangeTests(TestCase):
                                         email="foo@foo.com")
         self.client.login(username="foo", password="foo")
         try:
-            self.assertTemplateUsed(self.client.get("/", follow=True),
-                                    "registration/password_change_form.html")
+            self.assertRedirects(self.client.get("/home/"),
+                                 MandatoryPasswordChangeMiddleware().password_change_url)
             never_expire_password(user)
-            self.assertTemplateNotUsed(self.client.get("/", follow=True),
-                                       "registration/password_change_form.html")
+            self.assertEqual(self.client.get("/home/").status_code, 200)
         finally:
             self.client.logout()
             user.delete()
@@ -88,25 +88,25 @@ class SessionExpiryTests(TestCase):
         """
         Verify the session cookie stores the start time and last active time.
         """
-        self.client.get('/')
+        self.client.get('/home/')
         now = datetime.now()
         start_time = self.client.session[SessionExpiryPolicyMiddleware.START_TIME_KEY]
         last_activity = self.client.session[SessionExpiryPolicyMiddleware.LAST_ACTIVITY_KEY]
-        self.assertTrue((now-start_time).seconds < 10)
-        self.assertTrue((now-last_activity).seconds < 10)
+        self.assertTrue(now - start_time < timedelta(seconds=10))
+        self.assertTrue(now - last_activity < timedelta(seconds=10))
 
     def session_expiry_test(self, key, expired):
         """
         Verify that expired sessions are cleared from the system. (And that we
         redirect to the login page.)
         """
-        response = self.client.get('/')
-        self.assertRedirects(response, 'http://testserver/project/')
+        self.assertTrue(self.client.get('/home/').status_code, 200)
         session = self.client.session
         session[key] = expired
         session.save()
-        response = self.client.get('/')
-        self.assertRedirects(response, 'http://testserver/accounts/login/?next=/')
+        response = self.client.get('/home/')
+        self.assertRedirects(response,
+                             'http://testserver/accounts/login/?next=/home/')
 
     @login_user
     def test_session_too_old(self):
@@ -114,9 +114,10 @@ class SessionExpiryTests(TestCase):
         Pretend we are 1 second passed the session age time and make sure out session
         is cleared.
         """
-        expired = datetime.now() - timedelta(
-                seconds=SessionExpiryPolicyMiddleware.SESSION_COOKIE_AGE + 1)
-        self.session_expiry_test(SessionExpiryPolicyMiddleware.START_TIME_KEY, expired)
+        delta = SessionExpiryPolicyMiddleware().SESSION_COOKIE_AGE + 1
+        expired = datetime.now() - timedelta(seconds=delta)
+        self.session_expiry_test(SessionExpiryPolicyMiddleware.START_TIME_KEY,
+                                 expired)
 
     @login_user
     def test_session_inactive_too_long(self):
@@ -124,9 +125,11 @@ class SessionExpiryTests(TestCase):
         Pretend we are 1 second passed the session inactivity timeout and make sure
         the session is cleared.
         """
-        expired = datetime.now() - timedelta(
-                seconds=SessionExpiryPolicyMiddleware.SESSION_INACTIVITY_TIMEOUT + 1)
-        self.session_expiry_test(SessionExpiryPolicyMiddleware.LAST_ACTIVITY_KEY, expired)
+        delta = SessionExpiryPolicyMiddleware().SESSION_INACTIVITY_TIMEOUT + 1
+        expired = datetime.now() - timedelta(seconds=delta)
+        self.session_expiry_test(SessionExpiryPolicyMiddleware()
+                                   .LAST_ACTIVITY_KEY,
+                                 expired)
 
 
 class XFrameOptionsDenyTests(TestCase):
@@ -135,14 +138,14 @@ class XFrameOptionsDenyTests(TestCase):
         """
         Verify the HTTP Response Header is set.
         """
-        response = self.client.get('/')
+        response = self.client.get('/accounts/login/')
         self.assertEqual(response['X-FRAME-OPTIONS'], 'DENY')
 
 
 class AuthenticationThrottlingTests(TestCase):
     def setUp(self):
         self.old_time = time.time
-        self.old_config = settings.AUTHENTICATION_THROTTLING
+        self.old_config = getattr(settings, "AUTHENTICATION_THROTTLING", None)
         self.time = 0
         time.time = lambda: self.time
         settings.AUTHENTICATION_THROTTLING = {"DELAY_FUNCTION":
@@ -158,7 +161,10 @@ class AuthenticationThrottlingTests(TestCase):
 
     def tearDown(self):
         time.time = self.old_time
-        settings.AUTHENTICATION_THROTTLING = self.old_config
+        if self.old_config:
+            settings.AUTHENTICATION_THROTTLING = self.old_config
+        else:
+            del(settings.AUTHENTICATION_THROTTLING)
         self.user.delete()
 
     def attempt(self, password):
@@ -171,11 +177,11 @@ class AuthenticationThrottlingTests(TestCase):
         cache.clear()
     def typo(self):
         self.assertTemplateUsed(self.attempt("bar"), "registration/login.html")
-    def succeed(self):
+    def _succeed(self):
         self.assertTemplateNotUsed(self.attempt("foo"),
                                    "registration/login.html")
         self.reset()
-    def fail(self):
+    def _fail(self):
         self.assertTemplateUsed(self.attempt("foo"), "registration/login.html")
         self.reset()
     def set_time(self, t):
@@ -209,30 +215,30 @@ class AuthenticationThrottlingTests(TestCase):
         according to settings.AUTHENTICATION_THROTTLING.
         """
         self.set_time(0)
-        self.succeed()
+        self._succeed()
 
         self.set_time(0)
         self.typo()
-        self.fail()
+        self._fail()
 
         self.set_time(0)
         self.typo()
         self.set_time(1)
-        self.succeed()
+        self._succeed()
 
         self.set_time(0)
         self.typo()
         self.set_time(1)
         self.typo()
         self.set_time(2)
-        self.fail()
+        self._fail()
 
         self.set_time(0)
         self.typo()
         self.set_time(1)
         self.typo()
         self.set_time(3)
-        self.succeed()
+        self._succeed()
 
     def test_reset_button(self):
         """
@@ -248,7 +254,7 @@ class AuthenticationThrottlingTests(TestCase):
         self.client.login(username="bar", password="bar")
         self.client.post(reverse("reset_username_throttle", args=[self.user.id]))
         self.client.logout()
-        self.succeed()
+        self._succeed()
 
 
 class AuthTests(TestCase):
