@@ -13,7 +13,6 @@ from django.test import TestCase
 
 from security.auth import min_length
 from security.auth_throttling import *
-from security.crypto import symmetric
 from security.middleware import MandatoryPasswordChangeMiddleware
 from security.middleware import SessionExpiryPolicyMiddleware
 from security.models import PasswordExpiry
