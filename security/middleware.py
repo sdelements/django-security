@@ -3,11 +3,11 @@
 from datetime import datetime
 import logging
 from re import compile
-import simplejson as json
 
 from django.conf import settings
 from django.http import HttpResponseRedirect, HttpResponse
 from django.core.urlresolvers import NoReverseMatch, reverse
+from django.utils import simplejson as json
 import django.views.static
 
 from password_expiry import password_is_expired
