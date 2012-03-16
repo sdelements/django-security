@@ -1,5 +1,6 @@
 # Copyright (c) 2011, SD Elements. See ../LICENSE.txt for details.
 
+import hashlib
 import logging
 from math import ceil
 import re
@@ -20,6 +21,7 @@ import settings
 
 logger = logging.getLogger(__name__)
 
+
 def delay_message(remainder):
     """
     A natural-language description of a delay period.
@@ -31,12 +33,20 @@ def delay_message(remainder):
             _("1 second")             if ceil(remainder) == 1 else
             _("%d seconds") % ceil(remainder))
 
+
 def _key(counter_type, counter_name):
-    return "security.authentication_throttling.%s:%s" % (counter_type,
-                                                         counter_name)
+    """
+    We store a hashed version of the key because what we generate can be
+    too long, and it's possible the POST data we get could contain characters
+    that memcache doesn't like.
+    """
+    k = "security.authentication_throttling.%s:%s" % (counter_type, counter_name)
+    return hashlib.sha1(val).hexdigest()
+
 
 def reset_counters(**counters):
     cache.delete_many([_key(*pair) for pair in counters.items()])
+
 
 def increment_counters(**counters):
     """
@@ -51,11 +61,13 @@ def increment_counters(**counters):
         existing[key] = (existing.get(key, (0,))[0] + 1, t)
     cache.set_many(existing)
 
+
 def attempt_count(attempt_type, id):
     """
     Only used by tests.
     """
     return cache.get(_key(attempt_type, id), (0,))[0]
+
 
 def register_authentication_attempt(request):
     """
