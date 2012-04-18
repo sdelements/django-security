@@ -41,7 +41,7 @@ def _key(counter_type, counter_name):
     that memcache doesn't like.
     """
     k = "security.authentication_throttling.%s:%s" % (counter_type, counter_name)
-    return hashlib.sha1(val).hexdigest()
+    return hashlib.sha1(k).hexdigest()
 
 
 def reset_counters(**counters):
