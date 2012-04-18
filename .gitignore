@@ -6,3 +6,5 @@
 *~
 *.swp
 
+# ignore setup.py build dir
+build/
