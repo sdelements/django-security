@@ -33,12 +33,12 @@ class MandatoryPasswordChangeMiddleware:
             self.password_change_url = reverse(config["URL_NAME"])
             self.exempt_urls = [self.password_change_url
                                 ] + map(reverse, config["EXEMPT_URL_NAMES"])
-            self.process_view = self._process_view_if_configured
         except:
             logger.error("Bad MANDATORY_PASSWORD_CHANGE dictionary. "
                          "MandatoryPasswordChangeMiddleware disabled.")
+            raise django.core.exceptions.MiddlewareNotUsed
 
-    def _process_view_if_configured(self, request, view, *args, **kwargs):
+    def process_view(self, request, view, *args, **kwargs):
         if (not request.user.is_authenticated() or
              view == django.views.static.serve or # Mostly for testing, since
                                                   # Django shouldn't be serving
