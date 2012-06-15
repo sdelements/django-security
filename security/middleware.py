@@ -67,7 +67,6 @@ class NoConfidentialCachingMiddleware:
             self.blacklist = config.get("BLACKLIST_ON", True)
             if self.blacklist:
                 self.blacklist_url_regexes = map(compile, config["BLACKLIST_REGEXES"])
-
         except Exception as e:
             logger.error("Bad NO_CONFIDENTIAL_CACHING dictionary. "
                          "NoConfidentialCachingMiddleware disabled.")
@@ -89,6 +88,7 @@ class NoConfidentialCachingMiddleware:
             if match(request.path, self.blacklist_url_regexes):
                 response['Cache-Control'] = 'no-store'
         return response
+
 
 class HttpOnlySessionCookieMiddleware:
     """
