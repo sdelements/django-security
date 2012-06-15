@@ -64,7 +64,7 @@ class NoConfidentialCachingMiddleware:
             self.whitelist = config.get("WHITELIST_ON", False)
             if self.whitelist:
                 self.whitelist_url_regexes = map(compile, config["WHITELIST_REGEXES"])
-            self.blacklist = config.get("BLACKLIST_ON", True)
+            self.blacklist = config.get("BLACKLIST_ON", False)
             if self.blacklist:
                 self.blacklist_url_regexes = map(compile, config["BLACKLIST_REGEXES"])
         except Exception as e:
