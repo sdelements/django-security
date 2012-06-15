@@ -50,6 +50,7 @@ MIDDLEWARE_CLASSES = (
     'security.middleware.XFrameOptionsDenyMiddleware',
     'django.middleware.transaction.TransactionMiddleware',
     'security.middleware.MandatoryPasswordChangeMiddleware',
+    'security.middleware.NoConfidentialCachingMiddleware',
     'security.auth_throttling.Middleware',
 )
 ROOT_URLCONF = 'testing.urls'
@@ -95,6 +96,11 @@ LOGIN_EXEMPT_URLS = ["accounts/login"] + _DJANGO_TESTING_URLS
 MANDATORY_PASSWORD_CHANGE = {
     "URL_NAME": "change_password",
     "EXEMPT_URL_NAMES": [],
+}
+
+NO_CONFIDENTIAL_CACHING = {
+    "WHITELIST_REGEXES": ["^/accounts/login$"],
+    "BLACKLIST_REGEXES": ["^/accounts/logout$"]
 }
 
 AUTHENTICATION_THROTTLING = {

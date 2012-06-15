@@ -16,11 +16,9 @@ from django.template import RequestContext
 from django.utils.translation import ugettext as _
 from django.views.decorators.csrf import csrf_protect
 
-import settings
-
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
-
 
 def delay_message(remainder):
     """
@@ -179,3 +177,4 @@ class Middleware:
             register_authentication_attempt(request)
         return response
 
+__all__ = [delay_message, increment_counters, attempt_count, reset_counters]
