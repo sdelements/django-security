@@ -12,14 +12,14 @@ from django.conf.urls.defaults import *
 from django.test import TestCase
 
 from security.auth import min_length
-from security.auth_throttling import *
+from security.auth_throttling import delay_message, increment_counters, attempt_count, reset_counters
 from security.middleware import MandatoryPasswordChangeMiddleware
 from security.middleware import SessionExpiryPolicyMiddleware
 from security.models import PasswordExpiry
 from security.password_expiry import never_expire_password
 from security.views import require_ajax
 
-import settings
+from django.conf import settings
 
 
 def login_user(func):
@@ -130,6 +130,41 @@ class SessionExpiryTests(TestCase):
         self.session_expiry_test(SessionExpiryPolicyMiddleware()
                                    .LAST_ACTIVITY_KEY,
                                  expired)
+
+class ConfidentialCachingTests(TestCase):
+    def setUp(self):
+        self.old_config = getattr(settings, "NO_CONFIDENTIAL_CACHING", None)
+        settings.NO_CONFIDENTIAL_CACHING = {
+            "WHITELIST_ON": False,
+            "BLACKLIST_ON": False,
+            "WHITELIST_REGEXES": ["^/accounts/login/$"],
+            "BLACKLIST_REGEXES": ["^/accounts/logout/$"]
+        }
+
+
+    def tearDown(self):
+        if self.old_config:
+            settings.NO_CONFIDENTIAL_CACHING = self.old_config
+        else:
+            del(settings.NO_CONFIDENTIAL_CACHING)
+
+    def test_whitelisting(self):
+        settings.NO_CONFIDENTIAL_CACHING["WHITELIST_ON"] = True
+        # Get Non Confidential Page
+        response = self.client.get('/accounts/login/')
+        self.assertNotEqual(response.get("Cache-Control", None), "no-store")
+        # Get Confidential Page
+        response = self.client.get("/accounts/logout")
+        self.assertEqual(response.get("Cache-Control", None), "no-store")
+
+    def test_blacklisting(self):
+        settings.NO_CONFIDENTIAL_CACHING["BLACKLIST_ON"] = True
+        # Get Non Confidential Page
+        response = self.client.get('/accounts/login/')
+        self.assertNotEqual(response.get("Cache-Control", None), "no-store")
+        # Get Confidential Page
+        response = self.client.get("/accounts/logout/")
+        self.assertEqual(response.get("Cache-Control", None), "no-store")
 
 
 class XFrameOptionsDenyTests(TestCase):

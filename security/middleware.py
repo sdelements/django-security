@@ -49,6 +49,47 @@ class MandatoryPasswordChangeMiddleware:
             return HttpResponseRedirect(self.password_change_url)
 
 
+class NoConfidentialCachingMiddleware:
+    """
+    Adds No-Cache and No-Store Headers to Confidential pages
+    """
+
+    def __init__(self):
+        """
+        Looks for a valid configuration in settings.MANDATORY_PASSWORD_CHANGE.
+        If there is any problem, the view handler is not installed.
+        """
+        try:
+            config = settings.NO_CONFIDENTIAL_CACHING
+            self.whitelist = config.get("WHITELIST_ON", False)
+            if self.whitelist:
+                self.whitelist_url_regexes = map(compile, config["WHITELIST_REGEXES"])
+            self.blacklist = config.get("BLACKLIST_ON", True)
+            if self.blacklist:
+                self.blacklist_url_regexes = map(compile, config["BLACKLIST_REGEXES"])
+
+        except Exception as e:
+            logger.error("Bad NO_CONFIDENTIAL_CACHING dictionary. "
+                         "NoConfidentialCachingMiddleware disabled.")
+            raise django.core.exceptions.MiddlewareNotUsed
+
+    def process_response(self, request, response):
+        """
+        Add the Cache control no-store to anything confidential. You can either
+        Whitelist non-confidential pages and treat all others as non-confidential,
+        or specifically blacklist pages as confidential
+        """
+        def match(path, match_list):
+            return any(re.match(path) for re in match_list)
+
+        if self.whitelist:
+            if not match(request.path, self.whitelist_url_regexes):
+                response['Cache-Control'] = 'no-store'
+        if self.blacklist:
+            if match(request.path, self.blacklist_url_regexes):
+                response['Cache-Control'] = 'no-store'
+        return response
+
 class HttpOnlySessionCookieMiddleware:
     """
     Middleware that tags the sessionid cookie 'HttpOnly'.
