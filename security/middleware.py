@@ -79,6 +79,7 @@ class NoConfidentialCachingMiddleware:
         or specifically blacklist pages as confidential
         """
         def match(path, match_list):
+            path = path.lstrip('/')
             return any(re.match(path) for re in match_list)
 
         if self.whitelist:
