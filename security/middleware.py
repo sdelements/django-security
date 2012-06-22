@@ -81,13 +81,14 @@ class NoConfidentialCachingMiddleware:
         def match(path, match_list):
             path = path.lstrip('/')
             return any(re.match(path) for re in match_list)
+        cache_control = 'no-cache, no-store'
 
         if self.whitelist:
             if not match(request.path, self.whitelist_url_regexes):
-                response['Cache-Control'] = 'no-store'
+                response['Cache-Control'] = cache_control
         if self.blacklist:
             if match(request.path, self.blacklist_url_regexes):
-                response['Cache-Control'] = 'no-store'
+                response['Cache-Control'] = cache_control
         return response
 
 
