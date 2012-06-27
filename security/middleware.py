@@ -116,7 +116,7 @@ class XFrameOptionsDenyMiddleware:
         response['X-FRAME-OPTIONS'] = 'DENY'
         return response
 
-class P3PMiddleware:
+class P3PPolicyMiddleware:
     """
     This middleware will append the http header attribute
     specifying your P3P policy as set out in your settings
@@ -125,13 +125,13 @@ class P3PMiddleware:
         try:
             self.policy = settings.P3P_COMPACT_POLICY
         except AttributeError:
-            raise exceptions.MiddlewareNotUsed
+            raise django.core.exceptions.MiddlewareNotUsed
 
     def process_response(self, request, response):
         """
         And P3P policy to the response header.
         """
-        response['P3P'] = 'policyref="/w3c/p3p.xml" CP="%s"' self.policy
+        response['P3P'] = 'policyref="/w3c/p3p.xml" CP="%s"' % self.policy
         return response
 
 class SessionExpiryPolicyMiddleware:
