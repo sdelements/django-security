@@ -49,6 +49,7 @@ MIDDLEWARE_CLASSES = (
     'security.middleware.LoginRequiredMiddleware',
     'security.middleware.XFrameOptionsDenyMiddleware',
     'django.middleware.transaction.TransactionMiddleware',
+    'security.middleware.P3PPolicyMiddleware',
     'security.middleware.MandatoryPasswordChangeMiddleware',
     'security.middleware.NoConfidentialCachingMiddleware',
     'security.auth_throttling.Middleware',
