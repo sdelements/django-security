@@ -137,10 +137,10 @@ class ConfidentialCachingTests(TestCase):
         settings.NO_CONFIDENTIAL_CACHING = {
             "WHITELIST_ON": False,
             "BLACKLIST_ON": False,
-            "WHITELIST_REGEXES": ["^/accounts/login/$"],
-            "BLACKLIST_REGEXES": ["^/accounts/logout/$"]
+            "WHITELIST_REGEXES": ["accounts/login/$"],
+            "BLACKLIST_REGEXES": ["accounts/logout/$"]
         }
-
+        self.header_value = 'no-cache, no-store'
 
     def tearDown(self):
         if self.old_config:
@@ -152,19 +152,19 @@ class ConfidentialCachingTests(TestCase):
         settings.NO_CONFIDENTIAL_CACHING["WHITELIST_ON"] = True
         # Get Non Confidential Page
         response = self.client.get('/accounts/login/')
-        self.assertNotEqual(response.get("Cache-Control", None), "no-store")
+        self.assertNotEqual(response.get("Cache-Control", None), self.header_value)
         # Get Confidential Page
         response = self.client.get("/accounts/logout")
-        self.assertEqual(response.get("Cache-Control", None), "no-store")
+        self.assertEqual(response.get("Cache-Control", None), self.header_value)
 
     def test_blacklisting(self):
         settings.NO_CONFIDENTIAL_CACHING["BLACKLIST_ON"] = True
         # Get Non Confidential Page
         response = self.client.get('/accounts/login/')
-        self.assertNotEqual(response.get("Cache-Control", None), "no-store")
+        self.assertNotEqual(response.get("Cache-Control", None), self.header_value)
         # Get Confidential Page
         response = self.client.get("/accounts/logout/")
-        self.assertEqual(response.get("Cache-Control", None), "no-store")
+        self.assertEqual(response.get("Cache-Control", None), self.header_value)
 
 
 class XFrameOptionsDenyTests(TestCase):
@@ -291,6 +291,16 @@ class AuthenticationThrottlingTests(TestCase):
         self.client.logout()
         self._succeed()
 
+class P3PPolicyTests(TestCase):
+
+    def setUp(self):
+        self.policy = "NN AD BLAH"
+        settings.P3P_COMPACT_POLICY = self.policy
+
+    def test_p3p_header(self):
+        expected_header = 'policyref="/w3c/p3p.xml" CP="%s"' % self.policy
+        response = self.client.get('/accounts/login/')
+        self.assertEqual(response["P3P"], expected_header)
 
 class AuthTests(TestCase):
 
