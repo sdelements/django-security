@@ -258,7 +258,7 @@ class LoginRequiredMiddleware:
             if not any(m.match(path) for m in LoginRequiredMiddleware.EXEMPT_URLS):
                 if request.is_ajax():
                     response = {"login_url": settings.LOGIN_URL}
-                    return HttpResponse(json.dumps(response), status=403,
+                    return HttpResponse(json.dumps(response), status=401,
                             mimetype="application/json")
                 else:
                     login_url = "%s?next=%s" % (settings.LOGIN_URL, request.path)
