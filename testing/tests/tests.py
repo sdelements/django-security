@@ -46,6 +46,12 @@ def login_user(func):
     return wrapper
 
 
+class CustomLoginURLMiddleware(object):
+    """Used to test the custom url support in the login required middleware."""
+    def process_request(self, request):
+        request.login_url = '/custom-login/'
+
+
 class LoginRequiredMiddlewareTests(TestCase):
     def setUp(self):
         self.login_url = reverse("django.contrib.auth.views.login")
@@ -67,6 +73,19 @@ class LoginRequiredMiddlewareTests(TestCase):
         self.assertEqual(response.status_code, 403)
         self.assertEqual(json.loads(response.content),
                          {"login_url": self.login_url})
+
+    def test_redirects_to_custom_login_url(self):
+        middlware_classes = list(settings.MIDDLEWARE_CLASSES)
+        custom_login_middleware = 'tests.tests.CustomLoginURLMiddleware'
+        with self.settings(MIDDLEWARE_CLASSES=[custom_login_middleware] +
+                                              middlware_classes):
+            response = self.client.get('/home/')
+            self.assertRedirects(response, '/custom-login/')
+            response = self.client.get('/home/',
+                                       HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+            self.assertEqual(response.status_code, 403)
+            self.assertEqual(json.loads(response.content),
+                             {"login_url": '/custom-login/'})
 
 
 class RequirePasswordChangeTests(TestCase):
