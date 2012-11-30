@@ -24,6 +24,6 @@ setup(name="django-security",
           'License :: OSI Approved :: BSD License',
           'Topic :: Software Development :: Libraries :: Python Modules',
       ],
-      install_requires=['django>=1.3,<1.4',],
+      install_requires=['django>=1.4,<1.5',],
       )
 

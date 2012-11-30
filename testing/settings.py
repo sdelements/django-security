@@ -62,23 +62,7 @@ INSTALLED_APPS = (
     'security',
     'tests'
 )
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-        },
-    },
-    'loggers': {
-        '': {
-            'handlers': ['console'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-    }
-}
+
 LOGIN_REDIRECT_URL="/home/"
 
 # The tests for django.contrib.auth use certain URLs, and they'll fail if we
