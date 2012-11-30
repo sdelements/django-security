@@ -5,6 +5,7 @@ import logging
 from re import compile
 
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpResponseRedirect, HttpResponse
 from django.core.urlresolvers import NoReverseMatch, reverse
 from django.utils import simplejson as json
@@ -191,7 +192,8 @@ class LoginRequiredMiddleware:
         EXEMPT_URLS += [compile(expr) for expr in settings.LOGIN_EXEMPT_URLS]
 
     def process_request(self, request):
-        assert hasattr(request, 'user'), ("The Login Required middleware"
+        if not hasattr(request, 'user'):
+            raise ImproperlyConfigured("The Login Required middleware"
                 "requires authentication middleware to be installed.")
         if not request.user.is_authenticated():
             path = request.path_info.lstrip('/')
