@@ -5,6 +5,7 @@ import time # We monkeypatch this.
 
 from django.contrib.auth.models import User
 from django.core.cache import cache
+from django.core.exceptions import ImproperlyConfigured
 from django.core.urlresolvers import reverse
 from django.forms import ValidationError
 from django.http import HttpResponseForbidden, HttpRequest
@@ -54,7 +55,7 @@ class LoginRequiredMiddlewareTests(TestCase):
         auth_middleware = 'django.contrib.auth.middleware.AuthenticationMiddleware'
         middlware_classes = [m for m in middlware_classes if m != auth_middleware]
         with self.settings(MIDDLEWARE_CLASSES=middlware_classes):
-            self.assertRaises(AssertionError, self.client.get, '/home/')
+            self.assertRaises(ImproperlyConfigured, self.client.get, '/home/')
 
     def test_redirects_unauthenticated_request(self):
         response = self.client.get('/home/')
