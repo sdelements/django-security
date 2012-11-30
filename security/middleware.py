@@ -264,13 +264,20 @@ class LoginRequiredMiddleware:
         if request.user.is_authenticated() and not request.user.is_active:
             logout(request)
         if not request.user.is_authenticated():
+            if hasattr(request, 'login_url'):
+                login_url = request.login_url
+                next_url = None
+            else:
+                login_url = settings.LOGIN_URL
+                next_url = request.path
             path = request.path_info.lstrip('/')
             if not any(m.match(path) for m in LoginRequiredMiddleware.EXEMPT_URLS):
                 if request.is_ajax():
-                    response = {"login_url": settings.LOGIN_URL}
+                    response = {"login_url": login_url}
                     return HttpResponse(json.dumps(response), status=401,
                             mimetype="application/json")
                 else:
-                    login_url = "%s?next=%s" % (settings.LOGIN_URL, request.path)
+                    if next_url:
+                        login_url = login_url + '?next=' + next_url
                     return HttpResponseRedirect(login_url)
 
