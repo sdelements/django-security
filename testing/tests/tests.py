@@ -10,6 +10,7 @@ from django.forms import ValidationError
 from django.http import HttpResponseForbidden, HttpRequest
 from django.conf.urls.defaults import *
 from django.test import TestCase
+from django.utils import simplejson as json
 
 from security.auth import min_length
 from security.auth_throttling import delay_message, increment_counters, attempt_count, reset_counters
@@ -42,6 +43,29 @@ def login_user(func):
         self.client.logout()
         user.delete()
     return wrapper
+
+
+class LoginRequiredMiddlewareTests(TestCase):
+    def setUp(self):
+        self.login_url = reverse("django.contrib.auth.views.login")
+
+    def test_aborts_if_auth_middlware_missing(self):
+        middlware_classes = settings.MIDDLEWARE_CLASSES
+        auth_middleware = 'django.contrib.auth.middleware.AuthenticationMiddleware'
+        middlware_classes = [m for m in middlware_classes if m != auth_middleware]
+        with self.settings(MIDDLEWARE_CLASSES=middlware_classes):
+            self.assertRaises(AssertionError, self.client.get, '/home/')
+
+    def test_redirects_unauthenticated_request(self):
+        response = self.client.get('/home/')
+        self.assertRedirects(response, self.login_url + "?next=/home/")
+
+    def test_redirects_unauthenticated_ajax_request(self):
+        response = self.client.get('/home/',
+                                   HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(json.loads(response.content),
+                         {"login_url": self.login_url})
 
 
 class RequirePasswordChangeTests(TestCase):
