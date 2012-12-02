@@ -92,7 +92,6 @@ class NoConfidentialCachingMiddleware:
                 response['Cache-Control'] = cache_control
         return response
 
-
 class HttpOnlySessionCookieMiddleware:
     """
     Middleware that tags the sessionid cookie 'HttpOnly'.
@@ -103,20 +102,91 @@ class HttpOnlySessionCookieMiddleware:
             response.cookies['sessionid']['httponly'] = True
         return response
 
+# http://tools.ietf.org/html/draft-ietf-websec-x-frame-options-01
+# http://tools.ietf.org/html/draft-ietf-websec-frame-options-00
+class XFrameOptionsMiddleware:
+    """
+    This middleware appends X-Frame-Options and Frame-Options headers
+    to HTTP response. Value is set from X_FRAME_OPTIONS option
+    in settings file. Possible values are "sameorigin", "deny"
+    and "allow-from: URL". If setting is not present, "deny" will be set by default.
+    """
 
-class XFrameOptionsDenyMiddleware:
-    """
-    This middleware will append the http header attribute
-    'x-frame-options: deny' to the any http response header.
-    """
+    def __init__(self):
+        try:
+            self.option = settings.X_FRAME_OPTIONS.lower()
+            assert(self.option == 'sameorigin' or self.option == 'deny'
+                    or self.option.startswith('allow-from:'))
+        except AttributeError:
+            self.option = 'deny'
 
     def process_response(self, request, response):
         """
-        And x-frame-options to the response header.
+        And X-Frame-Options and Frame-Options to the response header. 
         """
-        response['X-FRAME-OPTIONS'] = 'DENY'
+        response['X-FRAME-OPTIONS'] = self.option
+        response['FRAME-OPTIONS']   = self.option
         return response
 
+# preserve older django-security API
+XFrameOptionsDenyMiddleware = XFrameOptionsMiddleware
+
+# http://www.w3.org/TR/2012/CR-CSP-20121115/
+class ContentSecurityPolicyMiddleware:
+    """
+    This middleware adds Content Security Policy header
+    to HTTP response. Mandatory setting CSP_POLICY contains
+    the policy string, as defined by draft published
+    at http://www.w3.org/TR/CSP/ Example:
+
+    CSP_POLICY="allow 'self'; script-src *.google.com; img-src *.creativecommons.org"
+
+    This middleware supports experimental syntax for MSIE 10, Firefox and Chrome.
+    """
+    def __init__(self):
+        try:
+            self.policy = settings.CSP_POLICY
+        except AttributeError:
+            raise django.core.exceptions.MiddlewareNotUsed
+
+    def process_response(self, request, response):
+        """
+        And Content Security Policy policy to the response header.
+        """
+        response['Content-Security-Policy'] = self.policy
+        response['X-WebKit-CSP'] = self.policy
+        return response
+
+# http://tools.ietf.org/html/rfc6797
+class StrictTransportSecurityMiddleware:
+    """
+    This middleware adds Strict-Transport-Security header to HTTP
+    response, enforcing SSL connections on compliant browsers. Two
+    parameters can be set in settings file:
+
+    STS_MAX_AGE = time in seconds to preserve host's STS policy
+                  (default: 1 year)
+    STS_INCLUDE_SUBDOMAINS = whether subdomains should be covered
+                             by the policy as well (default: True)
+    """
+
+    def __init__(self):
+        try:
+            self.max_age = settings.STS_MAX_AGE
+            self.subdomains = settings.STS_INCLUDE_SUBDOMAINS
+        except AttributeError:
+            self.max_age = 3600*24*365 # one year
+            self.subdomains = True
+        self.value = 'max-age={1}'.format(self.max_age)
+        if self.subdomains:
+            self.value += ' ; includeSubDomains'
+
+    def process_response(self, request, response):
+        """
+        Add Strict-Transport-Security header.
+        """
+        response['Strict-Transport-Security'] = self.value
+        return response
 
 class P3PPolicyMiddleware:
     """
