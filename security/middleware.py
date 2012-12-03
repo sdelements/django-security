@@ -6,6 +6,7 @@ from re import compile
 
 from django.conf import settings
 from django.contrib.auth import logout
+from django.core.exceptions import ImproperlyConfigured
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect, HttpResponse
 from django.utils import simplejson as json
@@ -257,18 +258,26 @@ class LoginRequiredMiddleware:
         EXEMPT_URLS += [compile(expr) for expr in settings.LOGIN_EXEMPT_URLS]
 
     def process_request(self, request):
-        assert hasattr(request, 'user'), ("The Login Required middleware"
+        if not hasattr(request, 'user'):
+            raise ImproperlyConfigured("The Login Required middleware"
                 "requires authentication middleware to be installed.")
         if request.user.is_authenticated() and not request.user.is_active:
             logout(request)
         if not request.user.is_authenticated():
+            if hasattr(request, 'login_url'):
+                login_url = request.login_url
+                next_url = None
+            else:
+                login_url = settings.LOGIN_URL
+                next_url = request.path
             path = request.path_info.lstrip('/')
             if not any(m.match(path) for m in LoginRequiredMiddleware.EXEMPT_URLS):
                 if request.is_ajax():
-                    response = {"login_url": settings.LOGIN_URL}
+                    response = {"login_url": login_url}
                     return HttpResponse(json.dumps(response), status=401,
                             mimetype="application/json")
                 else:
-                    login_url = "%s?next=%s" % (settings.LOGIN_URL, request.path)
+                    if next_url:
+                        login_url = login_url + '?next=' + next_url
                     return HttpResponseRedirect(login_url)
 
