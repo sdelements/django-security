@@ -16,6 +16,17 @@ from password_expiry import password_is_expired
 
 logger = logging.getLogger(__name__)
 
+class DoNotTrackMiddleware:
+    """
+    Sets request.dnt to True or False based on the presence of the
+    Do Not Track HTTP header.
+    """
+    def process_request(self, request):
+        if 'HTTP_DNT' in request.META and request.META['HTTP_DNT'] == '1':
+            request.DNT = True
+        else:
+            request.DNT = False
+
 
 class MandatoryPasswordChangeMiddleware:
     """
