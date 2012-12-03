@@ -16,6 +16,7 @@ from password_expiry import password_is_expired
 
 logger = logging.getLogger(__name__)
 
+# https://developer.mozilla.org/en-US/docs/The_Do_Not_Track_Field_Guide/Introduction
 class DoNotTrackMiddleware:
     """
     Sets request.dnt to True or False based on the presence of the
