@@ -184,7 +184,11 @@ class ConfidentialCachingTests(TestCase):
             "WHITELIST_REGEXES": ["accounts/login/$"],
             "BLACKLIST_REGEXES": ["accounts/logout/$"]
         }
-        self.header_value = 'no-cache, no-store'
+        self.header_values = {
+            "Cache-Control": 'no-cache, no-store, max-age=0, must-revalidate',
+            "Pragma": "no-cache",
+            "Expires": '-1'
+        }
 
     def tearDown(self):
         if self.old_config:
@@ -196,19 +200,23 @@ class ConfidentialCachingTests(TestCase):
         settings.NO_CONFIDENTIAL_CACHING["WHITELIST_ON"] = True
         # Get Non Confidential Page
         response = self.client.get('/accounts/login/')
-        self.assertNotEqual(response.get("Cache-Control", None), self.header_value)
+        for header, value in self.header_values.items():
+            self.assertNotEqual(response.get(header, None), value)
         # Get Confidential Page
         response = self.client.get("/accounts/logout")
-        self.assertEqual(response.get("Cache-Control", None), self.header_value)
+        for header, value in self.header_values.items():
+            self.assertEqual(response.get(header, None), value)
 
     def test_blacklisting(self):
         settings.NO_CONFIDENTIAL_CACHING["BLACKLIST_ON"] = True
         # Get Non Confidential Page
         response = self.client.get('/accounts/login/')
-        self.assertNotEqual(response.get("Cache-Control", None), self.header_value)
+        for header, value in self.header_values.items():
+            self.assertNotEqual(response.get(header, None), value)
         # Get Confidential Page
         response = self.client.get("/accounts/logout/")
-        self.assertEqual(response.get("Cache-Control", None), self.header_value)
+        for header, value in self.header_values.items():
+            self.assertEqual(response.get(header, None), value)
 
 
 class XFrameOptionsDenyTests(TestCase):
