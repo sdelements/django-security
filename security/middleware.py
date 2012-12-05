@@ -5,8 +5,10 @@ import logging
 from re import compile
 
 from django.conf import settings
+from django.contrib.auth import logout
+from django.core.exceptions import ImproperlyConfigured
+from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect, HttpResponse
-from django.core.urlresolvers import NoReverseMatch, reverse
 from django.utils import simplejson as json
 import django.views.static
 
@@ -67,7 +69,7 @@ class NoConfidentialCachingMiddleware:
             self.blacklist = config.get("BLACKLIST_ON", False)
             if self.blacklist:
                 self.blacklist_url_regexes = map(compile, config["BLACKLIST_REGEXES"])
-        except Exception as e:
+        except Exception:
             logger.error("Bad NO_CONFIDENTIAL_CACHING dictionary. "
                          "NoConfidentialCachingMiddleware disabled.")
             raise django.core.exceptions.MiddlewareNotUsed
@@ -119,6 +121,7 @@ class XFrameOptionsDenyMiddleware:
         response['X-FRAME-OPTIONS'] = 'DENY'
         return response
 
+
 class P3PPolicyMiddleware:
     """
     This middleware will append the http header attribute
@@ -136,6 +139,7 @@ class P3PPolicyMiddleware:
         """
         response['P3P'] = 'policyref="/w3c/p3p.xml" CP="%s"' % self.policy
         return response
+
 
 class SessionExpiryPolicyMiddleware:
     """
@@ -241,9 +245,12 @@ class SessionExpiryPolicyMiddleware:
 class LoginRequiredMiddleware:
     """
     Middleware that requires a user to be authenticated to view any page on
-    the site that hasn't been white listed. Exemptions to this requirement
-    can optionally be specified in settings via a list of regular expressions
-    in LOGIN_EXEMPT_URLS (which you can copy from your urls.py).
+    the site that hasn't been white listed. (The middleware also ensures the
+    user is 'active'. Disabled users are also redirected to the login page.
+
+    Exemptions to this requirement can optionally be specified in settings via
+    a list of regular expressions in LOGIN_EXEMPT_URLS (which you can copy from
+    your urls.py).
 
     Requires authentication middleware and template context processors to be
     loaded. You'll get an error if they aren't.
@@ -254,16 +261,26 @@ class LoginRequiredMiddleware:
         EXEMPT_URLS += [compile(expr) for expr in settings.LOGIN_EXEMPT_URLS]
 
     def process_request(self, request):
-        assert hasattr(request, 'user'), ("The Login Required middleware"
+        if not hasattr(request, 'user'):
+            raise ImproperlyConfigured("The Login Required middleware"
                 "requires authentication middleware to be installed.")
+        if request.user.is_authenticated() and not request.user.is_active:
+            logout(request)
         if not request.user.is_authenticated():
+            if hasattr(request, 'login_url'):
+                login_url = request.login_url
+                next_url = None
+            else:
+                login_url = settings.LOGIN_URL
+                next_url = request.path
             path = request.path_info.lstrip('/')
             if not any(m.match(path) for m in LoginRequiredMiddleware.EXEMPT_URLS):
                 if request.is_ajax():
-                    response = {"login_url": settings.LOGIN_URL}
+                    response = {"login_url": login_url}
                     return HttpResponse(json.dumps(response), status=401,
                             mimetype="application/json")
                 else:
-                    login_url = "%s?next=%s" % (settings.LOGIN_URL, request.path)
+                    if next_url:
+                        login_url = login_url + '?next=' + next_url
                     return HttpResponseRedirect(login_url)
 
