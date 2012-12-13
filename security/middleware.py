@@ -83,14 +83,17 @@ class NoConfidentialCachingMiddleware:
         def match(path, match_list):
             path = path.lstrip('/')
             return any(re.match(path) for re in match_list)
-        cache_control = 'no-cache, no-store'
+        def remove_response_caching(response):
+            response['Cache-control'] = 'no-cache, no-store, max-age=0, must-revalidate'
+            response['Pragma'] = "no-cache"
+            response['Expires'] = -1
 
         if self.whitelist:
             if not match(request.path, self.whitelist_url_regexes):
-                response['Cache-Control'] = cache_control
+                remove_response_caching(response)
         if self.blacklist:
             if match(request.path, self.blacklist_url_regexes):
-                response['Cache-Control'] = cache_control
+                remove_response_caching(response)
         return response
 
 
