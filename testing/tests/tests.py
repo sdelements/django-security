@@ -1,6 +1,6 @@
 # Copyright (c) 2011, SD Elements. See LICENSE.txt for details.
 
-from datetime import datetime, timedelta
+import datetime
 import time # We monkeypatch this.
 
 from django.contrib.auth.models import User
@@ -12,6 +12,7 @@ from django.http import HttpResponseForbidden, HttpRequest
 from django.conf.urls.defaults import *
 from django.test import TestCase
 from django.utils import simplejson as json
+from django.utils import timezone
 
 from security.auth import min_length
 from security.auth_throttling import delay_message, increment_counters, attempt_count, reset_counters
@@ -133,11 +134,11 @@ class SessionExpiryTests(TestCase):
         Verify the session cookie stores the start time and last active time.
         """
         self.client.get('/home/')
-        now = datetime.now()
+        now = timezone.now()
         start_time = self.client.session[SessionExpiryPolicyMiddleware.START_TIME_KEY]
         last_activity = self.client.session[SessionExpiryPolicyMiddleware.LAST_ACTIVITY_KEY]
-        self.assertTrue(now - start_time < timedelta(seconds=10))
-        self.assertTrue(now - last_activity < timedelta(seconds=10))
+        self.assertTrue(now - start_time < datetime.timedelta(seconds=10))
+        self.assertTrue(now - last_activity < datetime.timedelta(seconds=10))
 
     def session_expiry_test(self, key, expired):
         """
@@ -159,7 +160,7 @@ class SessionExpiryTests(TestCase):
         is cleared.
         """
         delta = SessionExpiryPolicyMiddleware().SESSION_COOKIE_AGE + 1
-        expired = datetime.now() - timedelta(seconds=delta)
+        expired = timezone.now() - datetime.timedelta(seconds=delta)
         self.session_expiry_test(SessionExpiryPolicyMiddleware.START_TIME_KEY,
                                  expired)
 
@@ -170,7 +171,7 @@ class SessionExpiryTests(TestCase):
         the session is cleared.
         """
         delta = SessionExpiryPolicyMiddleware().SESSION_INACTIVITY_TIMEOUT + 1
-        expired = datetime.now() - timedelta(seconds=delta)
+        expired = timezone.now() - datetime.timedelta(seconds=delta)
         self.session_expiry_test(SessionExpiryPolicyMiddleware()
                                    .LAST_ACTIVITY_KEY,
                                  expired)

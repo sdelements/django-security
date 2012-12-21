@@ -1,6 +1,5 @@
 # Copyright (c) 2011, SD Elements. See LICENSE.txt for details.
 
-from datetime import datetime
 import logging
 from re import compile
 
@@ -9,7 +8,7 @@ from django.contrib.auth import logout
 from django.core.exceptions import ImproperlyConfigured
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect, HttpResponse
-from django.utils import simplejson as json
+from django.utils import simplejson as json, timezone
 import django.views.static
 
 from password_expiry import password_is_expired
@@ -178,12 +177,14 @@ class SessionExpiryPolicyMiddleware:
         is the case. We set the last activity time to now() if the session
         is still active.
         """
-        now = datetime.now()
+        now = timezone.now()
 
         # If the session has no start time or last activity time, set those
         # two values. We assume we have a brand new session.
         if (self.START_TIME_KEY not in request.session or
-            self.LAST_ACTIVITY_KEY not in request.session):
+            self.LAST_ACTIVITY_KEY not in request.session or
+            timezone.is_naive(request.session[self.START_TIME_KEY]) or
+            timezone.is_naive(request.session[self.LAST_ACTIVITY_KEY])):
 
             logger.debug("New session %s started: %s" % (request.session.session_key, now))
             request.session[self.START_TIME_KEY] = now
