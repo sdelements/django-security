@@ -182,15 +182,16 @@ class SessionExpiryPolicyMiddleware:
 
         # If the session has no start time or last activity time, set those
         # two values. We assume we have a brand new session.
-        if (SessionExpiryPolicyMiddleware.START_TIME_KEY not in request.session
-                or SessionExpiryPolicyMiddleware.LAST_ACTIVITY_KEY not in request.session):
+        if (self.START_TIME_KEY not in request.session or
+            self.LAST_ACTIVITY_KEY not in request.session):
+
             logger.debug("New session %s started: %s" % (request.session.session_key, now))
-            request.session[SessionExpiryPolicyMiddleware.START_TIME_KEY] = now
-            request.session[SessionExpiryPolicyMiddleware.LAST_ACTIVITY_KEY] = now
+            request.session[self.START_TIME_KEY] = now
+            request.session[self.LAST_ACTIVITY_KEY] = now
             return
 
-        start_time = request.session[SessionExpiryPolicyMiddleware.START_TIME_KEY]
-        last_activity_time = request.session[SessionExpiryPolicyMiddleware.LAST_ACTIVITY_KEY]
+        start_time = request.session[self.START_TIME_KEY]
+        last_activity_time = request.session[self.LAST_ACTIVITY_KEY]
         logger.debug("Session %s started: %s" % (request.session.session_key, start_time))
         logger.debug("Session %s last active: %s" % (request.session.session_key, last_activity_time))
 
