@@ -70,7 +70,7 @@ class LoginRequiredMiddlewareTests(TestCase):
     def test_redirects_unauthenticated_ajax_request(self):
         response = self.client.get('/home/',
                                    HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 401)
         self.assertEqual(json.loads(response.content),
                          {"login_url": self.login_url})
 
@@ -83,7 +83,7 @@ class LoginRequiredMiddlewareTests(TestCase):
             self.assertRedirects(response, '/custom-login/')
             response = self.client.get('/home/',
                                        HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-            self.assertEqual(response.status_code, 403)
+            self.assertEqual(response.status_code, 401)
             self.assertEqual(json.loads(response.content),
                              {"login_url": '/custom-login/'})
 
