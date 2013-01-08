@@ -189,7 +189,7 @@ XFrameOptionsDenyMiddleware = XFrameOptionsMiddleware
 class ContentSecurityPolicyMiddleware:
     """
     This middleware adds Content Security Policy header
-    to HTTP response. Mandatory setting CSP_POLICY contains
+    to HTTP response. Mandatory setting CONTENT_SECURITY_POLICY contains
     the policy string, as defined by draft published
     at http://www.w3.org/TR/CSP/ Example:
 
@@ -202,19 +202,29 @@ class ContentSecurityPolicyMiddleware:
     behavior - for example inline JavaScript is disabled. Read
     http://developer.chrome.com/extensions/contentSecurityPolicy.html
     to see how pages need to be adapted to work under CSP.
+
+    If CONTENT_SECURITY_POLICY_REPORT_ONLY is set to True, CSP will
+    be enabled in Report Only mode (no enforcement).
     """
     def __init__(self):
         try:
             self.policy = settings.CONTENT_SECURITY_POLICY
         except AttributeError:
             raise django.core.exceptions.MiddlewareNotUsed
+        try:
+            self.report_only = settings.CONTENT_SECURITY_POLICY_REPORT_ONLY
+        except:
+            self.report_only = False
 
     def process_response(self, request, response):
         """
         And Content Security Policy policy to the response header.
         """
-        response['Content-Security-Policy'] = self.policy
-        response['X-WebKit-CSP'] = self.policy
+        if not report_only:
+            response['Content-Security-Policy'] = self.policy
+            response['X-WebKit-CSP'] = self.policy
+        else:
+            response['Content-Security-Policy-Report-Only'] = self.policy
         return response
 
 # http://tools.ietf.org/html/rfc6797
