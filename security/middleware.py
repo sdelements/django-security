@@ -28,6 +28,44 @@ class DoNotTrackMiddleware:
         else:
             request.DNT = False
 
+# http://blogs.msdn.com/b/ieinternals/archive/2011/01/31/controlling-the-internet-explorer-xss-filter-with-the-x-xss-protection-http-header.aspx
+class XssProtectMiddleware:
+    """
+    Sends X-XSS-Protection HTTP header that controls Cross-Site Scripting filter
+    on MSIE. Uses XSS_PROTECT setting with the following values:
+
+        on -- enable full XSS filter blocking XSS requests (default)
+        sanitize -- enable XSS filter that tries to sanitize requests instead of blocking (less effective)
+        off -- completely distable XSS filter
+    """
+    def __init__(self):
+        self.options = { 'on' : '1; mode=block', 'off' : '0', 'sanitize' : '1', }
+        try:
+            self.option = settings.XSS_PROTECT.lower()
+            assert(self.option in options.keys())
+        except AttributeError:
+            self.option = 'on'
+
+    def process_response(self, request, response):
+        """
+        Add X-XSS-Protection to the reponse header.
+        """
+        response['X-XSS-Protection'] = self.option[self.option]
+        return response
+
+# http://msdn.microsoft.com/en-us/library/ie/gg622941(v=vs.85).aspx
+class ContentNoSniff:
+    """
+    Sends X-Content-Options HTTP header to disable autodetection of MIME type of files returned by the server.
+    """
+
+    def process_response(self, request, response):
+        """
+        And X-Content-Options: nosniff to the response header.
+        """
+        response['X-Content-Options'] = 'nosniff'
+        return response
+
 
 class MandatoryPasswordChangeMiddleware:
     """
