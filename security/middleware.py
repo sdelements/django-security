@@ -27,9 +27,9 @@ class DoNotTrackMiddleware:
     """
     def process_request(self, request):
         if 'HTTP_DNT' in request.META and request.META['HTTP_DNT'] == '1':
-            request.DNT = True
+            request.dnt = True
         else:
-            request.DNT = False
+            request.dnt = False
 
 # http://blogs.msdn.com/b/ieinternals/archive/2011/01/31/controlling-the-internet-explorer-xss-filter-with-the-x-xss-protection-http-header.aspx
 class XssProtectMiddleware:
@@ -53,7 +53,7 @@ class XssProtectMiddleware:
         """
         Add X-XSS-Protection to the reponse header.
         """
-        response['X-XSS-Protection'] = self.option[self.option]
+        response['X-XSS-Protection'] = self.options[self.option]
         return response
 
 # http://msdn.microsoft.com/en-us/library/ie/gg622941(v=vs.85).aspx
