@@ -20,7 +20,10 @@ logger = logging.getLogger(__name__)
 class DoNotTrackMiddleware:
     """
     Sets request.dnt to True or False based on the presence of the
-    Do Not Track HTTP header.
+    Do Not Track HTTP header. It's up to application to determine how
+    to respond to this information, but usually this should result in
+    tracking cookies or web beacons *not* being set for this particular
+    request.
     """
     def process_request(self, request):
         if 'HTTP_DNT' in request.META and request.META['HTTP_DNT'] == '1':
@@ -159,7 +162,7 @@ class XFrameOptionsMiddleware:
     This middleware appends X-Frame-Options and Frame-Options headers
     to HTTP response. Value is set from X_FRAME_OPTIONS option
     in settings file. Possible values are "sameorigin", "deny"
-    and "allow-from: URL". If setting is not present, "deny" will be set by default.
+    and "allow-from: URL". Default is "deny".
     """
 
     def __init__(self):
@@ -174,11 +177,12 @@ class XFrameOptionsMiddleware:
         """
         And X-Frame-Options and Frame-Options to the response header. 
         """
-        response['X-FRAME-OPTIONS'] = self.option
-        response['FRAME-OPTIONS']   = self.option
+        response['X-Frame-Options'] = self.option
+        response['Frame-Options']   = self.option
         return response
 
 # preserve older django-security API
+# new API uses "deny" as default to maintain compatibility
 XFrameOptionsDenyMiddleware = XFrameOptionsMiddleware
 
 # http://www.w3.org/TR/2012/CR-CSP-20121115/
@@ -189,13 +193,14 @@ class ContentSecurityPolicyMiddleware:
     the policy string, as defined by draft published
     at http://www.w3.org/TR/CSP/ Example:
 
-    CSP_POLICY="allow 'self'; script-src *.google.com; img-src *.creativecommons.org"
+    CONTENT_SECURITY_POLICY="allow 'self'; script-src *.google.com"
 
-    This middleware supports experimental syntax for MSIE 10, Firefox and Chrome.
+    This middleware supports CSP header syntax for MSIE 10, Firefox
+    (Content-Security-Policy) and Chrome (X-WebKit-CSP).
     """
     def __init__(self):
         try:
-            self.policy = settings.CSP_POLICY
+            self.policy = settings.CONTENT_SECURITY_POLICY
         except AttributeError:
             raise django.core.exceptions.MiddlewareNotUsed
 
