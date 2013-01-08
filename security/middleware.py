@@ -197,6 +197,11 @@ class ContentSecurityPolicyMiddleware:
 
     This middleware supports CSP header syntax for MSIE 10, Firefox
     (Content-Security-Policy) and Chrome (X-WebKit-CSP).
+
+    Warning: enabling CSP has signification impact on browser
+    behavior - for example inline JavaScript is disabled. Read
+    http://developer.chrome.com/extensions/contentSecurityPolicy.html
+    to see how pages need to be adapted to work under CSP.
     """
     def __init__(self):
         try:
