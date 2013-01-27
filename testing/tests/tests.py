@@ -174,7 +174,7 @@ class XFrameOptionsDenyTests(TestCase):
         Verify the HTTP Response Header is set.
         """
         response = self.client.get('/accounts/login/')
-        self.assertEqual(response['X-FRAME-OPTIONS'], 'DENY')
+        self.assertEqual(response['X-Frame-Options'], settings.X_FRAME_OPTIONS)
 
 class XXssProtectTests(TestCase):
 

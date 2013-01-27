@@ -47,7 +47,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'security.middleware.SessionExpiryPolicyMiddleware',
     'security.middleware.LoginRequiredMiddleware',
-    'security.middleware.XFrameOptionsDenyMiddleware',
+    'security.middleware.XFrameOptionsMiddleware',
     'security.middleware.ContentNoSniff',
     'django.middleware.transaction.TransactionMiddleware',
     'security.middleware.P3PPolicyMiddleware',
@@ -114,3 +114,4 @@ AUTHENTICATION_THROTTLING = {
 }
 
 XSS_PROTECT = 'on'
+X_FRAME_OPTIONS = 'allow-from: http://example.com'
