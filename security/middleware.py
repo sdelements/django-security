@@ -247,7 +247,7 @@ class StrictTransportSecurityMiddleware:
         except AttributeError:
             self.max_age = 3600*24*365 # one year
             self.subdomains = True
-        self.value = 'max-age={1}'.format(self.max_age)
+        self.value = 'max-age={0}'.format(self.max_age)
         if self.subdomains:
             self.value += ' ; includeSubDomains'
 
