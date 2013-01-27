@@ -49,6 +49,8 @@ MIDDLEWARE_CLASSES = (
     'security.middleware.LoginRequiredMiddleware',
     'security.middleware.XFrameOptionsMiddleware',
     'security.middleware.ContentNoSniff',
+    'security.middleware.ContentSecurityPolicyMiddleware',
+    'security.middleware.StrictTransportSecurityMiddleware',
     'django.middleware.transaction.TransactionMiddleware',
     'security.middleware.P3PPolicyMiddleware',
     'security.middleware.XssProtectMiddleware',
@@ -115,3 +117,4 @@ AUTHENTICATION_THROTTLING = {
 
 XSS_PROTECT = 'on'
 X_FRAME_OPTIONS = 'allow-from: http://example.com'
+CONTENT_SECURITY_POLICY="allow 'self'; script-src *.google.com"
