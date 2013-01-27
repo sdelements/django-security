@@ -45,7 +45,7 @@ class XssProtectMiddleware:
         self.options = { 'on' : '1; mode=block', 'off' : '0', 'sanitize' : '1', }
         try:
             self.option = settings.XSS_PROTECT.lower()
-            assert(self.option in options.keys())
+            assert(self.option in self.options.keys())
         except AttributeError:
             self.option = 'on'
 
@@ -220,7 +220,7 @@ class ContentSecurityPolicyMiddleware:
         """
         And Content Security Policy policy to the response header.
         """
-        if not report_only:
+        if not self.report_only:
             response['Content-Security-Policy'] = self.policy
             response['X-WebKit-CSP'] = self.policy
         else:
