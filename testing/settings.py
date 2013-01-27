@@ -50,6 +50,7 @@ MIDDLEWARE_CLASSES = (
     'security.middleware.XFrameOptionsDenyMiddleware',
     'django.middleware.transaction.TransactionMiddleware',
     'security.middleware.P3PPolicyMiddleware',
+    'security.middleware.XssProtectMiddleware',
     'security.middleware.MandatoryPasswordChangeMiddleware',
     'security.middleware.NoConfidentialCachingMiddleware',
     'security.auth_throttling.Middleware',
@@ -111,3 +112,4 @@ AUTHENTICATION_THROTTLING = {
     ]
 }
 
+XSS_PROTECT = 'on'
