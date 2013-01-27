@@ -210,7 +210,8 @@ class StrictTransportSecurityTests(TestCase):
         Verify the HTTP Response Header is set.
         """
         response = self.client.get('/accounts/login/')
-        self.assertNotNull(response['Strict-Transport-Security'], 'nosniff')
+        self.assertNotEqual(response['Strict-Transport-Security'], None)
+        self.ass
 
 class AuthenticationThrottlingTests(TestCase):
     def setUp(self):
