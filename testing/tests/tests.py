@@ -185,6 +185,15 @@ class XXssProtectTests(TestCase):
         response = self.client.get('/accounts/login/')
         self.assertEqual(response['X-XSS-Protection'], 'DENY')
 
+class ContentNoSniffTests(TestCase):
+
+    def test_option_set(self):
+        """
+        Verify the HTTP Response Header is set.
+        """
+        response = self.client.get('/accounts/login/')
+        self.assertEqual(response['X-Content-Options'], 'nosniff')
+
 class AuthenticationThrottlingTests(TestCase):
     def setUp(self):
         self.old_time = time.time

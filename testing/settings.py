@@ -48,6 +48,7 @@ MIDDLEWARE_CLASSES = (
     'security.middleware.SessionExpiryPolicyMiddleware',
     'security.middleware.LoginRequiredMiddleware',
     'security.middleware.XFrameOptionsDenyMiddleware',
+    'security.middleware.ContentNoSniff',
     'django.middleware.transaction.TransactionMiddleware',
     'security.middleware.P3PPolicyMiddleware',
     'security.middleware.XssProtectMiddleware',
