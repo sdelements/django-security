@@ -183,7 +183,7 @@ class XXssProtectTests(TestCase):
         Verify the HTTP Response Header is set.
         """
         response = self.client.get('/accounts/login/')
-        self.assertEqual(response['X-XSS-Protection'], 'DENY')
+        self.assertEqual(response['X-XSS-Protection'], settings.XSS_PROTECT)
 
 class ContentNoSniffTests(TestCase):
 
