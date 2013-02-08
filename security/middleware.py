@@ -4,6 +4,8 @@ from datetime import datetime
 import logging
 from re import compile
 
+import django # for VERSION
+
 from django.conf import settings
 from django.contrib.auth import logout
 from django.core.urlresolvers import reverse
@@ -148,8 +150,16 @@ class NoConfidentialCachingMiddleware:
 class HttpOnlySessionCookieMiddleware:
     """
     Middleware that tags the sessionid cookie 'HttpOnly'.
-    This should get handled by Django starting in v1.3.
+    Starting from Django 1.4 this middleware is obsolete.
     """
+    def __init__(self):
+        ver_0 = django.VERSION[0]
+        ver_1 = django.VERSION[1]
+        if (ver_0 == 1 and ver_1 >= 4) or ver_0 > 1:
+            logger.warning("httpOnly is set by default by Django >= 1.4."
+                         "HttpOnlySessionCookieMiddleware is obsolete.")
+            raise django.core.exceptions.MiddlewareNotUsed
+        
     def process_response(self, request, response):
         if response.cookies.has_key('sessionid'):
             response.cookies['sessionid']['httponly'] = True
