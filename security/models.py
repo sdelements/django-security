@@ -6,7 +6,6 @@ from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.db import models
 
-
 class PasswordExpiry(models.Model):
     """
     Associate a password expiry date with a user. For now, this date is
@@ -32,3 +31,19 @@ class PasswordExpiry(models.Model):
     class Meta:
         verbose_name_plural = "PasswordExpiries"
 
+# http://www.w3.org/TR/CSP/#sample-violation-report
+class CspReport(models.Model):
+    """
+    Content Security Policy violation report.
+    """
+
+    # data from CSP report
+    document_uri = models.UrlField()
+    referrer = models.UrlField()
+    blocked_uri = models.UrlField()
+    violated_directive = models.CharField(max_length=500)
+    original_policy = models.CharField(max_lenght=500)
+
+    # metadata
+    date_received = models.DateTimeField(auto_now_add=True)
+    sender_ip = models.GenericIPAddressField()
