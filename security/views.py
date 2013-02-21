@@ -57,7 +57,7 @@ def csp_report(request, csp_save=False, csp_log=True):
     # save received CSP violation to database
     if csp_save:
         csp_report = CspReport(document_uri=report['document-uri'], referrer=report['referrer'],
-            blocked_uri=report['blocker-uri'], violated_directive=report['violated-directive'],
+            blocked_uri=report['blocked-uri'], violated_directive=report['violated-directive'],
             original_policy=report['original-policy'], sender_ip=request.META['REMOTE_ADDR'])
 
         csp_report.save()
