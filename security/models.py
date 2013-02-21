@@ -38,12 +38,15 @@ class CspReport(models.Model):
     """
 
     # data from CSP report
-    document_uri = models.UrlField()
-    referrer = models.UrlField()
-    blocked_uri = models.UrlField()
+    document_uri = models.ULlField()
+    referrer = models.URLField()
+    blocked_uri = models.URLField()
     violated_directive = models.CharField(max_length=500)
     original_policy = models.CharField(max_lenght=500)
 
     # metadata
     date_received = models.DateTimeField(auto_now_add=True)
     sender_ip = models.GenericIPAddressField()
+
+    def __unicode__(self):
+        return 'CSP Report: {0} from {1}'.format(self.blocked_uri, self.document_uri)
