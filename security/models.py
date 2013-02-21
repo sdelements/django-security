@@ -38,11 +38,11 @@ class CspReport(models.Model):
     """
 
     # data from CSP report
-    document_uri = models.ULlField()
+    document_uri = models.URLField()
     referrer = models.URLField()
     blocked_uri = models.URLField()
     violated_directive = models.CharField(max_length=500)
-    original_policy = models.CharField(max_lenght=500)
+    original_policy = models.CharField(max_length=500)
 
     # metadata
     date_received = models.DateTimeField(auto_now_add=True)
