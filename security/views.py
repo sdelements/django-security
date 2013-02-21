@@ -26,7 +26,19 @@ def csp_report(request, csp_save=False, csp_log=True):
     """
     Collect Content Security Policy reports from browsers. If csp_save is True
     save them in CspReport class. If csp_log is True log them through Django
-    logger. By default only logging is enabled.
+    logger. By default only logging is enabled. This view should be added
+    to your project's urls.py.
+
+    Default mode, only logger enable, no database logging:
+
+        url(r'^csp-report/$', security.views.csp_report),
+
+    Logger and database enabled:
+
+        url(r'^csp-report/$', security.views.csp_report,
+                            kwargs={'csp_save':True,'csp_log':True}),
+
+    This view emits logs messages using 'security' identifier.
     """
 
     # http://www.w3.org/TR/CSP/#sample-violation-report
