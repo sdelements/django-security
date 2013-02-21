@@ -11,6 +11,8 @@ urlpatterns = patterns("",
     (r"^admin/reset-account-throttling/(?P<user_id>-?[0-9]+)/",
      "security.auth_throttling.views.reset_username_throttle",
      {"redirect_url": "/admin"}, "reset_username_throttle"), 
-    ("^home/$", lambda request: HttpResponse())
+    ("^home/$", lambda request: HttpResponse()),
+    ("^csp-report/$", "security.views.csp_report"),
+
 )
 
