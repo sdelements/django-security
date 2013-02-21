@@ -3,6 +3,7 @@
 from django.http import HttpResponseForbidden, HttpResponse
 from django.utils import simplejson as json
 from django.views.decorators.csrf import csrf_exempt
+from security.models import CspReport
 
 import logging
 log = logging.getLogger(__name__)
