@@ -343,3 +343,44 @@ class AuthTests(TestCase):
         self.assertRaises(ValidationError, min_length(6), "abcde")
         min_length(6)("abcdef")
 
+
+from security.views import csp_report
+from django.utils import simplejson as json
+
+class FakeHttpRequest():
+    method = 'POST'
+    body = """
+{
+  "csp-report": {
+    "document-uri": "http://example.org/page.html",
+    "referrer": "http://evil.example.com/haxor.html",
+    "blocked-uri": "http://evil.example.com/image.png",
+    "violated-directive": "default-src 'self'",
+    "original-policy": "default-src 'self'; report-uri http://example.org/csp-report.cgi"
+  }
+}
+    """
+    META = {
+                'CONTENT_TYPE' : 'application/json',
+                }
+
+class CspTest(TestCase):
+
+    def test_json(self):
+
+        req = FakeHttpRequest()
+
+        parsed = json.loads(req.body)
+
+        self.assertNotEqual(len(parsed), 0)
+
+    # http://www.w3.org/TR/CSP/#sample-violation-report
+    def test_csp_view(self):
+
+        req = FakeHttpRequest()
+
+        # call the view
+        resp = csp_report(req)
+
+        self.assertEqual(resp.status_code, 204)
+
