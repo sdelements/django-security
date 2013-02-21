@@ -2,6 +2,7 @@
 
 from django.http import HttpResponseForbidden, HttpResponse
 from django.utils import simplejson as json
+from django.views.decorators.csrf import csrf_exempt
 
 import logging
 log = logging.getLogger(__name__)
@@ -19,6 +20,7 @@ def require_ajax(view):
             return HttpResponseForbidden()
     return check_ajax
 
+@csrf_exempt
 def csp_report(request, csp_save=False, csp_log=True):
     """
     Collect Content Security Policy reports from browsers. If csp_save is True
