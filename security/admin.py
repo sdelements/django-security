@@ -4,4 +4,4 @@ from models import PasswordExpiry
 
 
 admin.site.register(PasswordExpiry)
-
+admin.site.register(CspReport)
