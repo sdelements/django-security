@@ -195,7 +195,7 @@ class HttpOnlySessionCookieMiddleware:
 # http://tools.ietf.org/html/draft-ietf-websec-frame-options-00
 class XFrameOptionsMiddleware:
     """
-    Emits X-Frame-Options and Frame-Options headers in HTTP response. These
+    Emits X-Frame-Options headers in HTTP response. These
     headers will instruct the browser to limit ability of this web page
     to be framed, or displayed within a FRAME or IFRAME tag. This mitigates
     password stealing attacks like Clickjacking and similar.
@@ -209,6 +209,8 @@ class XFrameOptionsMiddleware:
     **Note:** Frames and inline frames are frequently used by ads, social media
     plugins and similar widgets so test these features after setting this flag. For
     more granular control use Content-Security-Policy_.
+    
+    References: `Clickjacking Defense <http://blogs.msdn.com/b/ie/archive/2009/01/27/ie8-security-part-vii-clickjacking-defenses.aspx>_`
     """
 
     def __init__(self):
@@ -224,7 +226,6 @@ class XFrameOptionsMiddleware:
         And X-Frame-Options and Frame-Options to the response header. 
         """
         response['X-Frame-Options'] = self.option
-        response['Frame-Options']   = self.option
         return response
 
 # preserve older django-security API
@@ -234,6 +235,7 @@ XFrameOptionsDenyMiddleware = XFrameOptionsMiddleware
 # http://www.w3.org/TR/2012/CR-CSP-20121115/
 class ContentSecurityPolicyMiddleware:
     """
+    .. _Content-Security-Policy
     This middleware adds Content Security Policy header
     to HTTP response. Mandatory setting CONTENT_SECURITY_POLICY contains
     the policy string, as defined by draft published
