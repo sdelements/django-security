@@ -15,23 +15,35 @@ import django.views.static
 
 from password_expiry import password_is_expired
 
-
 logger = logging.getLogger(__name__)
 
-# https://developer.mozilla.org/en-US/docs/The_Do_Not_Track_Field_Guide/Introduction
 class DoNotTrackMiddleware:
     """
-    Sets request.dnt to True or False based on the presence of the
-    Do Not Track HTTP header. It's up to application to determine how
-    to respond to this information, but usually this should result in
-    tracking cookies or web beacons *not* being set for this particular
-    request.
+    Sets request.dnt to True or False based on the presence of the Do Not Track HTTP header
+    in request received from the client. The header indicates client's general preference
+    to opt-out from behavioral profiling and third-party tracking. Compliant website should
+    adapt its behaviour depending on one of user's implied preferences:
+    
+    - Explicit opt-out (``request.dnt=True``): Disable third party tracking for this request
+      and delete all previously stored tracking data.
+    - Explicit opt-in (``request.dnt=False``): Server may track user.
+    - No preference (``request.dnt=None``): Server may track user.
+    
+    One form of tracking that DNT controls is using cookies, especially permanent
+    or third-party cookies.
+    
+    Reference: `Do Not Track: A Universal Third-Party Web Tracking Opt Out
+    <http://tools.ietf.org/html/draft-mayer-do-not-track-00>_` 
     """
+    # XXX: Add 8.4.  Response Header RECOMMENDED
     def process_request(self, request):
-        if 'HTTP_DNT' in request.META and request.META['HTTP_DNT'] == '1':
-            request.dnt = True
+        if 'HTTP_DNT' in request.META:
+            if request.META['HTTP_DNT'] == '1':
+                request.dnt = True
+            else:
+                request.dnt = False
         else:
-            request.dnt = False
+            request.dnt = None
 
 # http://blogs.msdn.com/b/ieinternals/archive/2011/01/31/controlling-the-internet-explorer-xss-filter-with-the-x-xss-protection-http-header.aspx
 class XssProtectMiddleware:
@@ -204,9 +216,16 @@ class ContentSecurityPolicyMiddleware:
     at http://www.w3.org/TR/CSP/ Example:
 
     CONTENT_SECURITY_POLICY="allow 'self'; script-src *.google.com"
+    
+    or:
+    
+    CONTENT_SECURITY_POLICY_DICT = {
+    
+    }
 
-    This middleware supports CSP header syntax for MSIE 10, Firefox
-    (Content-Security-Policy) and Chrome (X-WebKit-CSP).
+    This middleware supports CSP header syntax for
+    MSIE 10 (X-Content-Security-Policy), Firefox Content-Security-Policy)
+    and Safari (X-WebKit-CSP).
 
     Warning: enabling CSP has signification impact on browser
     behavior - for example inline JavaScript is disabled. Read
