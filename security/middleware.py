@@ -282,17 +282,16 @@ class ContentSecurityPolicyMiddleware:
             response['Content-Security-Policy-Report-Only'] = self.policy
         return response
 
-# http://tools.ietf.org/html/rfc6797
 class StrictTransportSecurityMiddleware:
     """
-    This middleware adds Strict-Transport-Security header to HTTP
-    response, enforcing SSL connections on compliant browsers. Two
+    Adds Strict-Transport-Security header to HTTP
+    response that enforces SSL connections on compliant browsers. Two
     parameters can be set in settings file:
 
-    STS_MAX_AGE = time in seconds to preserve host's STS policy
-                  (default: 1 year)
-    STS_INCLUDE_SUBDOMAINS = whether subdomains should be covered
-                             by the policy as well (default: True)
+      ``STS_MAX_AGE``               time in seconds to preserve host's STS policy (default: 1 year)
+      ``STS_INCLUDE_SUBDOMAINS``    True if subdomains should be covered by the policy as well (default: True)
+    
+    Reference: `HTTP Strict Transport Security (HSTS) <https://datatracker.ietf.org/doc/rfc6797/>_`
     """
 
     def __init__(self):
