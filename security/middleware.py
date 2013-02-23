@@ -45,15 +45,16 @@ class DoNotTrackMiddleware:
         else:
             request.dnt = None
 
-# http://blogs.msdn.com/b/ieinternals/archive/2011/01/31/controlling-the-internet-explorer-xss-filter-with-the-x-xss-protection-http-header.aspx
 class XssProtectMiddleware:
     """
     Sends X-XSS-Protection HTTP header that controls Cross-Site Scripting filter
     on MSIE. Uses XSS_PROTECT setting with the following values:
 
-        on -- enable full XSS filter blocking XSS requests (default)
-        sanitize -- enable XSS filter that tries to sanitize requests instead of blocking (less effective)
-        off -- completely distable XSS filter
+      ``on``         enable full XSS filter blocking XSS requests (*default*)
+      ``sanitize``   enable XSS filter that tries to sanitize requests instead of blocking (less effective)
+      ``off``        completely distable XSS filter
+    
+    Reference: `Controlling the XSS Filter <http://blogs.msdn.com/b/ieinternals/archive/2011/01/31/controlling-the-internet-explorer-xss-filter-with-the-x-xss-protection-http-header.aspx>_` 
     """
     def __init__(self):
         self.options = { 'on' : '1; mode=block', 'off' : '0', 'sanitize' : '1', }
@@ -73,7 +74,14 @@ class XssProtectMiddleware:
 # http://msdn.microsoft.com/en-us/library/ie/gg622941(v=vs.85).aspx
 class ContentNoSniff:
     """
-    Sends X-Content-Options HTTP header to disable autodetection of MIME type of files returned by the server.
+    Sends X-Content-Options HTTP header to disable autodetection of MIME type
+    of files returned by the server in Microsoft Internet Explorer. Specifically
+    if this flag is enabled, MSIE will not load external CSS and JavaScript files
+    unless server correctly declares their MIME type. This mitigates attacks
+    where web page would for example load a script that was disguised as an user-
+    supplied image. 
+    
+    Reference: `MIME-Handling Change: X-Content-Type-Options: nosniff  <http://msdn.microsoft.com/en-us/library/ie/gg622941(v=vs.85).aspx>_`
     """
 
     def process_response(self, request, response):
