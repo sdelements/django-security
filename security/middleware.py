@@ -48,7 +48,7 @@ class DoNotTrackMiddleware:
 class XssProtectMiddleware:
     """
     Sends X-XSS-Protection HTTP header that controls Cross-Site Scripting filter
-    on MSIE. Uses XSS_PROTECT setting with the following values:
+    on MSIE. Use XSS_PROTECT option in settings file with the following values:
 
       ``on``         enable full XSS filter blocking XSS requests (*default*)
       ``sanitize``   enable XSS filter that tries to sanitize requests instead of blocking (less effective)
@@ -195,10 +195,20 @@ class HttpOnlySessionCookieMiddleware:
 # http://tools.ietf.org/html/draft-ietf-websec-frame-options-00
 class XFrameOptionsMiddleware:
     """
-    This middleware appends X-Frame-Options and Frame-Options headers
-    to HTTP response. Value is set from X_FRAME_OPTIONS option
-    in settings file. Possible values are "sameorigin", "deny"
-    and "allow-from: URL". Default is "deny".
+    Emits X-Frame-Options and Frame-Options headers in HTTP response. These
+    headers will instruct the browser to limit ability of this web page
+    to be framed, or displayed within a FRAME or IFRAME tag. This mitigates
+    password stealing attacks like Clickjacking and similar.
+    
+    Use X_FRAME_OPTIONS in settings file with the following values:
+    
+      ``deny``              prohibit any framing of this page 
+      ``sameorigin``        allow frames from the same domain (*default*)
+      ``allow-from *URL*``  allow frames from specified *URL*
+     
+    **Note:** Frames and inline frames are frequently used by ads, social media
+    plugins and similar widgets so test these features after setting this flag. For
+    more granular control use Content-Security-Policy_.
     """
 
     def __init__(self):
@@ -207,7 +217,7 @@ class XFrameOptionsMiddleware:
             assert(self.option == 'sameorigin' or self.option == 'deny'
                     or self.option.startswith('allow-from:'))
         except AttributeError:
-            self.option = 'deny'
+            self.option = 'sameorigin'
 
     def process_response(self, request, response):
         """
