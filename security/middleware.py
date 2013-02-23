@@ -169,8 +169,14 @@ class NoConfidentialCachingMiddleware:
 
 class HttpOnlySessionCookieMiddleware:
     """
-    Middleware that tags the sessionid cookie 'HttpOnly'.
-    Starting from Django 1.4 this middleware is obsolete.
+    Add ``httpOnly`` flag to all Django session cookies. This flag will only
+    prevent cookie value from being read from JavaScript code. This mitigates
+    session stealing attacks through Cross-Site Scripting and similar techniques.    
+    
+    **Note:** Starting from Django 1.4 this middleware is obsolete as support
+    for this flag is built in.
+    
+    Reference: `httpOnly <https://www.owasp.org/index.php/HTTPOnly>_`
     """
     def __init__(self):
         ver_0 = django.VERSION[0]
