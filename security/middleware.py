@@ -27,7 +27,7 @@ class DoNotTrackMiddleware:
     - Explicit opt-out (``request.dnt=True``): Disable third party tracking for this request
       and delete all previously stored tracking data.
     - Explicit opt-in (``request.dnt=False``): Server may track user.
-    - No preference (``request.dnt=None``): Server may track user.
+    
     
     One form of tracking that DNT controls is using cookies, especially permanent
     or third-party cookies.
@@ -360,10 +360,12 @@ class ContentSecurityPolicyMiddleware:
                 csp_string += " {0} ".format(k);
                 for loc in v:
                     if loc in self._CSP_LOCATIONS:
-                        csp_string += " '{0}' ".format(loc)
+                        csp_string += " '{0}' ".format(loc) # quoted
+                    elif loc == '*':
+                        csp_string += '*'                   # not quoted
                     else:
                         # XXX: check for valid hostname or URL
-                        csp_string += " {0} ".format(loc)
+                        csp_string += " {0} ".format(loc)   # not quoted
                 csp_string += ';'
             
             elif k == 'sandbox':
