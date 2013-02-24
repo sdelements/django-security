@@ -235,7 +235,7 @@ class XFrameOptionsMiddleware:
      
     **Note:** Frames and inline frames are frequently used by ads, social media
     plugins and similar widgets so test these features after setting this flag. For
-    more granular control use Content-Security-Policy_.
+    more granular control use ContentSecurityPolicyMiddleware_.
     
     References: `Clickjacking Defense <http://blogs.msdn.com/b/ie/archive/2009/01/27/ie8-security-part-vii-clickjacking-defenses.aspx>_`
     """
@@ -262,7 +262,7 @@ XFrameOptionsDenyMiddleware = XFrameOptionsMiddleware
 # http://www.w3.org/TR/2012/CR-CSP-20121115/
 class ContentSecurityPolicyMiddleware:
     """
-    .. _Content-Security-Policy
+    .. _ContentSecurityPolicyMiddleware
     Adds Content Security Policy (CSP) header to HTTP response. 
     CSP provides fine grained instructions to the browser on
     location of allowed resources loaded by the page, thus mitigating

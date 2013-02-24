@@ -36,15 +36,20 @@ class CspReport(models.Model):
     """
     Content Security Policy violation report object. Each report represents
     a single alert raised by client browser in response to CSP received from
-    the server. Each alert means the browser was unable to access a web resource
+    the server. 
+    
+    Each alert means the browser was unable to access a web resource
     (image, CSS, frame, script) because server's policy prohibited it from accessing
     it. These alerts should be reviewed on regular basis, as they will occur in
-    two classes - both requiring attention. First, false positives where too
+    two cases: first, false positives where too
     restrictive CSP is blocking legitimate website features and needs tuning. Second,
     when real attacks were fired against the user and this raises a question how
-    the malicious code appeared on your website. CSP reports are available in
-    Django admin view. To be logged into databse, CSP view needs to be configured
-    properly.
+    the malicious code appeared on your website. 
+    
+    CSP reports are available in Django admin view. To be logged into databse,
+    CSP reports view needs to be configured properly. See csp_report_ 
+    view for more information. Content Security Policy can be switched
+    on for a web application using ContentSecurityPolicyMiddleware_ middleware.
     """
 
     # data from CSP report
