@@ -299,14 +299,14 @@ class ContentSecurityPolicyMiddleware:
             'script-src' : ['self', 'js.example.com' ],
             'style-src' : ['self', 'css.example.com' ],
             'img-src' : ['self', 'img.example.com' ],
-            'connect'src' : ['self' ],
+            'connect-src' : ['self' ],
             'font-src' : ['fonts.example.com' ],
             'object-src' : ['self' ],
             'media-src' : ['media.example.com' ],
             'frame-src' : ['self' ],
-            'sandbox' : ['allow-forms', 'allow-scripts' ],
-            'report-uri' : ['http://example.com/csp-report' ],
-    
+            'sandbox' : [ '' ],
+            # report URI is *not* array
+            'report-uri' : 'http://example.com/csp-report',
         }
     ```
 
@@ -320,31 +320,121 @@ class ContentSecurityPolicyMiddleware:
     http://developer.chrome.com/extensions/contentSecurityPolicy.html
     to see how pages need to be adapted to work under CSP.
     - Browsers will log CSP violations in JavaScript console and to a remote
-    server configuered by ``report-uri`` option. This package provides
+    server configured by ``report-uri`` option. This package provides
     a view (csp_report_) to collect these alerts in your application.
     
     .. _References:
-    References: `Content Security Policy 1.0 <http://www.w3.org/TR/CSP/>_`
+    References: `Content Security Policy 1.0 <http://www.w3.org/TR/CSP/>_`,
+    `HTML5.1 - Sandboxing <http://www.w3.org/html/wg/drafts/html/master/single-page.html#sandboxing>_`
     """
+    # these types accept CSP locations as arguments
+    _CSP_LOC_TYPES = ['default-src',
+            'script-src',
+            'style-src',
+            'img-src',
+            'connect-src',
+            'font-src',
+            'object-src',
+            'media-src',
+            'frame-src',]
+    
+    # arguments to location types 
+    _CSP_LOCATIONS = ['self', 'none', 'unsave-eval', 'unsafe-inline']
+    
+    # sandbox allowed arguments
+    # http://www.w3.org/html/wg/drafts/html/master/single-page.html#sandboxing
+    _CSP_SANDBOX_ARGS = ['', 'allow-forms', 'allow-same-origin', 'allow-scripts',
+                       'allow-top-navigation']
+    
+    # operational variables
+    _csp_string = None
+    _csp_mode = None
+    
+    def _csp_builder(self, csp_dict):
+        csp_string = ""
+        
+        for k,v in csp_dict.items():
+            
+            if k in self._CSP_LOC_TYPES:
+                # contents taking location
+                csp_string += " {0} ".format(k);
+                for loc in v:
+                    if loc in self._CSP_LOCATIONS:
+                        csp_string += " '{0}' ".format(loc)
+                    else:
+                        # XXX: check for valid hostname or URL
+                        csp_string += " {0} ".format(loc)
+                csp_string += ';'
+            
+            elif k == 'sandbox':
+                # contents taking other keywords
+                for opt in v:
+                    if opt in self._CSP_SANDBOX_ARGS:
+                        csp_string += " {0} ".format(opt)
+                    else:
+                        logger.warning('Invalid CSP sandbox argument {0}'.format(opt))
+                        raise django.core.exceptions.MiddlewareNotUsed
+                csp_string += ';'
+            
+            elif k == 'report-uri':
+                # XXX: add valid URL check
+                csp_string += v;
+                csp_string += ';'
+            
+            else:
+                logger.warning('Invalid CSP type {0}'.format(k))
+                raise django.core.exceptions.MiddlewareNotUsed
+            
+        return csp_string    
+    
     def __init__(self):
-        try:
-            self.policy = settings.CONTENT_SECURITY_POLICY
-        except AttributeError:
+        # sanity checks
+        has_csp_string = hasattr(settings, 'CSP_STRING')
+        has_csp_dict = hasattr(settings, 'CSP_DICT')
+        err_msg = 'Middleware requires either CSP_STRING or CSP_DICT setting'
+        
+        if not hasattr(settings, 'CSP_MODE'):
+            self._enforce = True
+        else:
+            mode = settings.CSP_MODE
+            if mode == 'enforce':
+                self._enforce = True
+            elif mode == 'report-only':
+                self._enforce = False
+            else:
+                logger.warn('Invalid CSP_MODE {0}, "enforce" or "report-only" allowed'.format(mode))
+                raise django.core.exceptions.MiddlewareNotUsed
+        
+        if not (has_csp_string or has_csp_dict):
+            logger.warning('{0}, none found'.format(err_msg))
             raise django.core.exceptions.MiddlewareNotUsed
-        try:
-            self.report_only = settings.CONTENT_SECURITY_POLICY_REPORT_ONLY
-        except:
-            self.report_only = False
+        
+        if has_csp_dict and has_csp_string:
+            logger.warning('{0}, not both'.format(err_msg))
+            raise django.core.exceptions.MiddlewareNotUsed
+        
+        # build or copy CSP as string
+        if has_csp_string:
+            self._csp_string = settings.CSP_STRING
+        
+        if has_csp_dict:
+            self._csp_string = self._csp_builder(settings.CSP_DICT)
 
     def process_response(self, request, response):
         """
-        And Content Security Policy policy to the response header.
+        And Content Security Policy policy to the response header. Use either
+        enforcement or report-only headers in all currently used variants.
         """
-        if not self.report_only:
-            response['Content-Security-Policy'] = self.policy
-            response['X-WebKit-CSP'] = self.policy
+        # choose headers based enforcement mode
+        if self._enforce:
+            headers = ['X-Content-Security-Policy','Content-Security-Policy','X-WebKit-CSP']
         else:
-            response['Content-Security-Policy-Report-Only'] = self.policy
+            headers = ['X-Content-Security-Policy-Report-Only','Content-Security-Policy-Report-Only']
+        
+        # actually add appropriate headers
+        for h in headers:
+            response[h] = self._csp_string
+            
         return response
 
 class StrictTransportSecurityMiddleware:
