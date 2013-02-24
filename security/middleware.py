@@ -86,7 +86,7 @@ class ContentNoSniff:
 
     def process_response(self, request, response):
         """
-        And X-Content-Options: nosniff to the response header.
+        And ``X-Content-Options: nosniff`` to the response header.
         """
         response['X-Content-Options'] = 'nosniff'
         return response
@@ -96,7 +96,13 @@ class MandatoryPasswordChangeMiddleware:
     """
     Redirects any request from an authenticated user to the password change
     form if that user's password has expired. Must be placed after
-    AuthenticationMiddleware in the middleware list.
+    ``AuthenticationMiddleware`` in the middleware list.
+    
+    Configured by dictionary ``MANDATORY_PASSWORD_CHANGE`` with the following
+    keys:
+    
+        ``URL_NAME``            name of of the password change view
+        ``EXEMPT_URL_NAMES``    list of URLs that do not trigger password change request
     """
 
     def __init__(self):
@@ -127,7 +133,27 @@ class MandatoryPasswordChangeMiddleware:
 
 class NoConfidentialCachingMiddleware:
     """
-    Adds No-Cache and No-Store Headers to Confidential pages
+    Adds No-Cache and No-Store headers to confidential pages. You can either
+    whitelist non-confidential pages and treat all others as non-confidential,
+    or specifically blacklist pages as confidential. The behaviouri is configured
+    in ``NO_CONFIDENTIAL_CACHING`` dictionary in settings file with the
+    following keys:
+    
+        ``WHITELIST_ON``        all pages are confifendialt, except for
+                                pages explicitly whitelisted in ``WHITELIST_REGEXES``
+        ``WHITELIST_REGEXES``   list of regular expressions defining pages exempt
+                                from the no caching policy
+        ``BLACKLIST_ON``        only pages defined in ``BLACKLIST_REGEXES`` will
+                                have caching disabled
+        ``BLACKLIST_REGEXES``   list of regular expressions defining confidential
+                                pages for which caching should be prohibited
+    
+    **Note:** Django cache_control_ decorator allows more granular control
+    of caching on individual view level.
+    
+    .. _cache_control: https://docs.djangoproject.com/en/dev/topics/cache/#controlling-cache-using-other-headers
+    
+    Reference: `HTTP/1.1 Header definitions - What is Cacheable <http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9.1>_` 
     """
 
     def __init__(self):
@@ -151,13 +177,14 @@ class NoConfidentialCachingMiddleware:
     def process_response(self, request, response):
         """
         Add the Cache control no-store to anything confidential. You can either
-        Whitelist non-confidential pages and treat all others as non-confidential,
+        whitelist non-confidential pages and treat all others as non-confidential,
         or specifically blacklist pages as confidential
         """
         def match(path, match_list):
             path = path.lstrip('/')
             return any(re.match(path) for re in match_list)
-        cache_control = 'no-cache, no-store'
+        
+        cache_control = 'no-cache, no-store, private'
 
         if self.whitelist:
             if not match(request.path, self.whitelist_url_regexes):
