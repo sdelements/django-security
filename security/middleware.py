@@ -263,30 +263,68 @@ XFrameOptionsDenyMiddleware = XFrameOptionsMiddleware
 class ContentSecurityPolicyMiddleware:
     """
     .. _Content-Security-Policy
-    This middleware adds Content Security Policy header
-    to HTTP response. Mandatory setting CONTENT_SECURITY_POLICY contains
-    the policy string, as defined by draft published
-    at http://www.w3.org/TR/CSP/ Example:
-
-    CONTENT_SECURITY_POLICY="allow 'self'; script-src *.google.com"
+    Adds Content Security Policy (CSP) header to HTTP response. 
+    CSP provides fine grained instructions to the browser on
+    location of allowed resources loaded by the page, thus mitigating
+    attacks based on loading of untrusted JavaScript code such
+    as Cross-Site Scripting.
     
-    or:
+    The policy can be set in two modes, controlled by ``CSP_MODE`` options:
     
-    CONTENT_SECURITY_POLICY_DICT = {
+        ``CSP_MODE='enforce'``        browser will enforce policy settings and
+                                      log violations (*default*)
+        ``CSP_MODE='report-only'``    browser will not enforce policy, only report
+                                      violations
     
-    }
+    The policy itself is a dictionary of content type keys and values containing
+    list of allowed locations. For example, ``img-src`` specifies locations
+    of images allowed to be loaded by this page:
+    
+        ``'img-src' : [ 'img.example.com' ]``
+    
+    Content types and special location types (such as ``none`` or ``self``)
+    are defined in CSP draft (see References_). The policy can be specified
+    either as a dictionary, or a raw policy string:
+    
+    Example of raw policy string (suitable for short policies):
 
-    This middleware supports CSP header syntax for
-    MSIE 10 (X-Content-Security-Policy), Firefox Content-Security-Policy)
-    and Safari (X-WebKit-CSP).
+        ``CSP_STRING="allow 'self'; script-src *.google.com"``
+    
+    Example of policy dictionary (suitable for long, complex policies), with
+    all supported content types (but not listing all supported locations):
+    
+    ```
+        CSP_DICT = {
+            'default-src' : ['self', 'cdn.example.com' ],
+            'script-src' : ['self', 'js.example.com' ],
+            'style-src' : ['self', 'css.example.com' ],
+            'img-src' : ['self', 'img.example.com' ],
+            'connect'src' : ['self' ],
+            'font-src' : ['fonts.example.com' ],
+            'object-src' : ['self' ],
+            'media-src' : ['media.example.com' ],
+            'frame-src' : ['self' ],
+            'sandbox' : ['allow-forms', 'allow-scripts' ],
+            'report-uri' : ['http://example.com/csp-report' ],
+    
+        }
+    ```
 
-    Warning: enabling CSP has signification impact on browser
+    **Notes:**
+    
+    - This middleware supports CSP header syntax for
+    MSIE 10 (``X-Content-Security-Policy``), Firefox and
+    Chrome (``Content-Security-Policy``) and Safari (``X-WebKit-CSP``).
+    - Enabling CSP has signification impact on browser
     behavior - for example inline JavaScript is disabled. Read
     http://developer.chrome.com/extensions/contentSecurityPolicy.html
     to see how pages need to be adapted to work under CSP.
-
-    If CONTENT_SECURITY_POLICY_REPORT_ONLY is set to True, CSP will
-    be enabled in Report Only mode (no enforcement).
+    - Browsers will log CSP violations in JavaScript console and to a remote
+    server configuered by ``report-uri`` option. This package provides
+    a view (csp_report_) to collect these alerts in your application.
+    
+    .. _References:
+    References: `Content Security Policy 1.0 <http://www.w3.org/TR/CSP/>_`
     """
     def __init__(self):
         try:

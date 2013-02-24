@@ -24,21 +24,26 @@ def require_ajax(view):
 @csrf_exempt
 def csp_report(request, csp_save=False, csp_log=True):
     """
-    Collect Content Security Policy reports from browsers. If csp_save is True
-    save them in CspReport class. If csp_log is True log them through Django
-    logger. By default only logging is enabled. This view should be added
-    to your project's urls.py.
+    .. _csp_report:
+    Collect *Content Security Policy* reports from browsers. This view has
+    two optional keyword arguments:
+    
+        ``csp_save``    if True, reports will be saved as ``CspReport`` objects
+                        in database; this table is registered with Django Admin,
+                        so they can be later viewed in admin console
+        ``csp_log``     if True, reports will be logged through Django logging
+                        facility under ``security`` class
+    
+    By default only logging is enabled. To collect reports, this view needs to be added
+    to project's urls.py. Examples:
 
     Default mode, only logger enable, no database logging:
 
-        url(r'^csp-report/$', security.views.csp_report),
+        ``url(r'^csp-report/$', security.views.csp_report),``
 
     Logger and database enabled:
 
-        url(r'^csp-report/$', security.views.csp_report,
-                            kwargs={'csp_save':True,'csp_log':True}),
-
-    This view emits logs messages using 'security' identifier.
+        ``url(r'^csp-report/$', security.views.csp_report, kwargs={'csp_save':True,'csp_log':True}),``
     """
 
     # http://www.w3.org/TR/CSP/#sample-violation-report
