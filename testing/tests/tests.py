@@ -364,6 +364,8 @@ class FakeHttpRequest():
                 'CONTENT_TYPE' : 'application/json',
                 }
 
+from security.middleware import ContentSecurityPolicyMiddleware
+
 class CspTest(TestCase):
 
     def test_json(self):
@@ -383,4 +385,20 @@ class CspTest(TestCase):
         resp = csp_report(req)
 
         self.assertEqual(resp.status_code, 204)
+
+    def test_csp_gen(self):
+
+        d = {
+                'default-src' : ['*', 'self', 'none', 'dupa.com' ],
+                'sandbox' : [ '' ],
+                'report-uri' : 'http://cspbuilder.com/csp-report',
+
+                }
+
+        c = ContentSecurityPolicyMiddleware()
+
+        print(c._csp_builder(d))
+
+
+
 
