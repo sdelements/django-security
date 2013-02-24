@@ -314,20 +314,33 @@ class StrictTransportSecurityMiddleware:
 
 class P3PPolicyMiddleware:
     """
-    This middleware will append the http header attribute
-    specifying your P3P policy as set out in your settings
+    Adds the HTTP header attribute specifying compact P3P policy
+    defined in P3P_COMPACT_POLICY setting and location of full
+    policy defined in P3P_POLICY_URL. If the latter is not defined,
+    a default value is used (/w3c/p3p.xml). The policy file needs to
+    be created by website owner.
+    
+    **Note:** P3P work stopped in 2002 and the only popular
+    browser with limited P3P support is MSIE.
+    
+    Reference: `The Platform for Privacy Preferences 1.0 (P3P1.0) Specification - The Compact Policies <http://www.w3.org/TR/P3P/#compact_policies>_`
     """
     def __init__(self):
+        self.policy_url = '/w3c/p3p.xml'
         try:
             self.policy = settings.P3P_COMPACT_POLICY
         except AttributeError:
             raise django.core.exceptions.MiddlewareNotUsed
+        try:
+            self.policy_url = settings.P3P_POLICY_URL
+        except AttributeError:
+            long.info('P3P_POLICY_URL not defined, using default {0}'.format(self.policy_url))
 
     def process_response(self, request, response):
         """
         And P3P policy to the response header.
         """
-        response['P3P'] = 'policyref="/w3c/p3p.xml" CP="%s"' % self.policy
+        response['P3P'] = 'policyref="{0}" CP="{1}"'.format(self.policy_url, self.policy)
         return response
 
 
