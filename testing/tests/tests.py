@@ -140,7 +140,7 @@ class ConfidentialCachingTests(TestCase):
             "WHITELIST_REGEXES": ["accounts/login/$"],
             "BLACKLIST_REGEXES": ["accounts/logout/$"]
         }
-        self.header_value = 'no-cache, no-store'
+        self.header_value = 'no-cache, no-store, private'
 
     def tearDown(self):
         if self.old_config:
