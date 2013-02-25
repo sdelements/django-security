@@ -259,7 +259,6 @@ class XFrameOptionsMiddleware:
 # new API uses "deny" as default to maintain compatibility
 XFrameOptionsDenyMiddleware = XFrameOptionsMiddleware
 
-# http://www.w3.org/TR/2012/CR-CSP-20121115/
 class ContentSecurityPolicyMiddleware:
     """
     .. _ContentSecurityPolicyMiddleware
@@ -357,22 +356,22 @@ class ContentSecurityPolicyMiddleware:
             
             if k in self._CSP_LOC_TYPES:
                 # contents taking location
-                csp_string += " {0} ".format(k);
+                csp_string += " {0}".format(k);
                 for loc in v:
                     if loc in self._CSP_LOCATIONS:
-                        csp_string += " '{0}' ".format(loc) # quoted
+                        csp_string += " '{0}'".format(loc) # quoted
                     elif loc == '*':
-                        csp_string += '*'                   # not quoted
+                        csp_string += ' *'                   # not quoted
                     else:
                         # XXX: check for valid hostname or URL
-                        csp_string += " {0} ".format(loc)   # not quoted
+                        csp_string += " {0}".format(loc)   # not quoted
                 csp_string += ';'
             
             elif k == 'sandbox':
-                # contents taking other keywords
+                csp_string += " {0}".format(k);
                 for opt in v:
                     if opt in self._CSP_SANDBOX_ARGS:
-                        csp_string += " {0} ".format(opt)
+                        csp_string += " {0}".format(opt)
                     else:
                         logger.warning('Invalid CSP sandbox argument {0}'.format(opt))
                         raise django.core.exceptions.MiddlewareNotUsed
@@ -380,7 +379,8 @@ class ContentSecurityPolicyMiddleware:
             
             elif k == 'report-uri':
                 # XXX: add valid URL check
-                csp_string += v;
+                csp_string += " {0}".format(k);
+                csp_string += " {0}".format(v);
                 csp_string += ';'
             
             else:
