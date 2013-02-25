@@ -117,4 +117,6 @@ AUTHENTICATION_THROTTLING = {
 
 XSS_PROTECT = 'on'
 X_FRAME_OPTIONS = 'allow-from: http://example.com'
-CONTENT_SECURITY_POLICY="allow 'self'; script-src *.google.com"
+CSP_STRING="allow 'self'; script-src *.google.com"
+CSP_MODE='enforce'
+P3P_POLICY_URL='/w3c/p3p.xml'
