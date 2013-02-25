@@ -355,6 +355,11 @@ class ContentSecurityPolicyMiddleware:
         for k,v in csp_dict.items():
             
             if k in self._CSP_LOC_TYPES:
+
+                if not type(v) == list:
+                    logger.warning('Arguments to {0} must be given as array'.format(k))
+                    raise django.core.exceptions.MiddlewareNotUsed
+
                 # contents taking location
                 csp_string += " {0}".format(k);
                 for loc in v:
@@ -368,6 +373,11 @@ class ContentSecurityPolicyMiddleware:
                 csp_string += ';'
             
             elif k == 'sandbox':
+
+                if not type(v) == list:
+                    logger.warning('Arguments to {0} must be given as array'.format(k))
+                    raise django.core.exceptions.MiddlewareNotUsed
+
                 csp_string += " {0}".format(k);
                 for opt in v:
                     if opt in self._CSP_SANDBOX_ARGS:
