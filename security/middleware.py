@@ -478,10 +478,13 @@ class P3PPolicyMiddleware:
     be created by website owner.
     
     **Note:** P3P work stopped in 2002 and the only popular
-    browser with limited P3P support is MSIE.
+    browser with **limited** P3P support is MSIE.
     
     Reference: `The Platform for Privacy Preferences 1.0 (P3P1.0) Specification - The Compact Policies <http://www.w3.org/TR/P3P/#compact_policies>_`
     """
+
+    policy_url = '/w3c/p3p.xml'
+
     def __init__(self):
         self.policy_url = '/w3c/p3p.xml'
         try:
@@ -491,7 +494,7 @@ class P3PPolicyMiddleware:
         try:
             self.policy_url = settings.P3P_POLICY_URL
         except AttributeError:
-            long.info('P3P_POLICY_URL not defined, using default {0}'.format(self.policy_url))
+            logger.info('P3P_POLICY_URL not defined, using default {0}'.format(self.policy_url))
 
     def process_response(self, request, response):
         """
