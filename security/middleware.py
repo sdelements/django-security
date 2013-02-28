@@ -57,7 +57,7 @@ class XssProtectMiddleware:
     Reference: `Controlling the XSS Filter <http://blogs.msdn.com/b/ieinternals/archive/2011/01/31/controlling-the-internet-explorer-xss-filter-with-the-x-xss-protection-http-header.aspx>_` 
     """
     def __init__(self):
-        self.options = { 'on' : '1; mode=block', 'off' : '0', 'sanitize' : '1', }
+        self.options = {'on': '1; mode=block', 'off': '0', 'sanitize': '1',}
         try:
             self.option = settings.XSS_PROTECT.lower()
             assert(self.option in self.options.keys())
