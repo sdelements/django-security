@@ -27,7 +27,7 @@ class DoNotTrackMiddleware:
     - Explicit opt-out (``request.dnt=True``): Disable third party tracking for this request
       and delete all previously stored tracking data.
     - Explicit opt-in (``request.dnt=False``): Server may track user.
-    - No preference (``request.dnt=None``): Server may track user.
+    
     
     One form of tracking that DNT controls is using cookies, especially permanent
     or third-party cookies.
@@ -240,7 +240,7 @@ class XFrameOptionsMiddleware:
      
     **Note:** Frames and inline frames are frequently used by ads, social media
     plugins and similar widgets so test these features after setting this flag. For
-    more granular control use Content-Security-Policy_.
+    more granular control use ContentSecurityPolicyMiddleware_.
     
     References: `Clickjacking Defense <http://blogs.msdn.com/b/ie/archive/2009/01/27/ie8-security-part-vii-clickjacking-defenses.aspx>_`
     """
@@ -264,10 +264,9 @@ class XFrameOptionsMiddleware:
 # new API uses "deny" as default to maintain compatibility
 XFrameOptionsDenyMiddleware = XFrameOptionsMiddleware
 
-# http://www.w3.org/TR/2012/CR-CSP-20121115/
 class ContentSecurityPolicyMiddleware:
     """
-    .. _Content-Security-Policy
+    .. _ContentSecurityPolicyMiddleware
     Adds Content Security Policy (CSP) header to HTTP response. 
     CSP provides fine grained instructions to the browser on
     location of allowed resources loaded by the page, thus mitigating
@@ -361,21 +360,33 @@ class ContentSecurityPolicyMiddleware:
         for k,v in csp_dict.items():
             
             if k in self._CSP_LOC_TYPES:
+
+                if not type(v) == list:
+                    logger.warning('Arguments to {0} must be given as array'.format(k))
+                    raise django.core.exceptions.MiddlewareNotUsed
+
                 # contents taking location
-                csp_string += " {0} ".format(k);
+                csp_string += " {0}".format(k);
                 for loc in v:
                     if loc in self._CSP_LOCATIONS:
-                        csp_string += " '{0}' ".format(loc)
+                        csp_string += " '{0}'".format(loc) # quoted
+                    elif loc == '*':
+                        csp_string += ' *'                   # not quoted
                     else:
                         # XXX: check for valid hostname or URL
-                        csp_string += " {0} ".format(loc)
+                        csp_string += " {0}".format(loc)   # not quoted
                 csp_string += ';'
             
             elif k == 'sandbox':
-                # contents taking other keywords
+
+                if not type(v) == list:
+                    logger.warning('Arguments to {0} must be given as array'.format(k))
+                    raise django.core.exceptions.MiddlewareNotUsed
+
+                csp_string += " {0}".format(k);
                 for opt in v:
                     if opt in self._CSP_SANDBOX_ARGS:
-                        csp_string += " {0} ".format(opt)
+                        csp_string += " {0}".format(opt)
                     else:
                         logger.warning('Invalid CSP sandbox argument {0}'.format(opt))
                         raise django.core.exceptions.MiddlewareNotUsed
@@ -383,7 +394,8 @@ class ContentSecurityPolicyMiddleware:
             
             elif k == 'report-uri':
                 # XXX: add valid URL check
-                csp_string += v;
+                csp_string += " {0}".format(k);
+                csp_string += " {0}".format(v);
                 csp_string += ';'
             
             else:
@@ -481,10 +493,13 @@ class P3PPolicyMiddleware:
     be created by website owner.
     
     **Note:** P3P work stopped in 2002 and the only popular
-    browser with limited P3P support is MSIE.
+    browser with **limited** P3P support is MSIE.
     
     Reference: `The Platform for Privacy Preferences 1.0 (P3P1.0) Specification - The Compact Policies <http://www.w3.org/TR/P3P/#compact_policies>_`
     """
+
+    policy_url = '/w3c/p3p.xml'
+
     def __init__(self):
         self.policy_url = '/w3c/p3p.xml'
         try:
@@ -494,7 +509,7 @@ class P3PPolicyMiddleware:
         try:
             self.policy_url = settings.P3P_POLICY_URL
         except AttributeError:
-            long.info('P3P_POLICY_URL not defined, using default {0}'.format(self.policy_url))
+            logger.info('P3P_POLICY_URL not defined, using default {0}'.format(self.policy_url))
 
     def process_response(self, request, response):
         """
