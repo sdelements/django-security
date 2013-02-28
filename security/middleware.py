@@ -50,8 +50,8 @@ class XssProtectMiddleware:
     Sends X-XSS-Protection HTTP header that controls Cross-Site Scripting filter
     on MSIE. Use XSS_PROTECT option in settings file with the following values:
 
-      ``on``         enable full XSS filter blocking XSS requests (*default*)
-      ``sanitize``   enable XSS filter that tries to sanitize requests instead of blocking (less effective)
+      ``sanitize``   enable XSS filter that tries to sanitize requests instead of blocking (*default*)
+      ``on``         enable full XSS filter blocking XSS requests (may `leak document.referrer <http://homakov.blogspot.com/2013/02/hacking-with-xss-auditor.html>_`)
       ``off``        completely disable XSS filter
     
     Reference: `Controlling the XSS Filter <http://blogs.msdn.com/b/ieinternals/archive/2011/01/31/controlling-the-internet-explorer-xss-filter-with-the-x-xss-protection-http-header.aspx>_` 
@@ -64,7 +64,10 @@ class XssProtectMiddleware:
                 logger.error('Invalid XSS_PROTECT option "{0}"'.format(self.option))
                 raise django.core.exceptions.MiddlewareNotUsed
         except AttributeError:
-            self.option = 'on'
+            # set to "1" if no option was selected
+            # sanitization instead of blocking prevents leakage of document.referrer
+            # http://homakov.blogspot.com/2013/02/hacking-with-xss-auditor.html
+            self.option = 'sanitize'
 
     def process_response(self, request, response):
         """
