@@ -52,7 +52,7 @@ class XssProtectMiddleware:
 
       ``on``         enable full XSS filter blocking XSS requests (*default*)
       ``sanitize``   enable XSS filter that tries to sanitize requests instead of blocking (less effective)
-      ``off``        completely distable XSS filter
+      ``off``        completely disable XSS filter
     
     Reference: `Controlling the XSS Filter <http://blogs.msdn.com/b/ieinternals/archive/2011/01/31/controlling-the-internet-explorer-xss-filter-with-the-x-xss-protection-http-header.aspx>_` 
     """
@@ -60,7 +60,9 @@ class XssProtectMiddleware:
         self.options = {'on': '1; mode=block', 'off': '0', 'sanitize': '1',}
         try:
             self.option = settings.XSS_PROTECT.lower()
-            assert(self.option in self.options.keys())
+            if self.option not in self.options.keys():
+                logger.error('Invalid XSS_PROTECT option "{0}"'.format(self.option))
+                raise django.core.exceptions.MiddlewareNotUsed
         except AttributeError:
             self.option = 'on'
 
