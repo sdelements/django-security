@@ -74,14 +74,16 @@ LOGIN_REDIRECT_URL="/home/"
 _DJANGO_TESTING_URLS = [
     "login/", "login_required/", "login_required_login_url/", "logout/",
     "password_reset/", "password_reset_from_email/", "reset/*/",
-    "password_change/", "remote_user/", "admin_password_reset/"
+    "password_change/", "remote_user/", "admin_password_reset/",
+    "auth_processor_messages/", "auth_processor_perms/", "auth_processor_user/",
 ]
 
 LOGIN_EXEMPT_URLS = ["accounts/login", "custom-login"] + _DJANGO_TESTING_URLS
 
 MANDATORY_PASSWORD_CHANGE = {
     "URL_NAME": "change_password",
-    "EXEMPT_URL_NAMES": [],
+    "EXEMPT_URL_NAMES": (),
+    "EXEMPT_URLS": _DJANGO_TESTING_URLS,
 }
 
 NO_CONFIDENTIAL_CACHING = {
