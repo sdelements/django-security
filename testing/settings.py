@@ -74,7 +74,7 @@ LOGIN_REDIRECT_URL="/home/"
 _DJANGO_TESTING_URLS = [
     "login/", "login_required/", "login_required_login_url/", "logout/",
     "password_reset/", "password_reset_from_email/", "reset/*/",
-    "password_change/", "remote_user/",
+    "password_change/", "remote_user/", "admin_password_reset/"
 ]
 
 LOGIN_EXEMPT_URLS = ["accounts/login", "custom-login"] + _DJANGO_TESTING_URLS
