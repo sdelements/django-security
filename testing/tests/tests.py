@@ -156,6 +156,50 @@ class RequirePasswordChangeTests(TestCase):
             self.client.logout()
             user.delete()
 
+    def test_dont_redirect_exempt_urls(self):
+        user = User.objects.create_user(username="foo",
+                                        password="foo",
+                                        email="foo@foo.com")
+        self.client.login(username="foo", password="foo")
+
+        try:
+            with self.settings(MANDATORY_PASSWORD_CHANGE={
+                "URL_NAME": "change_password",
+                "EXEMPT_URLS": (r'^test1/$', r'^test2/$'),
+                "EXEMPT_URL_NAMES": ("test3", "test4"),
+            }):
+                # Redirect pages in general
+                self.assertRedirects(self.client.get("/home/"), reverse("change_password"))
+
+                # Don't redirect the password change page itself
+                self.assertEqual(self.client.get(reverse("change_password")).status_code, 200)
+
+                # Don't redirect exempt urls
+                self.assertEqual(self.client.get("/test1/").status_code, 200)
+                self.assertEqual(self.client.get("/test2/").status_code, 200)
+                self.assertEqual(self.client.get("/test3/").status_code, 200)
+                self.assertEqual(self.client.get("/test4/").status_code, 200)
+        finally:
+            self.client.logout()
+            user.delete()
+
+    def test_dont_choke_on_exempt_urls_that_dont_resolve(self):
+        user = User.objects.create_user(username="foo",
+                                        password="foo",
+                                        email="foo@foo.com")
+        self.client.login(username="foo", password="foo")
+
+        try:
+            with self.settings(MANDATORY_PASSWORD_CHANGE={
+                "URL_NAME": "change_password",
+                "EXEMPT_URL_NAMES": ("fake1", "fake2"),
+            }):
+                # Redirect pages in general
+                self.assertRedirects(self.client.get("/home/"), reverse("change_password"))
+        finally:
+            self.client.logout()
+            user.delete()
+
 
 class DecoratorTest(TestCase):
     """
