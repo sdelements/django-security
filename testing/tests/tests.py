@@ -8,15 +8,16 @@ from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
 from django.core.urlresolvers import reverse
 from django.forms import ValidationError
-from django.http import HttpResponseForbidden, HttpRequest
+from django.http import HttpResponseForbidden, HttpRequest, HttpResponse
 from django.conf.urls.defaults import *
 from django.test import TestCase
+from django.test.utils import override_settings
 from django.utils import simplejson as json
 from django.utils import timezone
 
 from security.auth import min_length
 from security.auth_throttling import delay_message, increment_counters, attempt_count, reset_counters
-from security.middleware import MandatoryPasswordChangeMiddleware
+from security.middleware import MandatoryPasswordChangeMiddleware, BaseMiddleware
 from security.middleware import SessionExpiryPolicyMiddleware
 from security.models import PasswordExpiry
 from security.password_expiry import never_expire_password
@@ -52,6 +53,53 @@ class CustomLoginURLMiddleware(object):
     def process_request(self, request):
         request.login_url = '/custom-login/'
 
+class BaseMiddlewareTestMiddleware(BaseMiddleware):
+    REQUIRED_SETTINGS =('R1', 'R2')
+    OPTIONAL_SETTINGS = ('O1', 'O2')
+
+    def load_setting(self, setting, value):
+        if not hasattr(self, 'loaded_settings'):
+            self.loaded_settings = {}
+        self.loaded_settings[setting] = value
+
+    def process_response(self, request, response):
+        response.loaded_settings = self.loaded_settings
+        return response
+
+    def process_exception(self, request, exception):
+        return self.process_response(request, HttpResponse())
+
+
+class BaseMiddlewareTests(TestCase):
+    MIDDLEWARE_NAME = __module__ + '.BaseMiddlewareTestMiddleware'
+
+    def test_settings_initially_loaded(self):
+        expected_settings = {'R1': 1, 'R2': 2, 'O1': 3, 'O2': 4}
+        with self.settings(MIDDLEWARE_CLASSES=(self.MIDDLEWARE_NAME,), **expected_settings):
+            response = self.client.get('/home/')
+            self.assertEqual(expected_settings, response.loaded_settings)
+
+    def test_required_settings(self):
+        with self.settings(MIDDLEWARE_CLASSES=(self.MIDDLEWARE_NAME,)):
+            self.assertRaises(ImproperlyConfigured, self.client.get, '/home/')
+
+    def test_optional_settings(self):
+        with self.settings(MIDDLEWARE_CLASSES=(self.MIDDLEWARE_NAME,), R1=True, R2=True):
+            response = self.client.get('/home/')
+            self.assertEqual(None, response.loaded_settings['O1'])
+            self.assertEqual(None, response.loaded_settings['O2'])
+
+    def test_setting_change(self):
+        with self.settings(MIDDLEWARE_CLASSES=(self.MIDDLEWARE_NAME,), R1=123, R2=True):
+            response = self.client.get('/home/')
+            self.assertEqual(123, response.loaded_settings['R1'])
+
+            with override_settings(R1=456):
+                response = self.client.get('/home/')
+                self.assertEqual(456, response.loaded_settings['R1'])
+
+            response = self.client.get('/home/')
+            self.assertEqual(123, response.loaded_settings['R1'])
 
 class LoginRequiredMiddlewareTests(TestCase):
     def setUp(self):
@@ -100,10 +148,10 @@ class RequirePasswordChangeTests(TestCase):
                                         email="foo@foo.com")
         self.client.login(username="foo", password="foo")
         try:
-            self.assertRedirects(self.client.get("/home/"),
-                                 MandatoryPasswordChangeMiddleware().password_change_url)
-            never_expire_password(user)
-            self.assertEqual(self.client.get("/home/").status_code, 200)
+            with self.settings(MANDATORY_PASSWORD_CHANGE={"URL_NAME": "change_password"}):
+                self.assertRedirects(self.client.get("/home/"), reverse("change_password"))
+                never_expire_password(user)
+                self.assertEqual(self.client.get("/home/").status_code, 200)
         finally:
             self.client.logout()
             user.delete()
