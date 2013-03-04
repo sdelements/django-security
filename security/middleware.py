@@ -33,7 +33,7 @@ class BaseMiddleware(object):
         OPTIONAL_SETTINGS. If no setting keys are defined then this method is never called.
         """
 
-    def _on_setting_changed(self, signal, sender, setting, value):
+    def _on_setting_changed(self, sender, setting, value, **kwargs):
         if setting in self.REQUIRED_SETTINGS or setting in self.OPTIONAL_SETTINGS:
             self.load_setting(setting, value)
 
