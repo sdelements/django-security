@@ -66,16 +66,22 @@ def csp_report(request, csp_save=False, csp_log=True):
         return HttpResponseForbidden()
 
     report = csp_dict['csp-report']
+    reporting_ip = request.META['REMOTE_ADDR']
+    reporting_ua = request.META['HTTP_USER_AGENT']
 
     # log message about received CSP violation to Django log
     if csp_log:
-        log.warn('Content Security Policy violation: {0}'.format(report))
+        log.warn('Content Security Policy violation: {0}, reporting IP {1}, user agent {2}'.format(report, reporting_ip, reporting_ua))
 
     # save received CSP violation to database
     if csp_save:
-        csp_report = CspReport(document_uri=report['document-uri'], referrer=report['referrer'],
-            blocked_uri=report['blocked-uri'], violated_directive=report['violated-directive'],
-            original_policy=report['original-policy'], sender_ip=request.META['REMOTE_ADDR'])
+        csp_report = CspReport(document_uri=report.get('document-uri'),
+                referrer=report.get('referrer'),
+                blocked_uri=report.get('blocked-uri'),
+                violated_directive=report.get('violated-directive'),
+                original_policy=report.get('original-policy'),
+                sender_ip=reporting_ip,
+                user_agent=reporting_ua)
 
         csp_report.save()
 
