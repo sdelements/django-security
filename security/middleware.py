@@ -6,7 +6,7 @@ from re import compile
 import django.conf
 from django.contrib.auth import logout
 from django.core.exceptions import ImproperlyConfigured
-from django.core.urlresolvers import reverse, NoReverseMatch
+from django.core.urlresolvers import reverse, NoReverseMatch, resolve
 from django.http import HttpResponseRedirect, HttpResponse, HttpResponseServerError
 from django.test.signals import setting_changed
 from django.utils import simplejson as json, timezone
@@ -71,6 +71,7 @@ class MandatoryPasswordChangeMiddleware(BaseMiddleware):
     def process_view(self, request, view, *args, **kwargs):
         if self.settings:
             path = request.path_info.lstrip('/')
+            url_name = resolve(request.path_info).url_name
 
             # Check for an exempt URL before trying to resolve URL_NAME,
             # because the reason the URL is exempt may be because a special
@@ -80,7 +81,7 @@ class MandatoryPasswordChangeMiddleware(BaseMiddleware):
                                                      # Django shouldn't be serving
                                                      # media in production.
                 any(m.match(path) for m in self.exempt_urls) or
-                request.path in map(reverse, self.settings.get("EXEMPT_URL_NAMES", ()))):
+                url_name in self.settings.get("EXEMPT_URL_NAMES", ())):
                 return
 
             password_change_url = reverse(self.settings["URL_NAME"])
