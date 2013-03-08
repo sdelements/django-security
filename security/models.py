@@ -62,7 +62,7 @@ class CspReport(models.Model):
     # metadata
     date_received = models.DateTimeField(auto_now_add=True, help_text="When this report was received")
     sender_ip = models.GenericIPAddressField(help_text="IP of the browser sending this report")
-    user_agent = models.ChaField(max_length=200, help_text="User-Agent of reporting browser")
+    user_agent = models.CharField(max_length=200, help_text="User-Agent of reporting browser")
 
     def __unicode__(self):
         return 'CSP Report: {0} from {1}'.format(self.blocked_uri, self.document_uri)
