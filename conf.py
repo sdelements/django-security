@@ -17,7 +17,7 @@ import sys, os
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.append(os.path.dirname(__file__))
-import django 
+import django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "testing.settings")
 
 # -- General configuration -----------------------------------------------------
@@ -40,7 +40,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'django-security'
-copyright = u'2013, Pawel Krawczyk'
+copyright = u'2013, SD Elements"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
