@@ -3,23 +3,24 @@
 import logging
 from re import compile
 
+import django # for VERSION
 import django.conf
 from django.contrib.auth import logout
 from django.core.exceptions import ImproperlyConfigured
-from django.core.urlresolvers import reverse, NoReverseMatch, resolve
-from django.http import HttpResponseRedirect, HttpResponse, HttpResponseServerError
+from django.core.urlresolvers import reverse, resolve
+from django.http import HttpResponseRedirect, HttpResponse
 from django.test.signals import setting_changed
 from django.utils import simplejson as json, timezone
 import django.views.static
 
 from password_expiry import password_is_expired
 
-
 logger = logging.getLogger(__name__)
 
 class BaseMiddleware(object):
     """
-    Abstract class containing some functionality common to all middleware.
+    Abstract class containing some functionality common to all middleware that
+    require configuration.
     """
 
     REQUIRED_SETTINGS = ()
@@ -52,12 +53,100 @@ class BaseMiddleware(object):
             setting_changed.connect(self._on_setting_changed)
 
 
+class DoNotTrackMiddleware:
+    """
+    Sets request.dnt to True or False based on the presence of the Do Not Track HTTP header
+    in request received from the client. The header indicates client's general preference
+    to opt-out from behavioral profiling and third-party tracking. Compliant website should
+    adapt its behaviour depending on one of user's implied preferences:
+
+    - Explicit opt-out (``request.dnt=True``): Disable third party tracking for this request
+      and delete all previously stored tracking data.
+    - Explicit opt-in (``request.dnt=False``): Server may track user.
+
+
+    One form of tracking that DNT controls is using cookies, especially permanent
+    or third-party cookies.
+
+    Reference: `Do Not Track: A Universal Third-Party Web Tracking Opt Out
+    <http://tools.ietf.org/html/draft-mayer-do-not-track-00>_`
+    """
+    # XXX: Add 8.4.  Response Header RECOMMENDED
+    def process_request(self, request):
+        if 'HTTP_DNT' in request.META:
+            if request.META['HTTP_DNT'] == '1':
+                request.dnt = True
+            else:
+                request.dnt = False
+        else:
+            request.dnt = None
+
+
+class XssProtectMiddleware(BaseMiddleware):
+    """
+    Sends X-XSS-Protection HTTP header that controls Cross-Site Scripting filter
+    on MSIE. Use XSS_PROTECT option in settings file with the following values:
+
+      ``sanitize``   enable XSS filter that tries to sanitize requests instead of blocking (*default*)
+      ``on``         enable full XSS filter blocking XSS requests (may `leak document.referrer <http://homakov.blogspot.com/2013/02/hacking-with-xss-auditor.html>_`)
+      ``off``        completely disable XSS filter
+
+    Reference: `Controlling the XSS Filter <http://blogs.msdn.com/b/ieinternals/archive/2011/01/31/controlling-the-internet-explorer-xss-filter-with-the-x-xss-protection-http-header.aspx>_`
+    """
+
+    OPTIONAL_SETTINGS = ("XSS_PROTECT",)
+
+    OPTIONS = {'on': '1; mode=block', 'off': '0', 'sanitize': '1',}
+
+    DEFAULT = 'sanitize'
+
+    def load_setting(self, setting, value):
+        if not value:
+            self.option = XssProtectMiddleware.DEFAULT
+        if value not in XssProtectMiddleware.OPTIONS.keys():
+            raise ImproperlyConfigured(MandatoryPasswordChangeMiddleware.__name__+" invalid option for XSS_PROTECT.")
+        self.option = value
+
+    def process_response(self, request, response):
+        """
+        Add X-XSS-Protection to the reponse header.
+        """
+        response['X-XSS-Protection'] = XssProtectMiddleware.OPTIONS[self.option]
+        return response
+
+
+# http://msdn.microsoft.com/en-us/library/ie/gg622941(v=vs.85).aspx
+class ContentNoSniff:
+    """
+    Sends X-Content-Options HTTP header to disable autodetection of MIME type
+    of files returned by the server in Microsoft Internet Explorer. Specifically
+    if this flag is enabled, MSIE will not load external CSS and JavaScript files
+    unless server correctly declares their MIME type. This mitigates attacks
+    where web page would for example load a script that was disguised as an user-
+    supplied image.
+
+    Reference: `MIME-Handling Change: X-Content-Type-Options: nosniff  <http://msdn.microsoft.com/en-us/library/ie/gg622941(v=vs.85).aspx>_`
+    """
+
+    def process_response(self, request, response):
+        """
+        And ``X-Content-Options: nosniff`` to the response header.
+        """
+        response['X-Content-Options'] = 'nosniff'
+        return response
+
 
 class MandatoryPasswordChangeMiddleware(BaseMiddleware):
     """
     Redirects any request from an authenticated user to the password change
     form if that user's password has expired. Must be placed after
-    AuthenticationMiddleware in the middleware list.
+    ``AuthenticationMiddleware`` in the middleware list.
+
+    Configured by dictionary ``MANDATORY_PASSWORD_CHANGE`` with the following
+    keys:
+
+        ``URL_NAME``            name of of the password change view
+        ``EXEMPT_URL_NAMES``    list of URLs that do not trigger password change request
     """
 
     OPTIONAL_SETTINGS = ("MANDATORY_PASSWORD_CHANGE",)
@@ -95,7 +184,27 @@ class MandatoryPasswordChangeMiddleware(BaseMiddleware):
 
 class NoConfidentialCachingMiddleware(BaseMiddleware):
     """
-    Adds No-Cache and No-Store Headers to Confidential pages
+    Adds No-Cache and No-Store headers to confidential pages. You can either
+    whitelist non-confidential pages and treat all others as non-confidential,
+    or specifically blacklist pages as confidential. The behaviouri is configured
+    in ``NO_CONFIDENTIAL_CACHING`` dictionary in settings file with the
+    following keys:
+
+        ``WHITELIST_ON``        all pages are confifendialt, except for
+                                pages explicitly whitelisted in ``WHITELIST_REGEXES``
+        ``WHITELIST_REGEXES``   list of regular expressions defining pages exempt
+                                from the no caching policy
+        ``BLACKLIST_ON``        only pages defined in ``BLACKLIST_REGEXES`` will
+                                have caching disabled
+        ``BLACKLIST_REGEXES``   list of regular expressions defining confidential
+                                pages for which caching should be prohibited
+
+    **Note:** Django cache_control_ decorator allows more granular control
+    of caching on individual view level.
+
+    .. _cache_control: https://docs.djangoproject.com/en/dev/topics/cache/#controlling-cache-using-other-headers
+
+    Reference: `HTTP/1.1 Header definitions - What is Cacheable <http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9.1>_`
     """
 
     OPTIONAL_SETTINGS = ("NO_CONFIDENTIAL_CACHING",)
@@ -112,7 +221,7 @@ class NoConfidentialCachingMiddleware(BaseMiddleware):
     def process_response(self, request, response):
         """
         Add the Cache control no-store to anything confidential. You can either
-        Whitelist non-confidential pages and treat all others as non-confidential,
+        whitelist non-confidential pages and treat all others as non-confidential,
         or specifically blacklist pages as confidential
         """
         def match(path, match_list):
@@ -132,48 +241,301 @@ class NoConfidentialCachingMiddleware(BaseMiddleware):
         return response
 
 
-class HttpOnlySessionCookieMiddleware(BaseMiddleware):
+# http://tools.ietf.org/html/draft-ietf-websec-x-frame-options-01
+# http://tools.ietf.org/html/draft-ietf-websec-frame-options-00
+class XFrameOptionsMiddleware(BaseMiddleware):
     """
-    Middleware that tags the sessionid cookie 'HttpOnly'.
-    This should get handled by Django starting in v1.3.
+    Emits X-Frame-Options headers in HTTP response. These
+    headers will instruct the browser to limit ability of this web page
+    to be framed, or displayed within a FRAME or IFRAME tag. This mitigates
+    password stealing attacks like Clickjacking and similar.
+
+    Use X_FRAME_OPTIONS in settings file with the following values:
+
+      ``deny``              prohibit any framing of this page
+      ``sameorigin``        allow frames from the same domain (*default*)
+      ``allow-from *URL*``  allow frames from specified *URL*
+
+    **Note:** Frames and inline frames are frequently used by ads, social media
+    plugins and similar widgets so test these features after setting this flag. For
+    more granular control use ContentSecurityPolicyMiddleware_.
+
+    References: `Clickjacking Defense <http://blogs.msdn.com/b/ie/archive/2009/01/27/ie8-security-part-vii-clickjacking-defenses.aspx>_`
     """
+
+    OPTIONAL_SETTINGS = ('X_FRAME_OPTIONS',)
+
+    DEFAULT = 'deny'
+
+    def load_setting(self, setting, value):
+        if not value:
+            self.option = XFrameOptionsMiddleware.DEFAULT
+        if value not in ['sameorigin', 'deny'] and not value.startswith('allow-from:'):
+            raise ImproperlyConfigured(XFrameOptionsMiddleware.__name__+" invalid option for X_FRAME_OPTIONS.")
+        self.option = value
+
     def process_response(self, request, response):
-        if response.cookies.has_key('sessionid'):
-            response.cookies['sessionid']['httponly'] = True
+        """
+        And X-Frame-Options and Frame-Options to the response header.
+        """
+        response['X-Frame-Options'] = self.option
+        return response
+
+# preserve older django-security API
+# new API uses "deny" as default to maintain compatibility
+XFrameOptionsDenyMiddleware = XFrameOptionsMiddleware
+
+
+class ContentSecurityPolicyMiddleware:
+    """
+    .. _ContentSecurityPolicyMiddleware
+    Adds Content Security Policy (CSP) header to HTTP response.
+    CSP provides fine grained instructions to the browser on
+    location of allowed resources loaded by the page, thus mitigating
+    attacks based on loading of untrusted JavaScript code such
+    as Cross-Site Scripting.
+
+    The policy can be set in two modes, controlled by ``CSP_MODE`` options:
+
+        ``CSP_MODE='enforce'``        browser will enforce policy settings and
+                                      log violations (*default*)
+        ``CSP_MODE='report-only'``    browser will not enforce policy, only report
+                                      violations
+
+    The policy itself is a dictionary of content type keys and values containing
+    list of allowed locations. For example, ``img-src`` specifies locations
+    of images allowed to be loaded by this page:
+
+        ``'img-src' : [ 'img.example.com' ]``
+
+    Content types and special location types (such as ``none`` or ``self``)
+    are defined in CSP draft (see References_). The policy can be specified
+    either as a dictionary, or a raw policy string:
+
+    Example of raw policy string (suitable for short policies):
+
+        ``CSP_STRING="allow 'self'; script-src *.google.com"``
+
+    Example of policy dictionary (suitable for long, complex policies), with
+    all supported content types (but not listing all supported locations):
+
+    ```
+        CSP_DICT = {
+            'default-src' : ['self', 'cdn.example.com' ],
+            'script-src' : ['self', 'js.example.com' ],
+            'style-src' : ['self', 'css.example.com' ],
+            'img-src' : ['self', 'img.example.com' ],
+            'connect-src' : ['self' ],
+            'font-src' : ['fonts.example.com' ],
+            'object-src' : ['self' ],
+            'media-src' : ['media.example.com' ],
+            'frame-src' : ['self' ],
+            'sandbox' : [ '' ],
+            # report URI is *not* array
+            'report-uri' : 'http://example.com/csp-report',
+        }
+    ```
+
+    **Notes:**
+
+    - This middleware supports CSP header syntax for
+    MSIE 10 (``X-Content-Security-Policy``), Firefox and
+    Chrome (``Content-Security-Policy``) and Safari (``X-WebKit-CSP``).
+    - Enabling CSP has signification impact on browser
+    behavior - for example inline JavaScript is disabled. Read
+    http://developer.chrome.com/extensions/contentSecurityPolicy.html
+    to see how pages need to be adapted to work under CSP.
+    - Browsers will log CSP violations in JavaScript console and to a remote
+    server configured by ``report-uri`` option. This package provides
+    a view (csp_report_) to collect these alerts in your application.
+
+    .. _References:
+    References: `Content Security Policy 1.0 <http://www.w3.org/TR/CSP/>_`,
+    `HTML5.1 - Sandboxing <http://www.w3.org/html/wg/drafts/html/master/single-page.html#sandboxing>_`
+    """
+    # these types accept CSP locations as arguments
+    _CSP_LOC_TYPES = ['default-src',
+            'script-src',
+            'style-src',
+            'img-src',
+            'connect-src',
+            'font-src',
+            'object-src',
+            'media-src',
+            'frame-src',]
+
+    # arguments to location types
+    _CSP_LOCATIONS = ['self', 'none', 'unsave-eval', 'unsafe-inline']
+
+    # sandbox allowed arguments
+    # http://www.w3.org/html/wg/drafts/html/master/single-page.html#sandboxing
+    _CSP_SANDBOX_ARGS = ['', 'allow-forms', 'allow-same-origin', 'allow-scripts',
+                       'allow-top-navigation']
+
+    # operational variables
+    _csp_string = None
+    _csp_mode = None
+
+    def _csp_builder(self, csp_dict):
+        csp_string = ""
+
+        for k,v in csp_dict.items():
+
+            if k in self._CSP_LOC_TYPES:
+
+                if not type(v) == list:
+                    logger.warning('Arguments to {0} must be given as array'.format(k))
+                    raise django.core.exceptions.MiddlewareNotUsed
+
+                # contents taking location
+                csp_string += " {0}".format(k);
+                for loc in v:
+                    if loc in self._CSP_LOCATIONS:
+                        csp_string += " '{0}'".format(loc) # quoted
+                    elif loc == '*':
+                        csp_string += ' *'                   # not quoted
+                    else:
+                        # XXX: check for valid hostname or URL
+                        csp_string += " {0}".format(loc)   # not quoted
+                csp_string += ';'
+
+            elif k == 'sandbox':
+
+                if not type(v) == list:
+                    logger.warning('Arguments to {0} must be given as array'.format(k))
+                    raise django.core.exceptions.MiddlewareNotUsed
+
+                csp_string += " {0}".format(k);
+                for opt in v:
+                    if opt in self._CSP_SANDBOX_ARGS:
+                        csp_string += " {0}".format(opt)
+                    else:
+                        logger.warning('Invalid CSP sandbox argument {0}'.format(opt))
+                        raise django.core.exceptions.MiddlewareNotUsed
+                csp_string += ';'
+
+            elif k == 'report-uri':
+                # XXX: add valid URL check
+                csp_string += " {0}".format(k);
+                csp_string += " {0}".format(v);
+                csp_string += ';'
+
+            else:
+                logger.warning('Invalid CSP type {0}'.format(k))
+                raise django.core.exceptions.MiddlewareNotUsed
+
+        return csp_string
+
+    def __init__(self):
+        # sanity checks
+        has_csp_string = hasattr(django.conf.settings, 'CSP_STRING')
+        has_csp_dict = hasattr(django.conf.settings, 'CSP_DICT')
+        err_msg = 'Middleware requires either CSP_STRING or CSP_DICT setting'
+
+        if not hasattr(django.conf.settings, 'CSP_MODE'):
+            self._enforce = True
+        else:
+            mode = django.conf.settings.CSP_MODE
+            if mode == 'enforce':
+                self._enforce = True
+            elif mode == 'report-only':
+                self._enforce = False
+            else:
+                logger.warn('Invalid CSP_MODE {0}, "enforce" or "report-only" allowed'.format(mode))
+                raise django.core.exceptions.MiddlewareNotUsed
+
+        if not (has_csp_string or has_csp_dict):
+            logger.warning('{0}, none found'.format(err_msg))
+            raise django.core.exceptions.MiddlewareNotUsed
+
+        if has_csp_dict and has_csp_string:
+            logger.warning('{0}, not both'.format(err_msg))
+            raise django.core.exceptions.MiddlewareNotUsed
+
+        # build or copy CSP as string
+        if has_csp_string:
+            self._csp_string = django.conf.settings.CSP_STRING
+
+        if has_csp_dict:
+            self._csp_string = self._csp_builder(django.conf.settings.CSP_DICT)
+
+    def process_response(self, request, response):
+        """
+        And Content Security Policy policy to the response header. Use either
+        enforcement or report-only headers in all currently used variants.
+        """
+        # choose headers based enforcement mode
+        if self._enforce:
+            headers = ['X-Content-Security-Policy','Content-Security-Policy','X-WebKit-CSP']
+        else:
+            headers = ['X-Content-Security-Policy-Report-Only','Content-Security-Policy-Report-Only']
+
+        # actually add appropriate headers
+        for h in headers:
+            response[h] = self._csp_string
+
         return response
 
 
-class XFrameOptionsDenyMiddleware(BaseMiddleware):
+class StrictTransportSecurityMiddleware:
     """
-    This middleware will append the http header attribute
-    'x-frame-options: deny' to the any http response header.
+    Adds Strict-Transport-Security header to HTTP
+    response that enforces SSL connections on compliant browsers. Two
+    parameters can be set in settings file:
+
+      ``STS_MAX_AGE``               time in seconds to preserve host's STS policy (default: 1 year)
+      ``STS_INCLUDE_SUBDOMAINS``    True if subdomains should be covered by the policy as well (default: True)
+
+    Reference: `HTTP Strict Transport Security (HSTS) <https://datatracker.ietf.org/doc/rfc6797/>_`
     """
+
+    def __init__(self):
+        try:
+            self.max_age = django.conf.settings.STS_MAX_AGE
+            self.subdomains = django.conf.settings.STS_INCLUDE_SUBDOMAINS
+        except AttributeError:
+            self.max_age = 3600*24*365 # one year
+            self.subdomains = True
+        self.value = 'max-age={0}'.format(self.max_age)
+        if self.subdomains:
+            self.value += ' ; includeSubDomains'
 
     def process_response(self, request, response):
         """
-        And x-frame-options to the response header.
+        Add Strict-Transport-Security header.
         """
-        response['X-FRAME-OPTIONS'] = 'DENY'
+        response['Strict-Transport-Security'] = self.value
         return response
 
 
 class P3PPolicyMiddleware(BaseMiddleware):
     """
-    This middleware will append the http header attribute
-    specifying your P3P policy as set out in your settings
+    Adds the HTTP header attribute specifying compact P3P policy
+    defined in P3P_COMPACT_POLICY setting and location of full
+    policy defined in P3P_POLICY_URL. If the latter is not defined,
+    a default value is used (/w3c/p3p.xml). The policy file needs to
+    be created by website owner.
+
+    **Note:** P3P work stopped in 2002 and the only popular
+    browser with **limited** P3P support is MSIE.
+
+    Reference: `The Platform for Privacy Preferences 1.0 (P3P1.0) Specification - The Compact Policies <http://www.w3.org/TR/P3P/#compact_policies>_`
     """
 
-    OPTIONAL_SETTINGS = ("P3P_COMPACT_POLICY",)
+    REQUIRED_SETTINGS = ("P3P_COMPACT_POLICY",)
+    OPTIONAL_SETTINGS = ("P3P_POLICY_URL",)
 
     def load_setting(self, setting, value):
-        self.policy = value
+        if setting == 'P3P_COMPACT_POLICY':
+            self.policy = value
+        elif setting == 'P3P_POLICY_URL':
+            self.policy_url = value if value else '/w3c/p3p.xml'
 
     def process_response(self, request, response):
         """
         And P3P policy to the response header.
         """
-        if self.policy:
-            response['P3P'] = 'policyref="/w3c/p3p.xml" CP="%s"' % self.policy
+        response['P3P'] = 'policyref="{0}" CP="{1}"'.format(self.policy_url, self.policy)
         return response
 
 

@@ -17,5 +17,6 @@ urlpatterns = patterns("",
     ("^test2/$", lambda request: HttpResponse(), {}, "test2"),
     ("^test3/$", lambda request: HttpResponse(), {}, "test3"),
     ("^test4/$", lambda request: HttpResponse(), {}, "test4"),
-    )
+    ("^csp-report/$", "security.views.csp_report"),
+)
 

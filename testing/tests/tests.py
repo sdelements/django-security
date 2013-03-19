@@ -17,7 +17,7 @@ from django.utils import timezone
 
 from security.auth import min_length
 from security.auth_throttling import delay_message, increment_counters, attempt_count, reset_counters
-from security.middleware import MandatoryPasswordChangeMiddleware, BaseMiddleware
+from security.middleware import BaseMiddleware
 from security.middleware import SessionExpiryPolicyMiddleware
 from security.models import PasswordExpiry
 from security.password_expiry import never_expire_password
@@ -319,8 +319,35 @@ class XFrameOptionsDenyTests(TestCase):
         Verify the HTTP Response Header is set.
         """
         response = self.client.get('/accounts/login/')
-        self.assertEqual(response['X-FRAME-OPTIONS'], 'DENY')
+        self.assertEqual(response['X-Frame-Options'], settings.X_FRAME_OPTIONS)
 
+class XXssProtectTests(TestCase):
+
+    def test_option_set(self):
+        """
+        Verify the HTTP Response Header is set.
+        """
+        response = self.client.get('/accounts/login/')
+        self.assertNotEqual(response['X-XSS-Protection'], None)
+
+class ContentNoSniffTests(TestCase):
+
+    def test_option_set(self):
+        """
+        Verify the HTTP Response Header is set.
+        """
+        response = self.client.get('/accounts/login/')
+        self.assertEqual(response['X-Content-Options'], 'nosniff')
+
+
+class StrictTransportSecurityTests(TestCase):
+
+    def test_option_set(self):
+        """
+        Verify the HTTP Response Header is set.
+        """
+        response = self.client.get('/accounts/login/')
+        self.assertNotEqual(response['Strict-Transport-Security'], None)
 
 class AuthenticationThrottlingTests(TestCase):
     def setUp(self):
@@ -452,4 +479,93 @@ class AuthTests(TestCase):
     def test_min_length(self):
         self.assertRaises(ValidationError, min_length(6), "abcde")
         min_length(6)("abcdef")
+
+
+from security.views import csp_report
+from django.utils import simplejson as json
+
+class FakeHttpRequest():
+    method = 'POST'
+    body = """
+{
+  "csp-report": {
+    "document-uri": "http://example.org/page.html",
+    "referrer": "http://evil.example.com/haxor.html",
+    "blocked-uri": "http://evil.example.com/image.png",
+    "violated-directive": "default-src 'self'",
+    "original-policy": "default-src 'self'; report-uri http://example.org/csp-report.cgi"
+  }
+}
+    """
+    META = {
+                'CONTENT_TYPE' : 'application/json',
+                }
+
+from security.middleware import ContentSecurityPolicyMiddleware
+from django.core.exceptions import MiddlewareNotUsed
+
+class ContentSecurityPolicyTests(TestCase):
+
+    def test_option_set(self):
+        """
+        Verify the HTTP Response Header is set.
+        """
+        response = self.client.get('/accounts/login/')
+        self.assertEqual(response['Content-Security-Policy'], settings.CSP_STRING)
+
+    def test_json(self):
+
+        req = FakeHttpRequest()
+
+        parsed = json.loads(req.body)
+
+        self.assertNotEqual(len(parsed), 0)
+
+    # http://www.w3.org/TR/CSP/#sample-violation-report
+    def test_csp_view(self):
+
+        req = FakeHttpRequest()
+
+        # call the view
+        resp = csp_report(req)
+
+        self.assertEqual(resp.status_code, 204)
+
+    def test_csp_gen_1(self):
+
+        csp_dict = {
+            'default-src': ['self', 'cdn.example.com'], 'script-src': ['self', 'js.example.com'], 'style-src': ['self', 'css.example.com'], 'img-src': ['self', 'img.example.com'], 'connect-src': ['self'], 'font-src': ['fonts.example.com'], 'object-src': ['self'], 'media-src': ['media.example.com'], 'frame-src': ['self'], 'sandbox':[''], 'report-uri':'http://example.com/csp-report',
+            }
+        expected = " script-src 'self' js.example.com; default-src 'self' cdn.example.com; img-src 'self' img.example.com; connect-src 'self'; style-src 'self' css.example.com; report-uri http://example.com/csp-report; frame-src 'self'; sandbox ; object-src 'self'; media-src media.example.com; font-src fonts.example.com;"
+
+        csp = ContentSecurityPolicyMiddleware()
+        generated = csp._csp_builder(csp_dict)
+        self.assertEqual(generated,expected)
+
+    def test_csp_gen_2(self):
+        csp_dict = { 'default-src' : ['self'] }
+        expected = " default-src 'self';"
+
+        csp = ContentSecurityPolicyMiddleware()
+        generated = csp._csp_builder(csp_dict)
+
+        self.assertEqual(generated,expected)
+
+    def test_csp_gen_3(self):
+
+        csp_dict = { 'script-src' : ['self','www.google-analytics.com','ajax.googleapis.com'] }
+        expected = " script-src 'self' www.google-analytics.com ajax.googleapis.com;"
+
+        csp = ContentSecurityPolicyMiddleware()
+        generated = csp._csp_builder(csp_dict)
+
+        self.assertEqual(generated,expected)
+
+    def test_csp_gen_err(self):
+        csp_dict = { 'default-src' : 'self' } # argument not passed as array
+
+        csp = ContentSecurityPolicyMiddleware()
+        self.assertRaises(MiddlewareNotUsed, csp._csp_builder, csp_dict)
+
+
 

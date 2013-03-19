@@ -4,7 +4,6 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
 
-
 class PasswordExpiry(models.Model):
     """
     Associate a password expiry date with a user. For now, this date is
@@ -39,3 +38,37 @@ class PasswordExpiry(models.Model):
     class Meta:
         verbose_name_plural = "PasswordExpiries"
 
+# http://www.w3.org/TR/CSP/#sample-violation-report
+class CspReport(models.Model):
+    """
+    Content Security Policy violation report object. Each report represents
+    a single alert raised by client browser in response to CSP received from
+    the server. 
+    
+    Each alert means the browser was unable to access a web resource
+    (image, CSS, frame, script) because server's policy prohibited it from accessing
+    it. These alerts should be reviewed on regular basis, as they will occur in
+    two cases: first, false positives where too
+    restrictive CSP is blocking legitimate website features and needs tuning. Second,
+    when real attacks were fired against the user and this raises a question how
+    the malicious code appeared on your website. 
+    
+    CSP reports are available in Django admin view. To be logged into databse,
+    CSP reports view needs to be configured properly. See csp_report_ 
+    view for more information. Content Security Policy can be switched
+    on for a web application using ContentSecurityPolicyMiddleware_ middleware.
+    """
+
+    # data from CSP report
+    document_uri = models.URLField(help_text="The address of the protected resource, with any fragment component removed")
+    referrer = models.URLField(help_text="The referrer attribute of the protected resource")
+    blocked_uri = models.URLField(help_text="URI of the resource that was prevented from loading due to the policy violation, with any fragment component removed")
+    violated_directive = models.CharField(max_length=500, help_text="The policy directive that was violated")
+    original_policy = models.TextField(max_length=500, help_text="The original policy as received by the user-agent.")
+
+    # metadata
+    date_received = models.DateTimeField(auto_now_add=True, help_text="When this report was received")
+    sender_ip = models.GenericIPAddressField(help_text="IP of the browser sending this report")
+
+    def __unicode__(self):
+        return 'CSP Report: {0} from {1}'.format(self.blocked_uri, self.document_uri)
