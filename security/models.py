@@ -53,9 +53,9 @@ class CspReport(models.Model):
     """
 
     # data from CSP report
-    document_uri = models.URLField(help_text="The address of the protected resource, with any fragment component removed")
-    referrer = models.URLField(help_text="The referrer attribute of the protected resource")
-    blocked_uri = models.URLField(help_text="URI of the resource that was prevented from loading due to the policy violation, with any fragment component removed")
+    document_uri = models.URLField(max_length=500, help_text="The address of the protected resource, with any fragment component removed")
+    referrer = models.URLField(max_length=500, help_text="The referrer attribute of the protected resource")
+    blocked_uri = models.URLField(max_length=500, help_text="URI of the resource that was prevented from loading due to the policy violation, with any fragment component removed")
     violated_directive = models.CharField(max_length=500, help_text="The policy directive that was violated")
     original_policy = models.TextField(null=True, max_length=500, help_text="The original policy as received by the user-agent.")
 
