@@ -104,7 +104,7 @@ class XssProtectMiddleware(BaseMiddleware):
         if not value:
             self.option = XssProtectMiddleware.DEFAULT
         if value not in XssProtectMiddleware.OPTIONS.keys():
-            raise ImproperlyConfigured(MandatoryPasswordChangeMiddleware.__name__+" invalid option for XSS_PROTECT.")
+            raise ImproperlyConfigured(XssProtectMiddleware.__name__+" invalid option for XSS_PROTECT.")
         self.option = value
 
     def process_response(self, request, response):
