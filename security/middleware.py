@@ -85,7 +85,7 @@ class DoNotTrackMiddleware:
     def process_response(self, request, response):
         """ Echo DNT header in response per section 8.4 of draft-mayer-do-not-track-00 """
         if 'HTTP_DNT' in request.META:
-            response['HTTP_DNT'] = '1'
+            response['DNT'] = '1'
 
 class XssProtectMiddleware(BaseMiddleware):
     """
