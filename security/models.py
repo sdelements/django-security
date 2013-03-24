@@ -1,10 +1,8 @@
 # Copyright (c) 2011, SD Elements. See LICENSE.txt for details.
 
-from datetime import datetime, MINYEAR, MAXYEAR
-
 from django.contrib.auth.models import User
-from django.core.urlresolvers import reverse
 from django.db import models
+from django.utils import timezone
 
 class PasswordExpiry(models.Model):
     """
@@ -18,14 +16,23 @@ class PasswordExpiry(models.Model):
     user = models.ForeignKey(User, unique=True) # Not one-to-one because some
                                                 # users may never receive an
                                                 # expiry date.
-    password_expiry_date = models.DateTimeField(default=
-                                                 datetime(MINYEAR, 1, 1))
+    password_expiry_date = models.DateTimeField(auto_now_add=True,
+                                                null=True,
+                                                help_text="The date and time "
+                                                          "when the user's "
+                                                          "password expires. If "
+                                                          "this is empty, the "
+                                                          "password never "
+                                                          "expires.")
 
     def is_expired(self):
-        return self.password_expiry_date <= datetime.utcnow()
+        if self.password_expiry_date is None:
+            return False
+        else:
+            return self.password_expiry_date <= timezone.now()
 
     def never_expire(self):
-        self.password_expiry_date = datetime(MAXYEAR, 12, 31)
+        self.password_expiry_date = None
         self.save()
 
     class Meta:

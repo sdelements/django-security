@@ -18,6 +18,7 @@ DATABASES = {
     }
 }
 TIME_ZONE = 'America/Chicago'
+USE_TZ = True
 LANGUAGE_CODE = 'en-us'
 SITE_ID = 1
 USE_I18N = True
@@ -69,23 +70,7 @@ INSTALLED_APPS = (
     'security',
     'tests'
 )
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-        },
-    },
-    'loggers': {
-        '': {
-            'handlers': ['console'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-    }
-}
+
 LOGIN_REDIRECT_URL="/home/"
 
 # The tests for django.contrib.auth use certain URLs, and they'll fail if we
@@ -93,14 +78,16 @@ LOGIN_REDIRECT_URL="/home/"
 _DJANGO_TESTING_URLS = [
     "login/", "login_required/", "login_required_login_url/", "logout/",
     "password_reset/", "password_reset_from_email/", "reset/*/",
-    "password_change/", "remote_user/",
+    "password_change/", "remote_user/", "admin_password_reset/",
+    "auth_processor_messages/", "auth_processor_perms/", "auth_processor_user/",
 ]
 
-LOGIN_EXEMPT_URLS = ["accounts/login"] + _DJANGO_TESTING_URLS
+LOGIN_EXEMPT_URLS = ["accounts/login", "custom-login"] + _DJANGO_TESTING_URLS
 
 MANDATORY_PASSWORD_CHANGE = {
     "URL_NAME": "change_password",
-    "EXEMPT_URL_NAMES": [],
+    "EXEMPT_URL_NAMES": (),
+    "EXEMPT_URLS": _DJANGO_TESTING_URLS,
 }
 
 NO_CONFIDENTIAL_CACHING = {
@@ -119,4 +106,5 @@ XSS_PROTECT = 'on'
 X_FRAME_OPTIONS = 'allow-from: http://example.com'
 CSP_STRING="allow 'self'; script-src *.google.com"
 CSP_MODE='enforce'
-P3P_POLICY_URL='/w3c/p3p.xml'
+P3P_POLICY_URL = '/w3c/p3p.xml'
+P3P_COMPACT_POLICY = 'PRIVATE'

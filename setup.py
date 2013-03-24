@@ -12,7 +12,7 @@ setup(name="django-security",
       long_description=readme,
       maintainer="SD Elements",
       maintainer_email="django-security@sdelements.com",
-      version="0.1.8",
+      version="0.1.15b",
       packages=["security", "security.migrations", "security.auth_throttling"],
       url='https://github.com/sdelements/django-security',
       classifiers=[
@@ -24,6 +24,6 @@ setup(name="django-security",
           'License :: OSI Approved :: BSD License',
           'Topic :: Software Development :: Libraries :: Python Modules',
       ],
-      install_requires=['django>=1.3',],
+      install_requires=['django>=1.4,<1.5',],
       )
 

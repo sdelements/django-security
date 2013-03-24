@@ -1,19 +1,23 @@
 # Copyright (c) 2011, SD Elements. See LICENSE.txt for details.
 
-from datetime import datetime, timedelta
+import datetime
 import time # We monkeypatch this.
 
 from django.contrib.auth.models import User
 from django.core.cache import cache
+from django.core.exceptions import ImproperlyConfigured
 from django.core.urlresolvers import reverse
 from django.forms import ValidationError
-from django.http import HttpResponseForbidden, HttpRequest
+from django.http import HttpResponseForbidden, HttpRequest, HttpResponse
 from django.conf.urls.defaults import *
 from django.test import TestCase
+from django.test.utils import override_settings
+from django.utils import simplejson as json
+from django.utils import timezone
 
 from security.auth import min_length
 from security.auth_throttling import delay_message, increment_counters, attempt_count, reset_counters
-from security.middleware import MandatoryPasswordChangeMiddleware
+from security.middleware import BaseMiddleware
 from security.middleware import SessionExpiryPolicyMiddleware
 from security.models import PasswordExpiry
 from security.password_expiry import never_expire_password
@@ -44,6 +48,95 @@ def login_user(func):
     return wrapper
 
 
+class CustomLoginURLMiddleware(object):
+    """Used to test the custom url support in the login required middleware."""
+    def process_request(self, request):
+        request.login_url = '/custom-login/'
+
+class BaseMiddlewareTestMiddleware(BaseMiddleware):
+    REQUIRED_SETTINGS =('R1', 'R2')
+    OPTIONAL_SETTINGS = ('O1', 'O2')
+
+    def load_setting(self, setting, value):
+        if not hasattr(self, 'loaded_settings'):
+            self.loaded_settings = {}
+        self.loaded_settings[setting] = value
+
+    def process_response(self, request, response):
+        response.loaded_settings = self.loaded_settings
+        return response
+
+    def process_exception(self, request, exception):
+        return self.process_response(request, HttpResponse())
+
+
+class BaseMiddlewareTests(TestCase):
+    MIDDLEWARE_NAME = __module__ + '.BaseMiddlewareTestMiddleware'
+
+    def test_settings_initially_loaded(self):
+        expected_settings = {'R1': 1, 'R2': 2, 'O1': 3, 'O2': 4}
+        with self.settings(MIDDLEWARE_CLASSES=(self.MIDDLEWARE_NAME,), **expected_settings):
+            response = self.client.get('/home/')
+            self.assertEqual(expected_settings, response.loaded_settings)
+
+    def test_required_settings(self):
+        with self.settings(MIDDLEWARE_CLASSES=(self.MIDDLEWARE_NAME,)):
+            self.assertRaises(ImproperlyConfigured, self.client.get, '/home/')
+
+    def test_optional_settings(self):
+        with self.settings(MIDDLEWARE_CLASSES=(self.MIDDLEWARE_NAME,), R1=True, R2=True):
+            response = self.client.get('/home/')
+            self.assertEqual(None, response.loaded_settings['O1'])
+            self.assertEqual(None, response.loaded_settings['O2'])
+
+    def test_setting_change(self):
+        with self.settings(MIDDLEWARE_CLASSES=(self.MIDDLEWARE_NAME,), R1=123, R2=True):
+            response = self.client.get('/home/')
+            self.assertEqual(123, response.loaded_settings['R1'])
+
+            with override_settings(R1=456):
+                response = self.client.get('/home/')
+                self.assertEqual(456, response.loaded_settings['R1'])
+
+            response = self.client.get('/home/')
+            self.assertEqual(123, response.loaded_settings['R1'])
+
+class LoginRequiredMiddlewareTests(TestCase):
+    def setUp(self):
+        self.login_url = reverse("django.contrib.auth.views.login")
+
+    def test_aborts_if_auth_middlware_missing(self):
+        middlware_classes = settings.MIDDLEWARE_CLASSES
+        auth_middleware = 'django.contrib.auth.middleware.AuthenticationMiddleware'
+        middlware_classes = [m for m in middlware_classes if m != auth_middleware]
+        with self.settings(MIDDLEWARE_CLASSES=middlware_classes):
+            self.assertRaises(ImproperlyConfigured, self.client.get, '/home/')
+
+    def test_redirects_unauthenticated_request(self):
+        response = self.client.get('/home/')
+        self.assertRedirects(response, self.login_url + "?next=/home/")
+
+    def test_redirects_unauthenticated_ajax_request(self):
+        response = self.client.get('/home/',
+                                   HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(json.loads(response.content),
+                         {"login_url": self.login_url})
+
+    def test_redirects_to_custom_login_url(self):
+        middlware_classes = list(settings.MIDDLEWARE_CLASSES)
+        custom_login_middleware = 'tests.tests.CustomLoginURLMiddleware'
+        with self.settings(MIDDLEWARE_CLASSES=[custom_login_middleware] +
+                                              middlware_classes):
+            response = self.client.get('/home/')
+            self.assertRedirects(response, '/custom-login/')
+            response = self.client.get('/home/',
+                                       HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+            self.assertEqual(response.status_code, 401)
+            self.assertEqual(json.loads(response.content),
+                             {"login_url": '/custom-login/'})
+
+
 class RequirePasswordChangeTests(TestCase):
     def test_require_password_change(self):
         """
@@ -55,10 +148,54 @@ class RequirePasswordChangeTests(TestCase):
                                         email="foo@foo.com")
         self.client.login(username="foo", password="foo")
         try:
-            self.assertRedirects(self.client.get("/home/"),
-                                 MandatoryPasswordChangeMiddleware().password_change_url)
-            never_expire_password(user)
-            self.assertEqual(self.client.get("/home/").status_code, 200)
+            with self.settings(MANDATORY_PASSWORD_CHANGE={"URL_NAME": "change_password"}):
+                self.assertRedirects(self.client.get("/home/"), reverse("change_password"))
+                never_expire_password(user)
+                self.assertEqual(self.client.get("/home/").status_code, 200)
+        finally:
+            self.client.logout()
+            user.delete()
+
+    def test_dont_redirect_exempt_urls(self):
+        user = User.objects.create_user(username="foo",
+                                        password="foo",
+                                        email="foo@foo.com")
+        self.client.login(username="foo", password="foo")
+
+        try:
+            with self.settings(MANDATORY_PASSWORD_CHANGE={
+                "URL_NAME": "change_password",
+                "EXEMPT_URLS": (r'^test1/$', r'^test2/$'),
+                "EXEMPT_URL_NAMES": ("test3", "test4"),
+            }):
+                # Redirect pages in general
+                self.assertRedirects(self.client.get("/home/"), reverse("change_password"))
+
+                # Don't redirect the password change page itself
+                self.assertEqual(self.client.get(reverse("change_password")).status_code, 200)
+
+                # Don't redirect exempt urls
+                self.assertEqual(self.client.get("/test1/").status_code, 200)
+                self.assertEqual(self.client.get("/test2/").status_code, 200)
+                self.assertEqual(self.client.get("/test3/").status_code, 200)
+                self.assertEqual(self.client.get("/test4/").status_code, 200)
+        finally:
+            self.client.logout()
+            user.delete()
+
+    def test_dont_choke_on_exempt_urls_that_dont_resolve(self):
+        user = User.objects.create_user(username="foo",
+                                        password="foo",
+                                        email="foo@foo.com")
+        self.client.login(username="foo", password="foo")
+
+        try:
+            with self.settings(MANDATORY_PASSWORD_CHANGE={
+                "URL_NAME": "change_password",
+                "EXEMPT_URL_NAMES": ("fake1", "fake2"),
+            }):
+                # Redirect pages in general
+                self.assertRedirects(self.client.get("/home/"), reverse("change_password"))
         finally:
             self.client.logout()
             user.delete()
@@ -89,11 +226,11 @@ class SessionExpiryTests(TestCase):
         Verify the session cookie stores the start time and last active time.
         """
         self.client.get('/home/')
-        now = datetime.now()
+        now = timezone.now()
         start_time = self.client.session[SessionExpiryPolicyMiddleware.START_TIME_KEY]
         last_activity = self.client.session[SessionExpiryPolicyMiddleware.LAST_ACTIVITY_KEY]
-        self.assertTrue(now - start_time < timedelta(seconds=10))
-        self.assertTrue(now - last_activity < timedelta(seconds=10))
+        self.assertTrue(now - start_time < datetime.timedelta(seconds=10))
+        self.assertTrue(now - last_activity < datetime.timedelta(seconds=10))
 
     def session_expiry_test(self, key, expired):
         """
@@ -115,7 +252,7 @@ class SessionExpiryTests(TestCase):
         is cleared.
         """
         delta = SessionExpiryPolicyMiddleware().SESSION_COOKIE_AGE + 1
-        expired = datetime.now() - timedelta(seconds=delta)
+        expired = timezone.now() - datetime.timedelta(seconds=delta)
         self.session_expiry_test(SessionExpiryPolicyMiddleware.START_TIME_KEY,
                                  expired)
 
@@ -126,7 +263,7 @@ class SessionExpiryTests(TestCase):
         the session is cleared.
         """
         delta = SessionExpiryPolicyMiddleware().SESSION_INACTIVITY_TIMEOUT + 1
-        expired = datetime.now() - timedelta(seconds=delta)
+        expired = timezone.now() - datetime.timedelta(seconds=delta)
         self.session_expiry_test(SessionExpiryPolicyMiddleware()
                                    .LAST_ACTIVITY_KEY,
                                  expired)
@@ -140,7 +277,11 @@ class ConfidentialCachingTests(TestCase):
             "WHITELIST_REGEXES": ["accounts/login/$"],
             "BLACKLIST_REGEXES": ["accounts/logout/$"]
         }
-        self.header_value = 'no-cache, no-store, private'
+        self.header_values = {
+            "Cache-Control": 'no-cache, no-store, max-age=0, must-revalidate',
+            "Pragma": "no-cache",
+            "Expires": '-1'
+        }
 
     def tearDown(self):
         if self.old_config:
@@ -152,19 +293,23 @@ class ConfidentialCachingTests(TestCase):
         settings.NO_CONFIDENTIAL_CACHING["WHITELIST_ON"] = True
         # Get Non Confidential Page
         response = self.client.get('/accounts/login/')
-        self.assertNotEqual(response.get("Cache-Control", None), self.header_value)
+        for header, value in self.header_values.items():
+            self.assertNotEqual(response.get(header, None), value)
         # Get Confidential Page
         response = self.client.get("/accounts/logout")
-        self.assertEqual(response.get("Cache-Control", None), self.header_value)
+        for header, value in self.header_values.items():
+            self.assertEqual(response.get(header, None), value)
 
     def test_blacklisting(self):
         settings.NO_CONFIDENTIAL_CACHING["BLACKLIST_ON"] = True
         # Get Non Confidential Page
         response = self.client.get('/accounts/login/')
-        self.assertNotEqual(response.get("Cache-Control", None), self.header_value)
+        for header, value in self.header_values.items():
+            self.assertNotEqual(response.get(header, None), value)
         # Get Confidential Page
         response = self.client.get("/accounts/logout/")
-        self.assertEqual(response.get("Cache-Control", None), self.header_value)
+        for header, value in self.header_values.items():
+            self.assertEqual(response.get(header, None), value)
 
 
 class XFrameOptionsDenyTests(TestCase):
@@ -194,7 +339,7 @@ class ContentNoSniffTests(TestCase):
         response = self.client.get('/accounts/login/')
         self.assertEqual(response['X-Content-Options'], 'nosniff')
 
-        
+
 class StrictTransportSecurityTests(TestCase):
 
     def test_option_set(self):
@@ -403,7 +548,6 @@ class ContentSecurityPolicyTests(TestCase):
 
         csp = ContentSecurityPolicyMiddleware()
         generated = csp._csp_builder(csp_dict)
-        print(generated)
 
         self.assertEqual(generated,expected)
 
@@ -414,7 +558,6 @@ class ContentSecurityPolicyTests(TestCase):
 
         csp = ContentSecurityPolicyMiddleware()
         generated = csp._csp_builder(csp_dict)
-        print(generated)
 
         self.assertEqual(generated,expected)
 

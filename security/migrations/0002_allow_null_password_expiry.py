@@ -1,27 +1,21 @@
-# encoding: utf-8
+# -*- coding: utf-8 -*-
 import datetime
 from south.db import db
 from south.v2 import SchemaMigration
 from django.db import models
 
+
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
 
-        # Adding model 'PasswordExpiry'
-        db.create_table('security_passwordexpiry', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('user', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['auth.User'], unique=True)),
-            ('password_expiry_date', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime(1, 1, 1, 0, 0))),
-        ))
-        db.send_create_signal('security', ['PasswordExpiry'])
-
+        # Changing field 'PasswordExpiry.password_expiry_date'
+        db.alter_column('security_passwordexpiry', 'password_expiry_date', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, null=True))
 
     def backwards(self, orm):
 
-        # Deleting model 'PasswordExpiry'
-        db.delete_table('security_passwordexpiry')
-
+        # Changing field 'PasswordExpiry.password_expiry_date'
+        db.alter_column('security_passwordexpiry', 'password_expiry_date', self.gf('django.db.models.fields.DateTimeField')())
 
     models = {
         'auth.group': {
@@ -63,7 +57,7 @@ class Migration(SchemaMigration):
         'security.passwordexpiry': {
             'Meta': {'object_name': 'PasswordExpiry'},
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'password_expiry_date': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(1, 1, 2, 0, 0)'}),
+            'password_expiry_date': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'null': 'True', 'blank': 'True'}),
             'user': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['auth.User']", 'unique': 'True'})
         }
     }
