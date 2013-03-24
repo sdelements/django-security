@@ -71,8 +71,8 @@ class DoNotTrackMiddleware:
     Reference: `Do Not Track: A Universal Third-Party Web Tracking Opt Out
     <http://tools.ietf.org/html/draft-mayer-do-not-track-00>_`
     """
-    # XXX: Add 8.4.  Response Header RECOMMENDED
     def process_request(self, request):
+        """ Read DNT header from browser request and create request attribute """
         if 'HTTP_DNT' in request.META:
             if request.META['HTTP_DNT'] == '1':
                 request.dnt = True
@@ -81,6 +81,10 @@ class DoNotTrackMiddleware:
         else:
             request.dnt = None
 
+    def process_response(self, request, response):
+        """ Echo DNT header in response per section 8.4 of draft-mayer-do-not-track-00 """
+        if 'HTTP_DNT' in request.META:
+            response['HTTP_DNT'] = '1'
 
 class XssProtectMiddleware(BaseMiddleware):
     """
