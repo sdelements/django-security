@@ -86,8 +86,6 @@ class DoNotTrackMiddleware:
     def process_response(self, request, response):
         """ Echo DNT header in response per section 8.4 of draft-mayer-do-not-track-00 """
         if 'HTTP_DNT' in request.META:
-            print('request=',request)
-            print('response=',response,response.keys())
             response['DNT'] = '1'
         return response
 
