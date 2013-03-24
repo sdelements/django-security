@@ -62,11 +62,12 @@ class DoNotTrackMiddleware:
 
     - Explicit opt-out (``request.dnt=True``): Disable third party tracking for this request
       and delete all previously stored tracking data.
-    - Explicit opt-in (``request.dnt=False``): Server may track user.
+    - Explicit opt-in (``request.dnt=False``): Website may track user.
+    - Header not present (``request.dnt=None``): Website may track user, but should not draw any
+      conclusions on user's preferences.
 
-
-    One form of tracking that DNT controls is using cookies, especially permanent
-    or third-party cookies.
+    Website's reaction to request.dnt=True may be for example disabling HTML snippets responsible
+    for collecting statistics, displaying targeted advertisements etc.
 
     Reference: `Do Not Track: A Universal Third-Party Web Tracking Opt Out
     <http://tools.ietf.org/html/draft-mayer-do-not-track-00>_`
