@@ -365,7 +365,7 @@ class ContentSecurityPolicyMiddleware:
             'frame-src',]
 
     # arguments to location types
-    _CSP_LOCATIONS = ['self', 'none', 'unsave-eval', 'unsafe-inline']
+    _CSP_LOCATIONS = ['self', 'none', 'unsafe-eval', 'unsafe-inline']
 
     # sandbox allowed arguments
     # http://www.w3.org/html/wg/drafts/html/master/single-page.html#sandboxing
