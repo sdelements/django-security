@@ -110,6 +110,7 @@ class XssProtectMiddleware(BaseMiddleware):
     def load_setting(self, setting, value):
         if not value:
             self.option = XssProtectMiddleware.DEFAULT
+            return
         if value not in XssProtectMiddleware.OPTIONS.keys():
             raise ImproperlyConfigured(XssProtectMiddleware.__name__+" invalid option for XSS_PROTECT.")
         self.option = value
