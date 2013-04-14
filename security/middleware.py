@@ -111,6 +111,7 @@ class XssProtectMiddleware(BaseMiddleware):
         if not value:
             self.option = XssProtectMiddleware.DEFAULT
             return
+        value = value.lower()
         if value not in XssProtectMiddleware.OPTIONS.keys():
             raise ImproperlyConfigured(XssProtectMiddleware.__name__+" invalid option for XSS_PROTECT.")
         self.option = value
@@ -278,6 +279,8 @@ class XFrameOptionsMiddleware(BaseMiddleware):
     def load_setting(self, setting, value):
         if not value:
             self.option = XFrameOptionsMiddleware.DEFAULT
+            return
+        value = value.lower()
         if value not in ['sameorigin', 'deny'] and not value.startswith('allow-from:'):
             raise ImproperlyConfigured(XFrameOptionsMiddleware.__name__+" invalid option for X_FRAME_OPTIONS.")
         self.option = value
