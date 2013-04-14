@@ -62,17 +62,18 @@ class DoNotTrackMiddleware:
 
     - Explicit opt-out (``request.dnt=True``): Disable third party tracking for this request
       and delete all previously stored tracking data.
-    - Explicit opt-in (``request.dnt=False``): Server may track user.
+    - Explicit opt-in (``request.dnt=False``): Website may track user.
+    - Header not present (``request.dnt=None``): Website may track user, but should not draw any
+      conclusions on user's preferences.
 
-
-    One form of tracking that DNT controls is using cookies, especially permanent
-    or third-party cookies.
+    Website's reaction to request.dnt=True may be for example disabling HTML snippets responsible
+    for collecting statistics, displaying targeted advertisements etc.
 
     Reference: `Do Not Track: A Universal Third-Party Web Tracking Opt Out
     <http://tools.ietf.org/html/draft-mayer-do-not-track-00>_`
     """
-    # XXX: Add 8.4.  Response Header RECOMMENDED
     def process_request(self, request):
+        """ Read DNT header from browser request and create request attribute """
         if 'HTTP_DNT' in request.META:
             if request.META['HTTP_DNT'] == '1':
                 request.dnt = True
@@ -80,7 +81,13 @@ class DoNotTrackMiddleware:
                 request.dnt = False
         else:
             request.dnt = None
+        # returns None in normal conditions
 
+    def process_response(self, request, response):
+        """ Echo DNT header in response per section 8.4 of draft-mayer-do-not-track-00 """
+        if 'HTTP_DNT' in request.META:
+            response['DNT'] = '1'
+        return response
 
 class XssProtectMiddleware(BaseMiddleware):
     """
@@ -103,8 +110,10 @@ class XssProtectMiddleware(BaseMiddleware):
     def load_setting(self, setting, value):
         if not value:
             self.option = XssProtectMiddleware.DEFAULT
+            return
+        value = value.lower()
         if value not in XssProtectMiddleware.OPTIONS.keys():
-            raise ImproperlyConfigured(MandatoryPasswordChangeMiddleware.__name__+" invalid option for XSS_PROTECT.")
+            raise ImproperlyConfigured(XssProtectMiddleware.__name__+" invalid option for XSS_PROTECT.")
         self.option = value
 
     def process_response(self, request, response):
@@ -270,6 +279,8 @@ class XFrameOptionsMiddleware(BaseMiddleware):
     def load_setting(self, setting, value):
         if not value:
             self.option = XFrameOptionsMiddleware.DEFAULT
+            return
+        value = value.lower()
         if value not in ['sameorigin', 'deny'] and not value.startswith('allow-from:'):
             raise ImproperlyConfigured(XFrameOptionsMiddleware.__name__+" invalid option for X_FRAME_OPTIONS.")
         self.option = value
@@ -365,7 +376,7 @@ class ContentSecurityPolicyMiddleware:
             'frame-src',]
 
     # arguments to location types
-    _CSP_LOCATIONS = ['self', 'none', 'unsave-eval', 'unsafe-inline']
+    _CSP_LOCATIONS = ['self', 'none', 'unsafe-eval', 'unsafe-inline']
 
     # sandbox allowed arguments
     # http://www.w3.org/html/wg/drafts/html/master/single-page.html#sandboxing
