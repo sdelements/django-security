@@ -3,25 +3,23 @@
 import datetime
 import time # We monkeypatch this.
 
+from django.conf.urls.defaults import *
 from django.contrib.auth.models import User
 from django.core.cache import cache
-from django.core.exceptions import ImproperlyConfigured
+from django.core.exceptions import ImproperlyConfigured, MiddlewareNotUsed
 from django.core.urlresolvers import reverse
 from django.forms import ValidationError
 from django.http import HttpResponseForbidden, HttpRequest, HttpResponse
-from django.conf.urls.defaults import *
 from django.test import TestCase
 from django.test.utils import override_settings
-from django.utils import simplejson as json
-from django.utils import timezone
+from django.utils import simplejson as json, timezone
 
 from security.auth import min_length
 from security.auth_throttling import delay_message, increment_counters, attempt_count, reset_counters
-from security.middleware import BaseMiddleware
-from security.middleware import SessionExpiryPolicyMiddleware
+from security.middleware import BaseMiddleware, ContentSecurityPolicyMiddleware, SessionExpiryPolicyMiddleware
 from security.models import PasswordExpiry
 from security.password_expiry import never_expire_password
-from security.views import require_ajax
+from security.views import require_ajax, csp_report
 
 from django.conf import settings
 
@@ -52,6 +50,7 @@ class CustomLoginURLMiddleware(object):
     """Used to test the custom url support in the login required middleware."""
     def process_request(self, request):
         request.login_url = '/custom-login/'
+
 
 class BaseMiddlewareTestMiddleware(BaseMiddleware):
     REQUIRED_SETTINGS =('R1', 'R2')
@@ -100,6 +99,7 @@ class BaseMiddlewareTests(TestCase):
 
             response = self.client.get('/home/')
             self.assertEqual(123, response.loaded_settings['R1'])
+
 
 class LoginRequiredMiddlewareTests(TestCase):
     def setUp(self):
@@ -268,6 +268,7 @@ class SessionExpiryTests(TestCase):
                                    .LAST_ACTIVITY_KEY,
                                  expired)
 
+
 class ConfidentialCachingTests(TestCase):
     def setUp(self):
         self.old_config = getattr(settings, "NO_CONFIDENTIAL_CACHING", None)
@@ -321,6 +322,7 @@ class XFrameOptionsDenyTests(TestCase):
         response = self.client.get('/accounts/login/')
         self.assertEqual(response['X-Frame-Options'], settings.X_FRAME_OPTIONS)
 
+
 class XXssProtectTests(TestCase):
 
     def test_option_set(self):
@@ -329,6 +331,7 @@ class XXssProtectTests(TestCase):
         """
         response = self.client.get('/accounts/login/')
         self.assertNotEqual(response['X-XSS-Protection'], None)
+
 
 class ContentNoSniffTests(TestCase):
 
@@ -348,6 +351,7 @@ class StrictTransportSecurityTests(TestCase):
         """
         response = self.client.get('/accounts/login/')
         self.assertNotEqual(response['Strict-Transport-Security'], None)
+
 
 class AuthenticationThrottlingTests(TestCase):
     def setUp(self):
@@ -463,6 +467,7 @@ class AuthenticationThrottlingTests(TestCase):
         self.client.logout()
         self._succeed()
 
+
 class P3PPolicyTests(TestCase):
 
     def setUp(self):
@@ -474,6 +479,7 @@ class P3PPolicyTests(TestCase):
         response = self.client.get('/accounts/login/')
         self.assertEqual(response["P3P"], expected_header)
 
+
 class AuthTests(TestCase):
 
     def test_min_length(self):
@@ -481,32 +487,25 @@ class AuthTests(TestCase):
         min_length(6)("abcdef")
 
 
-from security.views import csp_report
-from django.utils import simplejson as json
-
-class FakeHttpRequest():
-    method = 'POST'
-    body = """
-{
-  "csp-report": {
-    "document-uri": "http://example.org/page.html",
-    "referrer": "http://evil.example.com/haxor.html",
-    "blocked-uri": "http://evil.example.com/image.png",
-    "violated-directive": "default-src 'self'",
-    "original-policy": "default-src 'self'; report-uri http://example.org/csp-report.cgi"
-  }
-}
-    """
-    META = {
-        'CONTENT_TYPE' : 'application/json',
-        'REMOTE_ADDR': '127.0.0.1',
-        'HTTP_USER_AGENT': 'FakeHTTPRequest'
-    }
-
-from security.middleware import ContentSecurityPolicyMiddleware
-from django.core.exceptions import MiddlewareNotUsed
-
 class ContentSecurityPolicyTests(TestCase):
+
+    class FakeHttpRequest():
+        method = 'POST'
+        body = """{
+          "csp-report": {
+            "document-uri": "http://example.org/page.html",
+            "referrer": "http://evil.example.com/haxor.html",
+            "blocked-uri": "http://evil.example.com/image.png",
+            "violated-directive": "default-src 'self'",
+            "original-policy": "default-src 'self'; report-uri http://example.org/csp-report.cgi"
+          }
+        }
+        """
+        META = {
+            'CONTENT_TYPE' : 'application/json',
+            'REMOTE_ADDR': '127.0.0.1',
+            'HTTP_USER_AGENT': 'FakeHTTPRequest'
+        }
 
     def test_option_set(self):
         """
@@ -517,7 +516,7 @@ class ContentSecurityPolicyTests(TestCase):
 
     def test_json(self):
 
-        req = FakeHttpRequest()
+        req = ContentSecurityPolicyTests.FakeHttpRequest()
 
         parsed = json.loads(req.body)
 
@@ -526,7 +525,7 @@ class ContentSecurityPolicyTests(TestCase):
     # http://www.w3.org/TR/CSP/#sample-violation-report
     def test_csp_view(self):
 
-        req = FakeHttpRequest()
+        req = ContentSecurityPolicyTests.FakeHttpRequest()
 
         # call the view
         resp = csp_report(req)
