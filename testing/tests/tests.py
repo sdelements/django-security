@@ -498,8 +498,10 @@ class FakeHttpRequest():
 }
     """
     META = {
-                'CONTENT_TYPE' : 'application/json',
-                }
+        'CONTENT_TYPE' : 'application/json',
+        'REMOTE_ADDR': '127.0.0.1',
+        'HTTP_USER_AGENT': 'FakeHTTPRequest'
+    }
 
 from security.middleware import ContentSecurityPolicyMiddleware
 from django.core.exceptions import MiddlewareNotUsed
