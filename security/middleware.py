@@ -604,7 +604,7 @@ class SessionExpiryPolicyMiddleware(BaseMiddleware):
             logger.debug("Session %s last active: %s" % (request.session.session_key, last_activity_time))
 
             # Is this session older than SESSION_COOKIE_AGE?
-            # We don't wory about microseconds.
+            # We don't worry about microseconds.
             SECONDS_PER_DAY = 86400
             start_time_diff = now - start_time
             last_activity_diff = now - last_activity_time
@@ -615,7 +615,7 @@ class SessionExpiryPolicyMiddleware(BaseMiddleware):
 
             if session_too_old or session_inactive:
                 logger.debug("Session %s is inactive." % request.session.session_key)
-                request.session.clear()
+                logout(request)
             else:
                 # The session is good, update the last activity value
                 logger.debug("Session %s is still active." % request.session.session_key)
