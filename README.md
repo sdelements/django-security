@@ -62,42 +62,52 @@ or minimum configuration.
 <td>Disable possibly insecure autodetection of MIME types in browsers. *Recommended.*
 <td>None
 
-<td>ContentSecurityPolicyMiddleware
+<tr>
+<td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.ContentSecurityPolicyMiddleware">ContentSecurityPolicyMiddleware</a>
 <td>Send Content Security Policy (CSP) header in HTTP response. *Recommended,* requires careful tuning.
-<td>`CSP_MODE`, `CSP_STRING` or `CSP_DICT` ([details](http://django-security.readthedocs.org/en/latest/#security.middleware.ContentSecurityPolicyMiddleware))
+<td>`CSP_MODE`, `CSP_STRING` or `CSP_DICT`
 
+<tr>
 <td>DoNotTrackMiddleware
 <td>Read user browser's DoNotTrack preference and pass it to application. *Recommended,* requires implementation in views and templates.
 <td>None ([details](http://django-security.readthedocs.org/en/latest/#security.middleware.DoNotTrackMiddleware)
 
+<tr>
 <td>LoginRequiredMiddleware
 <td>Requires a user to be authenticated to view any page on the site that hasn’t been white listed.
 <td>`LOGIN_EXEMPT_URLS` ([details](http://django-security.readthedocs.org/en/latest/#security.middleware.LoginRequiredMiddleware))
 
+<tr>
 <td>MandatoryPasswordChangeMiddleware
 <td>Redirects any request from an authenticated user to the password change form if that user’s password has expired.
 <td>`MANDATORY_PASSWORD_CHANGE` ([details](http://django-security.readthedocs.org/en/latest/#security.middleware.MandatoryPasswordChangeMiddleware))
 
+<tr>
 <td>NoConfidentialCachingMiddleware
 <td>Adds No-Cache and No-Store headers to confidential pages.
 <td>`WHITELIST_ON`, `WHITELIST_REGEXES`, `BLACKLIST_ON`, `BLACKLIST_REGEXES` ([details](http://django-security.readthedocs.org/en/latest/#security.middleware.NoConfidentialCachingMiddleware))
 
+<tr>
 <td>P3PPolicyMiddleware
 <td>Adds the HTTP header attribute specifying compact P3P policy.
 <td>`P3P_COMPACT_POLICY`, `P3P_POLICY_URL` ([details](http://django-security.readthedocs.org/en/latest/#security.middleware.P3PPolicyMiddleware))
 
+<tr>
 <td>SessionExpiryPolicyMiddleware
 <td>Expire sessions on browser close, and on expiry times stored in the cookie itself.
 <td>None.
 
+<tr>
 <td>StrictTransportSecurityMiddleware
 <td>Enforce SSL/TLS connection and disable plaintext fall-back. *Recommended* for SSL/TLS sites.
 <td>`STS_MAX_AGE`, `STS_INCLUDE_SUBDOMAINS` ([details](http://django-security.readthedocs.org/en/latest/#security.middleware.StrictTransportSecurityMiddleware))
 
+<tr>
 <td>XFrameOptionsMiddleware
 <td>Disable framing of the website, mitigating Clickjacking attacks. *Recommended.*
 <td>`X_FRAME_OPTIONS` ([details](http://django-security.readthedocs.org/en/latest/#security.middleware.XFrameOptionsMiddleware))
 
+<tr>
 <td>XssProtectMiddleware
 <td>Enforce browser's Cross Site Scripting protection. *Recommended.*
 <td>None.
