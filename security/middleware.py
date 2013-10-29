@@ -55,10 +55,18 @@ class BaseMiddleware(object):
 
 class DoNotTrackMiddleware:
     """
-    Sets request.dnt to True or False based on the presence of the Do Not Track HTTP header
-    in request received from the client. The header indicates client's general preference
-    to opt-out from behavioral profiling and third-party tracking. Compliant website should
-    adapt its behaviour depending on one of user's implied preferences:
+    With this middleware views can access ``request.dnt`` parameter to check
+    client's preference on user tracking.
+
+    The parameter can take True, False or None values based on the presence of
+    the ``Do Not Track`` HTTP header in client's request, which in turn depends
+    on browser's configuration. The header indicates client's general preference
+    to opt-out from behavioral profiling and third-party tracking. 
+
+    The parameter does **not** change Django's behaviour in any way as its sole
+    purpose is to pass the user's preference to application and it's up to the owner
+    to implement a particular policy based on this information. Compliant website should
+    adapt its behaviour depending on one of user's preferences:
 
     - Explicit opt-out (``request.dnt=True``): Disable third party tracking for this request
       and delete all previously stored tracking data.
@@ -66,11 +74,19 @@ class DoNotTrackMiddleware:
     - Header not present (``request.dnt=None``): Website may track user, but should not draw any
       conclusions on user's preferences.
 
-    Website's reaction to request.dnt=True may be for example disabling HTML snippets responsible
-    for collecting statistics, displaying targeted advertisements etc.
+    For example, a website might respond to ``request.dnt=True`` by disabling template parts
+    responsible for personalized statistics, targeted advertisements or switching to DNT aware ones.
 
-    Reference: `Do Not Track: A Universal Third-Party Web Tracking Opt Out
-    <http://tools.ietf.org/html/draft-mayer-do-not-track-00>_`
+    Examples:
+
+    - `Do Not Track (DNT) tutorial for Django <http://ipsec.pl/node/1101>`_
+    - `Do Not Track - Web Application Templates <http://donottrack.us/application>`_
+    - `Opt-out of tailoring Twitter <https://dev.twitter.com/docs/tweet-button#optout>`_
+
+    References:
+
+    - `Web Tracking Protection <http://www.w3.org/Submission/web-tracking-protection/>`_
+    - `Do Not Track: A Universal Third-Party Web Tracking Opt Out <http://tools.ietf.org/html/draft-mayer-do-not-track-00>`_
     """
     def process_request(self, request):
         """ Read DNT header from browser request and create request attribute """
@@ -98,7 +114,9 @@ class XssProtectMiddleware(BaseMiddleware):
       ``on``         enable full XSS filter blocking XSS requests (may `leak document.referrer <http://homakov.blogspot.com/2013/02/hacking-with-xss-auditor.html>_`)
       ``off``        completely disable XSS filter
 
-    Reference: `Controlling the XSS Filter <http://blogs.msdn.com/b/ieinternals/archive/2011/01/31/controlling-the-internet-explorer-xss-filter-with-the-x-xss-protection-http-header.aspx>_`
+    Reference: 
+
+    - `Controlling the XSS Filter <http://blogs.msdn.com/b/ieinternals/archive/2011/01/31/controlling-the-internet-explorer-xss-filter-with-the-x-xss-protection-http-header.aspx>`_
     """
 
     OPTIONAL_SETTINGS = ("XSS_PROTECT",)
@@ -134,7 +152,9 @@ class ContentNoSniff:
     where web page would for example load a script that was disguised as an user-
     supplied image.
 
-    Reference: `MIME-Handling Change: X-Content-Type-Options: nosniff  <http://msdn.microsoft.com/en-us/library/ie/gg622941(v=vs.85).aspx>_`
+    Reference: 
+    
+    - `MIME-Handling Change: X-Content-Type-Options: nosniff <http://msdn.microsoft.com/en-us/library/ie/gg622941(v=vs.85).aspx>`_
     """
 
     def process_response(self, request, response):
@@ -213,7 +233,9 @@ class NoConfidentialCachingMiddleware(BaseMiddleware):
 
     .. _cache_control: https://docs.djangoproject.com/en/dev/topics/cache/#controlling-cache-using-other-headers
 
-    Reference: `HTTP/1.1 Header definitions - What is Cacheable <http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9.1>_`
+    Reference: 
+
+    - `HTTP/1.1 Header definitions - What is Cacheable <http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9.1>`_
     """
 
     OPTIONAL_SETTINGS = ("NO_CONFIDENTIAL_CACHING",)
@@ -254,22 +276,24 @@ class NoConfidentialCachingMiddleware(BaseMiddleware):
 # http://tools.ietf.org/html/draft-ietf-websec-frame-options-00
 class XFrameOptionsMiddleware(BaseMiddleware):
     """
-    Emits X-Frame-Options headers in HTTP response. These
+    Emits ``X-Frame-Options headers`` in HTTP response. These
     headers will instruct the browser to limit ability of this web page
     to be framed, or displayed within a FRAME or IFRAME tag. This mitigates
     password stealing attacks like Clickjacking and similar.
 
-    Use X_FRAME_OPTIONS in settings file with the following values:
+    Use ``X_FRAME_OPTIONS`` in settings file with the following values:
 
-      ``deny``              prohibit any framing of this page
-      ``sameorigin``        allow frames from the same domain (*default*)
-      ``allow-from *URL*``  allow frames from specified *URL*
+      - ``deny``              prohibit any framing of this page
+      - ``sameorigin``        allow frames from the same domain (*default*)
+      - ``allow-from URL``  allow frames from specified *URL*
 
     **Note:** Frames and inline frames are frequently used by ads, social media
     plugins and similar widgets so test these features after setting this flag. For
     more granular control use ContentSecurityPolicyMiddleware_.
 
-    References: `Clickjacking Defense <http://blogs.msdn.com/b/ie/archive/2009/01/27/ie8-security-part-vii-clickjacking-defenses.aspx>_`
+    References: 
+    
+    - `RFC 7034: HTTP Header Field X-Frame-Options <http://tools.ietf.org/html/rfc7034>`_
     """
 
     OPTIONAL_SETTINGS = ('X_FRAME_OPTIONS',)
@@ -299,7 +323,7 @@ XFrameOptionsDenyMiddleware = XFrameOptionsMiddleware
 
 class ContentSecurityPolicyMiddleware:
     """
-    .. _ContentSecurityPolicyMiddleware
+    .. _ContentSecurityPolicyMiddleware:
     Adds Content Security Policy (CSP) header to HTTP response.
     CSP provides fine grained instructions to the browser on
     location of allowed resources loaded by the page, thus mitigating
@@ -330,7 +354,8 @@ class ContentSecurityPolicyMiddleware:
     Example of policy dictionary (suitable for long, complex policies), with
     all supported content types (but not listing all supported locations):
 
-    ```
+    ::
+
         CSP_DICT = {
             'default-src' : ['self', 'cdn.example.com' ],
             'script-src' : ['self', 'js.example.com' ],
@@ -345,24 +370,19 @@ class ContentSecurityPolicyMiddleware:
             # report URI is *not* array
             'report-uri' : 'http://example.com/csp-report',
         }
-    ```
 
     **Notes:**
 
-    - This middleware supports CSP header syntax for
-    MSIE 10 (``X-Content-Security-Policy``), Firefox and
-    Chrome (``Content-Security-Policy``) and Safari (``X-WebKit-CSP``).
-    - Enabling CSP has signification impact on browser
-    behavior - for example inline JavaScript is disabled. Read
-    http://developer.chrome.com/extensions/contentSecurityPolicy.html
-    to see how pages need to be adapted to work under CSP.
-    - Browsers will log CSP violations in JavaScript console and to a remote
-    server configured by ``report-uri`` option. This package provides
-    a view (csp_report_) to collect these alerts in your application.
+    - This middleware supports CSP header syntax for MSIE 10 (``X-Content-Security-Policy``), Firefox and Chrome (``Content-Security-Policy``) and Safari (``X-WebKit-CSP``).
+    - Enabling CSP has significant impact on browser behavior - for example inline JavaScript is disabled. Read `Default Policy Restrictions <http://developer.chrome.com/extensions/contentSecurityPolicy.html>`_ to see how pages need to be adapted to work under CSP.
+    - Browsers will log CSP violations in JavaScript console and to a remote server configured by ``report-uri`` option. This package provides a view (csp_report_) to collect these alerts in your application.
 
     .. _References:
-    References: `Content Security Policy 1.0 <http://www.w3.org/TR/CSP/>_`,
-    `HTML5.1 - Sandboxing <http://www.w3.org/html/wg/drafts/html/master/single-page.html#sandboxing>_`
+
+    **References:**
+
+    - `Content Security Policy 1.0 <http://www.w3.org/TR/CSP/>`_,
+    - `HTML5.1 - Sandboxing <http://www.w3.org/html/wg/drafts/html/master/single-page.html#sandboxing>`_
     """
     # these types accept CSP locations as arguments
     _CSP_LOC_TYPES = ['default-src',
@@ -477,9 +497,9 @@ class ContentSecurityPolicyMiddleware:
         """
         # choose headers based enforcement mode
         if self._enforce:
-            headers = ['X-Content-Security-Policy','Content-Security-Policy','X-WebKit-CSP']
+            headers = ['Content-Security-Policy',]
         else:
-            headers = ['X-Content-Security-Policy-Report-Only','Content-Security-Policy-Report-Only']
+            headers = ['Content-Security-Policy-Report-Only',]
 
         # actually add appropriate headers
         for h in headers:
@@ -492,12 +512,15 @@ class StrictTransportSecurityMiddleware:
     """
     Adds Strict-Transport-Security header to HTTP
     response that enforces SSL connections on compliant browsers. Two
-    parameters can be set in settings file:
+    parameters can be set in settings file, otherwise reasonable
+    defaults will be used:
 
-      ``STS_MAX_AGE``               time in seconds to preserve host's STS policy (default: 1 year)
-      ``STS_INCLUDE_SUBDOMAINS``    True if subdomains should be covered by the policy as well (default: True)
+      - ``STS_MAX_AGE``               time in seconds to preserve host's STS policy (default: 1 year)
+      - ``STS_INCLUDE_SUBDOMAINS``    True if subdomains should be covered by the policy as well (default: True)
 
-    Reference: `HTTP Strict Transport Security (HSTS) <https://datatracker.ietf.org/doc/rfc6797/>_`
+    Reference: 
+    
+    - `HTTP Strict Transport Security (HSTS) <https://datatracker.ietf.org/doc/rfc6797/>`_
     """
 
     def __init__(self):
@@ -530,7 +553,9 @@ class P3PPolicyMiddleware(BaseMiddleware):
     **Note:** P3P work stopped in 2002 and the only popular
     browser with **limited** P3P support is MSIE.
 
-    Reference: `The Platform for Privacy Preferences 1.0 (P3P1.0) Specification - The Compact Policies <http://www.w3.org/TR/P3P/#compact_policies>_`
+    Reference: 
+
+    - `The Platform for Privacy Preferences 1.0 (P3P1.0) Specification - The Compact Policies <http://www.w3.org/TR/P3P/#compact_policies>`_
     """
 
     REQUIRED_SETTINGS = ("P3P_COMPACT_POLICY",)
