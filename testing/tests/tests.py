@@ -353,30 +353,25 @@ class StrictTransportSecurityTests(TestCase):
         self.assertNotEqual(response['Strict-Transport-Security'], None)
 
 
-class AuthenticationThrottlingTests(TestCase):
-    def setUp(self):
-        self.old_time = time.time
-        self.old_config = getattr(settings, "AUTHENTICATION_THROTTLING", None)
-        self.time = 0
-        time.time = lambda: self.time
-        settings.AUTHENTICATION_THROTTLING = {"DELAY_FUNCTION":
+@override_settings(AUTHENTICATION_THROTTLING={"DELAY_FUNCTION":
                                                 lambda x, _: (2 ** (x - 1)
                                                                 if x
                                                                 else 0,
                                                               0),
                                               "LOGIN_URLS_WITH_TEMPLATES":
                                                 [("accounts/login/",
-                                                  "registration/login.html")]}
+                                                  "registration/login.html")]})
+class AuthenticationThrottlingTests(TestCase):
+    def setUp(self):
+        # monkey patch time
+        self.old_time = time.time
+        self.time = 0
+        time.time = lambda: self.time
         self.user = User.objects.create_user(username="foo", password="foo",
                                              email="a@foo.org")
 
     def tearDown(self):
         time.time = self.old_time
-        if self.old_config:
-            settings.AUTHENTICATION_THROTTLING = self.old_config
-        else:
-            del(settings.AUTHENTICATION_THROTTLING)
-        self.user.delete()
 
     def attempt(self, password):
         return self.client.post("/accounts/login/",

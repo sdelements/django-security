@@ -3,20 +3,19 @@
 import hashlib
 import logging
 from math import ceil
-import re
 import time # Monkeypatched by the tests.
 
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.sites.models import get_current_site
 from django.core.cache import cache
-from django.forms import ValidationError
+from django.core.exceptions import ImproperlyConfigured
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.utils.translation import ugettext as _
 from django.views.decorators.csrf import csrf_protect
 
-from django.conf import settings
+from security import BaseMiddleware
 
 logger = logging.getLogger(__name__)
 
@@ -90,18 +89,9 @@ class _ThrottlingForm(AuthenticationForm):
                                             ])}
 
 
-class Middleware:
+class Middleware(BaseMiddleware):
     """
-    Performs authentication throttling by username and IP. Expects a settings
-    dict named AUTHENTICATION_THROTTLING with at least two elements,
-    LOGIN_URLS_WITH_TEMPLATES and DELAY_FUNCTION. The former is a list of
-    pairs of URL and template path. The latter is a function of two arguments,
-    called when a request is being considered for throttling: The first
-    argument is the number of failed attempts that have been made on the
-    username being supplied since the last success, and the second argument is
-    the number of attempts from the IP. The function should return a pair: The
-    number of seconds to delay the next attempt on that username, and the
-    number of seconds to delay the next attempt from that IP.
+    Performs authentication throttling by username and IP.
 
     Any POST request to one of the supplied login URLs is assumed to be a login
     attempt. The Django cache is used to store failure counts and timestamps:
@@ -112,23 +102,36 @@ class Middleware:
     request.user to determine whether the login attempt succeeded.
     """
 
-    def __init__(self):
+    REQUIRED_SETTINGS = ("AUTHENTICATION_THROTTLING",)
+
+    def load_setting(self, setting, value):
         """
-        Looks for a valid configuration in settings.AUTHENTICATION_THROTTLING.
-        If such is not found, the handlers are not installed.
+        There is only one required setting, AUTHENTICATION_THROTTLING, which
+        should contain the following information:
+
+            DELAY_FUNCTION - a function of two arguments, called when a request
+                             is being considered for throttling: The first
+                             argument is the number of failed attempts that
+                             have been made on the username being supplied
+                             since the last success, and the second argument is
+                             the number of attempts from the IP. The function
+                             should return a pair: The number of seconds to
+                             delay the next attempt on that username, and the
+                             number of seconds to delay the next attempt from
+                             that IP.
+            LOGIN_URLS_WITH_TEMPLATES - a list of pairs of URL and template path
+            REDIRECT_FIELD_NAME - used to override the default REDIRECT_FIELD_NAME
+
+        REDIRECT_FIELD_NAME is optional, the other fields are required.
         """
+        value = value or {}
+        self.redirect_field_name = value.get("REDIRECT_FIELD_NAME", REDIRECT_FIELD_NAME)
         try:
-            config = settings.AUTHENTICATION_THROTTLING
-            self.delay_function = config["DELAY_FUNCTION"]
-            self.logins = list(config["LOGIN_URLS_WITH_TEMPLATES"])
-            self.redirect_field_name = config.get("REDIRECT_FIELD_NAME",
-                                                  REDIRECT_FIELD_NAME)
-            # TODO: Test the validity of the list items?
-            self.process_request = self._process_request_if_configured
-            self.process_response = self._process_response_if_configured
-        except:
-            logger.error("Bad AUTHENTICATION_THROTTLING dictionary. "
-                           "AuthenticationThrottlingMiddleware disabled.")
+            self.delay_function = value["DELAY_FUNCTION"]
+            self.logins = list(value["LOGIN_URLS_WITH_TEMPLATES"])
+        except KeyError:
+            raise ImproperlyConfigured("Bad AUTHENTICATION_THROTTLING dictionary. "
+                                       "AuthenticationThrottlingMiddleware disabled.")
 
     def _throttling_delay(self, request):
         """
@@ -142,7 +145,7 @@ class Middleware:
         acc_delay, ip_delay = self.delay_function(acc_n, ip_n)
         return max(acc_t + acc_delay - t, ip_t + ip_delay - t)
 
-    def _process_request_if_configured(self, request):
+    def process_request(self, request):
         """
         Block the request if it is a login attempt to which a throttling delay
         is applicable.
@@ -172,7 +175,7 @@ class Middleware:
                                                       RequestContext(request))
                                 )(request)
 
-    def _process_response_if_configured(self, request, response):
+    def process_response(self, request, response):
         if request.META.get("login_request_permitted", False):
             register_authentication_attempt(request)
         return response
