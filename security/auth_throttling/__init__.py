@@ -1,5 +1,6 @@
 # Copyright (c) 2011, SD Elements. See ../LICENSE.txt for details.
 
+import json
 import hashlib
 import logging
 from math import ceil
@@ -10,14 +11,20 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.sites.models import get_current_site
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
+from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.utils.translation import ugettext as _
 from django.views.decorators.csrf import csrf_protect
 
-from security import BaseMiddleware
+from security.middleware import BaseMiddleware
 
 logger = logging.getLogger(__name__)
+
+
+class HttpResponseTooManyRequests(HttpResponse):
+    status_code = 429
+
 
 def delay_message(remainder):
     """
@@ -66,14 +73,37 @@ def attempt_count(attempt_type, id):
     return cache.get(_key(attempt_type, id), (0,))[0]
 
 
+def _extract_username(request):
+    """
+    Look for the "username" in a request.
+    """
+    # was username sent as a post param, which is the case for a normal
+    # django login form?
+    username = request.POST.get("username")
+    if username:
+        return username
+
+    # was username sent as JSON in request body?
+    try:
+        content = json.loads(request.body)
+        username = content.get("username")
+    except AttributeError, ValueError:
+        username = None
+    return username
+
+
 def register_authentication_attempt(request):
     """
     The given request is a login attempt that has already passed through the
     authentication middleware. Adjusts the throttling counters based on whether
     it succeeded or failed.
     """
-    (reset_counters if request.user.is_authenticated() else increment_counters
-     )(username=request.POST["username"], ip=request.META["REMOTE_ADDR"])
+    username = _extract_username(request)
+    ip = request.META["REMOTE_ADDR"]
+    if request.user.is_authenticated():
+        reset_counters(username=username, ip=ip)
+    else:
+        increment_counters(username=username, ip=ip)
 
 
 class _ThrottlingForm(AuthenticationForm):
@@ -100,63 +130,85 @@ class Middleware(BaseMiddleware):
     that URL, with an error informing the user of the situation. Otherwise,
     the request is allowed to continue, and a response handler checks
     request.user to determine whether the login attempt succeeded.
+
+    There is only one required setting, AUTHENTICATION_THROTTLING, which
+    should contain the following information:
+
+        DELAY_FUNCTION -            a function of two arguments, called when a
+                                    request is being considered for throttling:
+                                    The first argument is the number of failed
+                                    attempts that have been made on the
+                                    username being supplied since the last
+                                    success, and the second argument is the
+                                    number of attempts from the IP. The
+                                    function should return a pair: The number
+                                    of seconds to delay the next attempt on
+                                    that username, and the number of seconds to
+                                    delay the next attempt from that IP.
+        LOGIN_URLS_WITH_TEMPLATES - a list of pairs of URL and django
+                                    template paths.  If the supplied template
+                                    in LOGIN_URLS_WITH_TEMPLATES is None we
+                                    simply return a HTTP 429 error.
+        REDIRECT_FIELD_NAME       - used to override the default
+                                    REDIRECT_FIELD_NAME.
+
+    REDIRECT_FIELD_NAME is optional, the other fields are required.
     """
 
     REQUIRED_SETTINGS = ("AUTHENTICATION_THROTTLING",)
 
     def load_setting(self, setting, value):
         """
-        There is only one required setting, AUTHENTICATION_THROTTLING, which
-        should contain the following information:
-
-            DELAY_FUNCTION - a function of two arguments, called when a request
-                             is being considered for throttling: The first
-                             argument is the number of failed attempts that
-                             have been made on the username being supplied
-                             since the last success, and the second argument is
-                             the number of attempts from the IP. The function
-                             should return a pair: The number of seconds to
-                             delay the next attempt on that username, and the
-                             number of seconds to delay the next attempt from
-                             that IP.
-            LOGIN_URLS_WITH_TEMPLATES - a list of pairs of URL and template path
-            REDIRECT_FIELD_NAME - used to override the default REDIRECT_FIELD_NAME
-
-        REDIRECT_FIELD_NAME is optional, the other fields are required.
         """
         value = value or {}
-        self.redirect_field_name = value.get("REDIRECT_FIELD_NAME", REDIRECT_FIELD_NAME)
+
         try:
             self.delay_function = value["DELAY_FUNCTION"]
             self.logins = list(value["LOGIN_URLS_WITH_TEMPLATES"])
         except KeyError:
-            raise ImproperlyConfigured("Bad AUTHENTICATION_THROTTLING dictionary. "
-                                       "AuthenticationThrottlingMiddleware disabled.")
+            raise ImproperlyConfigured(
+                "Bad AUTHENTICATION_THROTTLING dictionary. "
+                "AuthenticationThrottlingMiddleware disabled."
+            )
+
+        self.redirect_field_name = value.get("REDIRECT_FIELD_NAME", REDIRECT_FIELD_NAME)
 
     def _throttling_delay(self, request):
         """
         Return the greater of the delay periods called for by the username and
         the IP of this login request.
         """
+        username = _extract_username(request)
+        ip = request.META["REMOTE_ADDR"]
         t = time.time()
-        acc_n, acc_t = cache.get(_key("username", request.POST["username"]),
-                                 (0, t))
-        ip_n, ip_t = cache.get(_key("ip", request.META["REMOTE_ADDR"]), (0, t))
+        acc_n, acc_t = cache.get(_key("username", username), (0, t))
+        ip_n, ip_t = cache.get(_key("ip", ip), (0, t))
         acc_delay, ip_delay = self.delay_function(acc_n, ip_n)
         return max(acc_t + acc_delay - t, ip_t + ip_delay - t)
 
     def process_request(self, request):
         """
         Block the request if it is a login attempt to which a throttling delay
-        is applicable.
+        is applicable. We don't process requests that are not PUTs or POSTs.
         """
-        if request.method != "POST": return
+        if not (request.method == "POST" or request.method == "PUT"): return
+
         for url, template_name in self.logins:
             if request.path[1:] != url: continue
+
             delay = self._throttling_delay(request)
+
             if delay <= 0:
                 request.META["login_request_permitted"] = True
                 return
+            # else: throttle the request
+
+            if not template_name:
+                # we simply return HTTP 429 Too Many Requests
+                return HttpResponseTooManyRequests()
+
+            # update the login form to indicate the throttling error, which
+            # will be displayed to the user.
             form = _ThrottlingForm(delay, request)
             redirect_url = request.REQUEST.get(self.redirect_field_name, "")
             current_site = get_current_site(request)
