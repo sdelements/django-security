@@ -66,30 +66,12 @@ def increment_counters(**counters):
     cache.set_many(existing)
 
 
-def attempt_count(attempt_type, id):
-    """
-    Only used by tests.
-    """
-    return cache.get(_key(attempt_type, id), (0,))[0]
-
-
 def _extract_username(request):
     """
-    Look for the "username" in a request.
+    Look for the "username" in a request. If there is no valid username we
+    will simply be throttling on IP alone.
     """
-    # was username sent as a post param, which is the case for a normal
-    # django login form?
-    username = request.POST.get("username")
-    if username:
-        return username
-
-    # was username sent as JSON in request body?
-    try:
-        content = json.loads(request.body)
-        username = content.get("username")
-    except AttributeError, ValueError:
-        username = None
-    return username
+    return request.POST.get("username", "notfound").lower()
 
 
 def register_authentication_attempt(request):
@@ -106,17 +88,52 @@ def register_authentication_attempt(request):
         increment_counters(username=username, ip=ip)
 
 
+def default_delay_function(account_attempt_count, ip_attempt_count):
+    """
+    We throttle based on how many times we have seen a request from a
+    particular IP or username.
+
+    Delay the third attempt on an account for five seconds, and double that
+    delay on every additional failure, to a maximum of twenty-four hours.
+    """
+    if account_attempt_count < 3:
+        return (0, 0)
+
+    twentyfour_hours = 60 * 60 * 24
+    account_delay = min(5 * 2 ** (account_attempt_count - 3), twentyfour_hours)
+    ip_delay = min(5 * 2 ** (ip_attempt_count - 3), twentyfour_hours)
+
+    return (account_delay, ip_delay)
+
+
+def throttling_delay(request, delay_function=default_delay_function):
+    """
+    Return the greater of the delay periods called for by the username and
+    the IP of this login request.
+    """
+    username = _extract_username(request)
+    ip = request.META["REMOTE_ADDR"]
+    t = time.time()
+    acc_n, acc_t = cache.get(_key("username", username), (0, t))
+    ip_n, ip_t = cache.get(_key("ip", ip), (0, t))
+    acc_delay, ip_delay = delay_function(acc_n, ip_n)
+    return max(acc_t + acc_delay - t, ip_t + ip_delay - t)
+
+
+def attempt_count(attempt_type, id):
+    """
+    Only used by tests.
+    """
+    return cache.get(_key(attempt_type, id), (0,))[0]
+
+
 class _ThrottlingForm(AuthenticationForm):
-    def __init__(self, throttling_delay, *args, **kwargs):
+    def __init__(self, delay, *args, **kwargs):
         super(_ThrottlingForm, self).__init__(*args, **kwargs)
-        self._errors = {"__all__":
-                          self.error_class(["Due to the failure of previous "
-                                              "attempts, your login request "
-                                              "has been denied as a security "
-                                              "precaution. Please try again "
-                                              "in at least %s. " %
-                                              delay_message(throttling_delay)
-                                            ])}
+        message = ("Due to the failure of previous attempts, your login "
+                   "request has been denied as a security precaution. Please "
+                   "try again in at least %s." % delay_message(delay))
+        self._errors = {"__all__": self.error_class([message])}
 
 
 class Middleware(BaseMiddleware):
@@ -134,6 +151,10 @@ class Middleware(BaseMiddleware):
     There is only one required setting, AUTHENTICATION_THROTTLING, which
     should contain the following information:
 
+        LOGIN_URLS_WITH_TEMPLATES - a list of pairs of URL and django
+                                    template paths.  If the supplied template
+                                    in LOGIN_URLS_WITH_TEMPLATES is None we
+                                    simply return a HTTP 429 error.
         DELAY_FUNCTION -            a function of two arguments, called when a
                                     request is being considered for throttling:
                                     The first argument is the number of failed
@@ -145,14 +166,10 @@ class Middleware(BaseMiddleware):
                                     of seconds to delay the next attempt on
                                     that username, and the number of seconds to
                                     delay the next attempt from that IP.
-        LOGIN_URLS_WITH_TEMPLATES - a list of pairs of URL and django
-                                    template paths.  If the supplied template
-                                    in LOGIN_URLS_WITH_TEMPLATES is None we
-                                    simply return a HTTP 429 error.
         REDIRECT_FIELD_NAME       - used to override the default
                                     REDIRECT_FIELD_NAME.
 
-    REDIRECT_FIELD_NAME is optional, the other fields are required.
+    LOGIN_URLS_WITH_TEMPLATES is required. The other parameters are optional.
     """
 
     REQUIRED_SETTINGS = ("AUTHENTICATION_THROTTLING",)
@@ -163,7 +180,6 @@ class Middleware(BaseMiddleware):
         value = value or {}
 
         try:
-            self.delay_function = value["DELAY_FUNCTION"]
             self.logins = list(value["LOGIN_URLS_WITH_TEMPLATES"])
         except KeyError:
             raise ImproperlyConfigured(
@@ -171,20 +187,8 @@ class Middleware(BaseMiddleware):
                 "AuthenticationThrottlingMiddleware disabled."
             )
 
+        self.delay_function = value.get("DELAY_FUNCTION", default_delay_function)
         self.redirect_field_name = value.get("REDIRECT_FIELD_NAME", REDIRECT_FIELD_NAME)
-
-    def _throttling_delay(self, request):
-        """
-        Return the greater of the delay periods called for by the username and
-        the IP of this login request.
-        """
-        username = _extract_username(request)
-        ip = request.META["REMOTE_ADDR"]
-        t = time.time()
-        acc_n, acc_t = cache.get(_key("username", username), (0, t))
-        ip_n, ip_t = cache.get(_key("ip", ip), (0, t))
-        acc_delay, ip_delay = self.delay_function(acc_n, ip_n)
-        return max(acc_t + acc_delay - t, ip_t + ip_delay - t)
 
     def process_request(self, request):
         """
@@ -196,7 +200,7 @@ class Middleware(BaseMiddleware):
         for url, template_name in self.logins:
             if request.path[1:] != url: continue
 
-            delay = self._throttling_delay(request)
+            delay = throttling_delay(request, self.delay_function)
 
             if delay <= 0:
                 request.META["login_request_permitted"] = True
@@ -232,4 +236,8 @@ class Middleware(BaseMiddleware):
             register_authentication_attempt(request)
         return response
 
-__all__ = [delay_message, increment_counters, attempt_count, reset_counters]
+
+__all__ = [
+    delay_message, increment_counters, reset_counters, attempt_count,
+    default_delay_function, throttling_delay
+]
