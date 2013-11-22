@@ -91,28 +91,26 @@ def register_authentication_attempt(request):
 def default_delay_function(account_attempt_count, ip_attempt_count):
     """
     We throttle based on how many times we have seen a request from a
-    particular IP or username.
-
-    Delay the third attempt on an account for five seconds, and double that
-    delay on every additional failure, to a maximum of twenty-four hours.
+    particular IP or username. This function will delay the third attempt on an
+    account for five seconds, and double that delay on every additional
+    failure, to a maximum of twenty-four hours. We do NOT delay based on IP.
+    Popular opinion is that IP based throttling doesn't belong in the
+    application layer.
     """
     if account_attempt_count < 3:
         return (0, 0)
 
     twentyfour_hours = 60 * 60 * 24
     account_delay = min(5 * 2 ** (account_attempt_count - 3), twentyfour_hours)
-    ip_delay = min(5 * 2 ** (ip_attempt_count - 3), twentyfour_hours)
 
-    return (account_delay, ip_delay)
+    return (account_delay, 0)
 
 
-def throttling_delay(request, delay_function=default_delay_function):
+def throttling_delay(username, ip, delay_function=default_delay_function):
     """
     Return the greater of the delay periods called for by the username and
     the IP of this login request.
     """
-    username = _extract_username(request)
-    ip = request.META["REMOTE_ADDR"]
     t = time.time()
     acc_n, acc_t = cache.get(_key("username", username), (0, t))
     ip_n, ip_t = cache.get(_key("ip", ip), (0, t))
@@ -200,7 +198,10 @@ class Middleware(BaseMiddleware):
         for url, template_name in self.logins:
             if request.path[1:] != url: continue
 
-            delay = throttling_delay(request, self.delay_function)
+            username = _extract_username(request)
+            ip = request.META["REMOTE_ADDR"]
+
+            delay = throttling_delay(username, ip, self.delay_function)
 
             if delay <= 0:
                 request.META["login_request_permitted"] = True
