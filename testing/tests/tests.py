@@ -1,6 +1,7 @@
 # Copyright (c) 2011, SD Elements. See LICENSE.txt for details.
 
 import datetime
+import json
 import time # We monkeypatch this.
 
 from django.conf.urls import *
@@ -12,7 +13,7 @@ from django.forms import ValidationError
 from django.http import HttpResponseForbidden, HttpRequest, HttpResponse
 from django.test import TestCase
 from django.test.utils import override_settings
-from django.utils import simplejson as json, timezone
+from django.utils import timezone
 
 from security.auth import min_length
 from security.auth_throttling import (
