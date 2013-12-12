@@ -1,7 +1,7 @@
 # Copyright (c) 2011, SD Elements. See LICENSE.txt for details.
 
 from django.http import HttpResponseForbidden, HttpResponse
-from django.utils import simplejson as json
+import json
 from django.views.decorators.csrf import csrf_exempt
 from security.models import CspReport
 
