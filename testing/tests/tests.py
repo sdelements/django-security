@@ -1,6 +1,7 @@
 # Copyright (c) 2011, SD Elements. See LICENSE.txt for details.
 
 import datetime
+import json
 import time # We monkeypatch this.
 
 from django.conf.urls import *
@@ -12,11 +13,17 @@ from django.forms import ValidationError
 from django.http import HttpResponseForbidden, HttpRequest, HttpResponse
 from django.test import TestCase
 from django.test.utils import override_settings
-from django.utils import simplejson as json, timezone
+from django.utils import timezone
 
 from security.auth import min_length
-from security.auth_throttling import delay_message, increment_counters, attempt_count, reset_counters
-from security.middleware import BaseMiddleware, ContentSecurityPolicyMiddleware, SessionExpiryPolicyMiddleware
+from security.auth_throttling import (
+    attempt_count, default_delay_function, delay_message, increment_counters,
+    reset_counters,
+)
+from security.middleware import (
+    BaseMiddleware, ContentSecurityPolicyMiddleware,
+    SessionExpiryPolicyMiddleware
+)
 from security.models import PasswordExpiry
 from security.password_expiry import never_expire_password
 from security.views import require_ajax, csp_report
@@ -353,30 +360,23 @@ class StrictTransportSecurityTests(TestCase):
         self.assertNotEqual(response['Strict-Transport-Security'], None)
 
 
+@override_settings(AUTHENTICATION_THROTTLING={
+    "DELAY_FUNCTION": lambda x, _: (2 ** (x - 1) if x else 0, 0),
+    "LOGIN_URLS_WITH_TEMPLATES": [
+        ("accounts/login/", "registration/login.html")
+    ]
+})
 class AuthenticationThrottlingTests(TestCase):
     def setUp(self):
+        # monkey patch time
         self.old_time = time.time
-        self.old_config = getattr(settings, "AUTHENTICATION_THROTTLING", None)
         self.time = 0
         time.time = lambda: self.time
-        settings.AUTHENTICATION_THROTTLING = {"DELAY_FUNCTION":
-                                                lambda x, _: (2 ** (x - 1)
-                                                                if x
-                                                                else 0,
-                                                              0),
-                                              "LOGIN_URLS_WITH_TEMPLATES":
-                                                [("accounts/login/",
-                                                  "registration/login.html")]}
         self.user = User.objects.create_user(username="foo", password="foo",
                                              email="a@foo.org")
 
     def tearDown(self):
         time.time = self.old_time
-        if self.old_config:
-            settings.AUTHENTICATION_THROTTLING = self.old_config
-        else:
-            del(settings.AUTHENTICATION_THROTTLING)
-        self.user.delete()
 
     def attempt(self, password):
         return self.client.post("/accounts/login/",
@@ -386,15 +386,19 @@ class AuthenticationThrottlingTests(TestCase):
     def reset(self):
         self.client.logout()
         cache.clear()
+
     def typo(self):
         self.assertTemplateUsed(self.attempt("bar"), "registration/login.html")
+
     def _succeed(self):
         self.assertTemplateNotUsed(self.attempt("foo"),
                                    "registration/login.html")
         self.reset()
+
     def _fail(self):
         self.assertTemplateUsed(self.attempt("foo"), "registration/login.html")
         self.reset()
+
     def set_time(self, t):
         self.time = t
 
@@ -419,6 +423,27 @@ class AuthenticationThrottlingTests(TestCase):
         self.assertEqual(attempt_count("username", "foo"), 0)
         self.assertEqual(attempt_count("ip", "127.0.0.1"), 0)
         cache.clear()
+
+    def test_default_delay_function(self):
+        """
+        The default function will only delay by looking at the username,
+        and shouldn't care about ip.
+        """
+        delay = default_delay_function
+
+        # 100 repeated IPs doesn't result in a delay.
+        self.assertEqual(delay(0, 100), (0, 0))
+
+        # first 3 incorrect attempts with a username will not be delayed.
+        for i in xrange(3):
+            self.assertEqual(delay(i, 0), (0, 0))
+
+        # forth, fifth, sixth attempts are throttled
+        for i in xrange(4,7):
+            self.assertEqual(delay(i, 0), (5 * 2 ** (i - 3), 0))
+
+        # we max out at 24 hours
+        self.assertEqual(delay(100, 0), (24 * 60 * 60, 0))
 
     def test_per_account_throttling(self):
         """
@@ -450,6 +475,28 @@ class AuthenticationThrottlingTests(TestCase):
         self.typo()
         self.set_time(3)
         self._succeed()
+
+    @override_settings(AUTHENTICATION_THROTTLING={
+        "DELAY_FUNCTION": lambda x, y: (x, y),
+        "LOGIN_URLS_WITH_TEMPLATES": [
+            ("accounts/login/", None)
+        ]
+    })
+    def test_too_many_requests_error_when_no_template_provided(self):
+        """
+        Verify we simply return a 429 error when there is no login template provided
+        for us to report an error within.
+        """
+        cache.clear()
+
+        # first bad attempt
+        self.typo()
+
+        # second attempt is throttled as per our delay function
+        response = self.attempt("bar")
+        self.assertEqual(response.status_code, 429, "Expected TooManyRequests Error.")
+
+        cache.clear()
 
     def test_reset_button(self):
         """

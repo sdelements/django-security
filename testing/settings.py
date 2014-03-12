@@ -76,10 +76,12 @@ LOGIN_REDIRECT_URL="/home/"
 # The tests for django.contrib.auth use certain URLs, and they'll fail if we
 # interfere with these.
 _DJANGO_TESTING_URLS = [
-    "login/", "login_required/", "login_required_login_url/", "logout/",
-    "password_reset/", "password_reset_from_email/", "reset/*/",
-    "password_change/", "remote_user/", "admin_password_reset/",
-    "auth_processor_messages/", "auth_processor_perms/", "auth_processor_user/",
+    'login/', 'login_required/', 'login_required_login_url/',
+    'admin_password_reset/', 'logout/', 'password_reset/',
+    'password_reset_from_email/', 'reset/', 'password_change/', 'remote_user/',
+    'auth_processor_messages/', 'auth_processor_perms/',
+    'auth_processor_user/', 'auth_processor_perm_in_perms/',
+    'admin/auth/user/',
 ]
 
 LOGIN_EXEMPT_URLS = ["accounts/login", "custom-login"] + _DJANGO_TESTING_URLS
@@ -108,3 +110,6 @@ CSP_STRING="allow 'self'; script-src *.google.com"
 CSP_MODE='enforce'
 P3P_POLICY_URL = '/w3c/p3p.xml'
 P3P_COMPACT_POLICY = 'PRIVATE'
+
+# Django 1.6 uses JSONSerializer which can't handle datetime
+SESSION_SERIALIZER='django.contrib.sessions.serializers.PickleSerializer'
