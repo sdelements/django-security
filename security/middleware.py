@@ -288,32 +288,56 @@ class XFrameOptionsMiddleware(BaseMiddleware):
       - ``allow-from URL``  allow frames from specified *URL*
 
     **Note:** Frames and inline frames are frequently used by ads, social media
-    plugins and similar widgets so test these features after setting this flag. For
-    more granular control use ContentSecurityPolicyMiddleware_.
+    plugins and similar widgets so test these features after setting this flag.
 
-    References: 
-    
-    - `RFC 7034: HTTP Header Field X-Frame-Options <http://tools.ietf.org/html/rfc7034>`_
+    You can exclude certain URLs from this header by setting
+    ``X_FRAME_OPTIONS_EXCLUDE_URLS`` to a list of URL regexes like so::
+
+        X_FRAME_OPTIONS_EXCLUDE_URLS = (
+            r'^/some/url/here$',        # Note the initial slash
+            r'^/another/to/exclude$',
+        )
+
+    The header will be sent unless ``request.path`` matches any of the above list.
+    For more granular control, use ContentSecurityPolicyMiddleware_.
+
+    References:
+
+      - `RFC 7034: HTTP Header Field X-Frame-Options <http://tools.ietf.org/html/rfc7034>`_
     """
 
-    OPTIONAL_SETTINGS = ('X_FRAME_OPTIONS',)
+    OPTIONAL_SETTINGS = ('X_FRAME_OPTIONS', 'X_FRAME_OPTIONS_EXCLUDE_URLS')
 
     DEFAULT = 'deny'
 
     def load_setting(self, setting, value):
-        if not value:
-            self.option = XFrameOptionsMiddleware.DEFAULT
-            return
-        value = value.lower()
-        if value not in ['sameorigin', 'deny'] and not value.startswith('allow-from:'):
-            raise ImproperlyConfigured(XFrameOptionsMiddleware.__name__+" invalid option for X_FRAME_OPTIONS.")
-        self.option = value
+        if setting == 'X_FRAME_OPTIONS':
+            if value:
+                value = value.lower()
+                if value not in ['sameorigin', 'deny'] and not value.startswith('allow-from:'):
+                    raise ImproperlyConfigured(self.__class__.__name__+" invalid option for X_FRAME_OPTIONS.")
+                self.option = value
+            else:
+                self.option = XFrameOptionsMiddleware.DEFAULT
+        elif setting == 'X_FRAME_OPTIONS_EXCLUDE_URLS':
+            if value:
+                try:
+                    self.exclude_urls = [compile(url) for url in value]
+                except TypeError:
+                    raise ImproperlyConfigured(self.__class__.__name__+" invalid option for X_FRAME_OPTIONS_EXCLUDE_URLS")
+            else:
+                self.exclude_urls = []
 
     def process_response(self, request, response):
         """
         And X-Frame-Options and Frame-Options to the response header.
         """
-        response['X-Frame-Options'] = self.option
+        for url in self.exclude_urls:
+            if url.match(request.path):
+                break
+        else:
+            response['X-Frame-Options'] = self.option
+
         return response
 
 # preserve older django-security API
