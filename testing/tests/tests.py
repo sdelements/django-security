@@ -329,6 +329,14 @@ class XFrameOptionsDenyTests(TestCase):
         response = self.client.get('/accounts/login/')
         self.assertEqual(response['X-Frame-Options'], settings.X_FRAME_OPTIONS)
 
+    def test_exclude_urls(self):
+        """
+        Verify that pages can be excluded from the X-Frame-Options header.
+        """
+        response = self.client.get('/home/')
+        self.assertEqual(response['X-Frame-Options'], settings.X_FRAME_OPTIONS)
+        response = self.client.get('/test1/')
+        self.assertNotIn('X-Frame-Options', response)
 
 class XXssProtectTests(TestCase):
 
