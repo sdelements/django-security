@@ -2,7 +2,7 @@
 import json
 
 from django.http import HttpResponseForbidden, HttpResponse
-from django.utils json
+from django.utils import json
 from django.views.decorators.csrf import csrf_exempt
 from security.models import CspReport
 

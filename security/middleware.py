@@ -11,7 +11,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.core.urlresolvers import reverse, resolve
 from django.http import HttpResponseRedirect, HttpResponse
 from django.test.signals import setting_changed
-from django.utils timezone
+from django.utils import timezone
 import django.views.static
 
 from password_expiry import password_is_expired
