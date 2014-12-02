@@ -1,7 +1,8 @@
 # Copyright (c) 2011, SD Elements. See LICENSE.txt for details.
 
+import json
+
 from django.http import HttpResponseForbidden, HttpResponse
-from django.utils import simplejson as json
 from django.views.decorators.csrf import csrf_exempt
 from security.models import CspReport
 
@@ -27,13 +28,13 @@ def csp_report(request, csp_save=False, csp_log=True):
     .. _csp_report:
     Collect Content Security Policy reports from browsers. This view has
     two optional keyword arguments:
-    
+
         ``csp_save``    if True, reports will be saved as ``CspReport`` objects
                         in database; this table is registered with Django Admin,
                         so they can be later viewed in admin console
         ``csp_log``     if True, reports will be logged through Django logging
                         facility under ``security`` class
-    
+
     By default only logging is enabled. To collect reports, this view needs to be added
     to project's urls.py. Examples:
 

@@ -1,5 +1,6 @@
 # Copyright (c) 2011, SD Elements. See LICENSE.txt for details.
 
+import json
 import logging
 from re import compile
 
@@ -10,7 +11,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.core.urlresolvers import reverse, resolve
 from django.http import HttpResponseRedirect, HttpResponse
 from django.test.signals import setting_changed
-from django.utils import simplejson as json, timezone
+from django.utils import timezone
 import django.views.static
 
 from password_expiry import password_is_expired
@@ -61,7 +62,7 @@ class DoNotTrackMiddleware:
     The parameter can take True, False or None values based on the presence of
     the ``Do Not Track`` HTTP header in client's request, which in turn depends
     on browser's configuration. The header indicates client's general preference
-    to opt-out from behavioral profiling and third-party tracking. 
+    to opt-out from behavioral profiling and third-party tracking.
 
     The parameter does **not** change Django's behaviour in any way as its sole
     purpose is to pass the user's preference to application and it's up to the owner
@@ -114,7 +115,7 @@ class XssProtectMiddleware(BaseMiddleware):
       ``on``         enable full XSS filter blocking XSS requests (may `leak document.referrer <http://homakov.blogspot.com/2013/02/hacking-with-xss-auditor.html>_`)
       ``off``        completely disable XSS filter
 
-    Reference: 
+    Reference:
 
     - `Controlling the XSS Filter <http://blogs.msdn.com/b/ieinternals/archive/2011/01/31/controlling-the-internet-explorer-xss-filter-with-the-x-xss-protection-http-header.aspx>`_
     """
@@ -152,8 +153,8 @@ class ContentNoSniff:
     where web page would for example load a script that was disguised as an user-
     supplied image.
 
-    Reference: 
-    
+    Reference:
+
     - `MIME-Handling Change: X-Content-Type-Options: nosniff <http://msdn.microsoft.com/en-us/library/ie/gg622941(v=vs.85).aspx>`_
     """
 
@@ -233,7 +234,7 @@ class NoConfidentialCachingMiddleware(BaseMiddleware):
 
     .. _cache_control: https://docs.djangoproject.com/en/dev/topics/cache/#controlling-cache-using-other-headers
 
-    Reference: 
+    Reference:
 
     - `HTTP/1.1 Header definitions - What is Cacheable <http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9.1>`_
     """
@@ -291,8 +292,8 @@ class XFrameOptionsMiddleware(BaseMiddleware):
     plugins and similar widgets so test these features after setting this flag. For
     more granular control use ContentSecurityPolicyMiddleware_.
 
-    References: 
-    
+    References:
+
     - `RFC 7034: HTTP Header Field X-Frame-Options <http://tools.ietf.org/html/rfc7034>`_
     """
 
@@ -518,8 +519,8 @@ class StrictTransportSecurityMiddleware:
       - ``STS_MAX_AGE``               time in seconds to preserve host's STS policy (default: 1 year)
       - ``STS_INCLUDE_SUBDOMAINS``    True if subdomains should be covered by the policy as well (default: True)
 
-    Reference: 
-    
+    Reference:
+
     - `HTTP Strict Transport Security (HSTS) <https://datatracker.ietf.org/doc/rfc6797/>`_
     """
 
@@ -553,7 +554,7 @@ class P3PPolicyMiddleware(BaseMiddleware):
     **Note:** P3P work stopped in 2002 and the only popular
     browser with **limited** P3P support is MSIE.
 
-    Reference: 
+    Reference:
 
     - `The Platform for Privacy Preferences 1.0 (P3P1.0) Specification - The Compact Policies <http://www.w3.org/TR/P3P/#compact_policies>`_
     """
