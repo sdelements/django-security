@@ -441,10 +441,11 @@ class ContentSecurityPolicyMiddleware:
 
         for k, v in csp_dict.items():
 
+            # check if the directive is on the list of those requiring an array argument
             if k in self._CSP_LOC_TYPES:
 
-                if not type(v) == list:
-                    logger.warning('Arguments to {} must be given as array'.format(k))
+                if type(v) is not list:
+                    logger.warning('Arguments to {} must be given as an array, found {} instead ({}) - ignoring'.format(k, type(v), v))
                     raise django.core.exceptions.MiddlewareNotUsed
 
                 # contents taking location
@@ -460,8 +461,8 @@ class ContentSecurityPolicyMiddleware:
 
             elif k == 'sandbox':
 
-                if not type(v) == list:
-                    logger.warning('Arguments to {} must be given as array'.format(k))
+                if type(v) is not list:
+                    logger.warning('Arguments to {} must be given as an array, found {} instead ({}) - ignoring'.format(k, type(v), v))
                     raise django.core.exceptions.MiddlewareNotUsed
 
                 csp_string += " {}".format(k);
