@@ -3,7 +3,7 @@
 import logging
 from re import compile
 
-import django # for VERSION
+import django  # for VERSION
 import django.conf
 from django.contrib.auth import logout
 from django.core.exceptions import ImproperlyConfigured
@@ -17,6 +17,7 @@ import django.views.static
 from password_expiry import password_is_expired
 
 logger = logging.getLogger(__name__)
+
 
 class BaseMiddleware(object):
     """
@@ -89,6 +90,7 @@ class DoNotTrackMiddleware:
     - `Web Tracking Protection <http://www.w3.org/Submission/web-tracking-protection/>`_
     - `Do Not Track: A Universal Third-Party Web Tracking Opt Out <http://tools.ietf.org/html/draft-mayer-do-not-track-00>`_
     """
+
     def process_request(self, request):
         """ Read DNT header from browser request and create request attribute """
         if 'HTTP_DNT' in request.META:
@@ -98,13 +100,14 @@ class DoNotTrackMiddleware:
                 request.dnt = False
         else:
             request.dnt = None
-        # returns None in normal conditions
+            # returns None in normal conditions
 
     def process_response(self, request, response):
         """ Echo DNT header in response per section 8.4 of draft-mayer-do-not-track-00 """
         if 'HTTP_DNT' in request.META:
             response['DNT'] = '1'
         return response
+
 
 class XssProtectMiddleware(BaseMiddleware):
     """
@@ -122,7 +125,7 @@ class XssProtectMiddleware(BaseMiddleware):
 
     OPTIONAL_SETTINGS = ("XSS_PROTECT",)
 
-    OPTIONS = {'on': '1; mode=block', 'off': '0', 'sanitize': '1',}
+    OPTIONS = {'on': '1; mode=block', 'off': '0', 'sanitize': '1', }
 
     DEFAULT = 'sanitize'
 
@@ -132,7 +135,7 @@ class XssProtectMiddleware(BaseMiddleware):
             return
         value = value.lower()
         if value not in XssProtectMiddleware.OPTIONS.keys():
-            raise ImproperlyConfigured(XssProtectMiddleware.__name__+" invalid option for XSS_PROTECT.")
+            raise ImproperlyConfigured(XssProtectMiddleware.__name__ + " invalid option for XSS_PROTECT.")
         self.option = value
 
     def process_response(self, request, response):
@@ -183,7 +186,7 @@ class MandatoryPasswordChangeMiddleware(BaseMiddleware):
 
     def load_setting(self, setting, value):
         if value and not value.has_key("URL_NAME"):
-            raise ImproperlyConfigured(MandatoryPasswordChangeMiddleware.__name__+" requires the URL_NAME setting")
+            raise ImproperlyConfigured(MandatoryPasswordChangeMiddleware.__name__ + " requires the URL_NAME setting")
         self.settings = value
         self.exempt_urls = [compile(url) for url in self.settings.get("EXEMPT_URLS", ())]
 
@@ -196,11 +199,11 @@ class MandatoryPasswordChangeMiddleware(BaseMiddleware):
             # because the reason the URL is exempt may be because a special
             # URL config is in use (i.e. during a test) that doesn't have URL_NAME.
             if (not request.user.is_authenticated() or
-                view == django.views.static.serve or # Mostly for testing, since
-                                                     # Django shouldn't be serving
-                                                     # media in production.
-                any(m.match(path) for m in self.exempt_urls) or
-                url_name in self.settings.get("EXEMPT_URL_NAMES", ())):
+                        view == django.views.static.serve or  # Mostly for testing, since
+                # Django shouldn't be serving
+                # media in production.
+                    any(m.match(path) for m in self.exempt_urls) or
+                        url_name in self.settings.get("EXEMPT_URL_NAMES", ())):
                 return
 
             password_change_url = reverse(self.settings["URL_NAME"])
@@ -256,9 +259,11 @@ class NoConfidentialCachingMiddleware(BaseMiddleware):
         whitelist non-confidential pages and treat all others as non-confidential,
         or specifically blacklist pages as confidential
         """
+
         def match(path, match_list):
             path = path.lstrip('/')
             return any(re.match(path) for re in match_list)
+
         def remove_response_caching(response):
             response['Cache-control'] = 'no-cache, no-store, max-age=0, must-revalidate'
             response['Pragma'] = "no-cache"
@@ -307,7 +312,7 @@ class XFrameOptionsMiddleware(BaseMiddleware):
             return
         value = value.lower()
         if value not in ['sameorigin', 'deny'] and not value.startswith('allow-from:'):
-            raise ImproperlyConfigured(XFrameOptionsMiddleware.__name__+" invalid option for X_FRAME_OPTIONS.")
+            raise ImproperlyConfigured(XFrameOptionsMiddleware.__name__ + " invalid option for X_FRAME_OPTIONS.")
         self.option = value
 
     def process_response(self, request, response):
@@ -387,14 +392,14 @@ class ContentSecurityPolicyMiddleware:
     """
     # these types accept CSP locations as arguments
     _CSP_LOC_TYPES = ['default-src',
-            'script-src',
-            'style-src',
-            'img-src',
-            'connect-src',
-            'font-src',
-            'object-src',
-            'media-src',
-            'frame-src',]
+                      'script-src',
+                      'style-src',
+                      'img-src',
+                      'connect-src',
+                      'font-src',
+                      'object-src',
+                      'media-src',
+                      'frame-src', ]
 
     # arguments to location types
     _CSP_LOCATIONS = ['self', 'none', 'unsafe-eval', 'unsafe-inline']
@@ -402,7 +407,7 @@ class ContentSecurityPolicyMiddleware:
     # sandbox allowed arguments
     # http://www.w3.org/html/wg/drafts/html/master/single-page.html#sandboxing
     _CSP_SANDBOX_ARGS = ['', 'allow-forms', 'allow-same-origin', 'allow-scripts',
-                       'allow-top-navigation']
+                         'allow-top-navigation']
 
     # operational variables
     _csp_string = None
@@ -411,7 +416,7 @@ class ContentSecurityPolicyMiddleware:
     def _csp_builder(self, csp_dict):
         csp_string = ""
 
-        for k,v in csp_dict.items():
+        for k, v in csp_dict.items():
 
             if k in self._CSP_LOC_TYPES:
 
@@ -423,12 +428,12 @@ class ContentSecurityPolicyMiddleware:
                 csp_string += " {0}".format(k);
                 for loc in v:
                     if loc in self._CSP_LOCATIONS:
-                        csp_string += " '{0}'".format(loc) # quoted
+                        csp_string += " '{0}'".format(loc)  # quoted
                     elif loc == '*':
-                        csp_string += ' *'                   # not quoted
+                        csp_string += ' *'  # not quoted
                     else:
                         # XXX: check for valid hostname or URL
-                        csp_string += " {0}".format(loc)   # not quoted
+                        csp_string += " {0}".format(loc)  # not quoted
                 csp_string += ';'
 
             elif k == 'sandbox':
@@ -498,9 +503,9 @@ class ContentSecurityPolicyMiddleware:
         """
         # choose headers based enforcement mode
         if self._enforce:
-            headers = ['Content-Security-Policy',]
+            headers = ['Content-Security-Policy', ]
         else:
-            headers = ['Content-Security-Policy-Report-Only',]
+            headers = ['Content-Security-Policy-Report-Only', ]
 
         # actually add appropriate headers
         for h in headers:
@@ -529,7 +534,7 @@ class StrictTransportSecurityMiddleware:
             self.max_age = django.conf.settings.STS_MAX_AGE
             self.subdomains = django.conf.settings.STS_INCLUDE_SUBDOMAINS
         except AttributeError:
-            self.max_age = 3600*24*365 # one year
+            self.max_age = 3600 * 24 * 365  # one year
             self.subdomains = True
         self.value = 'max-age={0}'.format(self.max_age)
         if self.subdomains:
@@ -616,9 +621,9 @@ class SessionExpiryPolicyMiddleware(BaseMiddleware):
         # If the session has no start time or last activity time, set those
         # two values. We assume we have a brand new session.
         if (self.START_TIME_KEY not in request.session or
-            self.LAST_ACTIVITY_KEY not in request.session or
-            timezone.is_naive(request.session[self.START_TIME_KEY]) or
-            timezone.is_naive(request.session[self.LAST_ACTIVITY_KEY])):
+                    self.LAST_ACTIVITY_KEY not in request.session or
+                timezone.is_naive(request.session[self.START_TIME_KEY]) or
+                timezone.is_naive(request.session[self.LAST_ACTIVITY_KEY])):
 
             logger.debug("New session %s started: %s" % (request.session.session_key, now))
             request.session[self.START_TIME_KEY] = now
@@ -635,9 +640,9 @@ class SessionExpiryPolicyMiddleware(BaseMiddleware):
             start_time_diff = now - start_time
             last_activity_diff = now - last_activity_time
             session_too_old = (start_time_diff.days * SECONDS_PER_DAY + start_time_diff.seconds >
-                    self.SESSION_COOKIE_AGE)
+                               self.SESSION_COOKIE_AGE)
             session_inactive = (last_activity_diff.days * SECONDS_PER_DAY + last_activity_diff.seconds >
-                    self.SESSION_INACTIVITY_TIMEOUT)
+                                self.SESSION_INACTIVITY_TIMEOUT)
 
             if session_too_old or session_inactive:
                 logger.debug("Session %s is inactive." % request.session.session_key)
@@ -655,7 +660,7 @@ class SessionExpiryPolicyMiddleware(BaseMiddleware):
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-#     * Redistributions of source code must retain the above copyright
+# * Redistributions of source code must retain the above copyright
 #       notice, this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
@@ -702,7 +707,7 @@ class LoginRequiredMiddleware(BaseMiddleware):
     def process_request(self, request):
         if not hasattr(request, 'user'):
             raise ImproperlyConfigured("The Login Required middleware"
-                "requires authentication middleware to be installed.")
+                                       "requires authentication middleware to be installed.")
         if request.user.is_authenticated() and not request.user.is_active:
             logout(request)
         if not request.user.is_authenticated():
@@ -717,7 +722,7 @@ class LoginRequiredMiddleware(BaseMiddleware):
                 if request.is_ajax():
                     response = {"login_url": login_url}
                     return HttpResponse(json.dumps(response), status=401,
-                            mimetype="application/json")
+                                        mimetype="application/json")
                 else:
                     if next_url:
                         login_url = login_url + '?next=' + next_url
