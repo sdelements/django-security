@@ -412,8 +412,8 @@ class ContentSecurityPolicyMiddleware:
     - `HTML5.1 - Sandboxing <http://www.w3.org/html/wg/drafts/html/master/single-page.html#sandboxing>`_
     """
     # these types accept CSP string array as arguments
-    _CSP_LOC_TYPES = ['connect-src', 'child-src', 'font-src', 'form-action', 'frame-ancestors', 'frame-src',
-                      'img-src', 'media-src', 'object-src', 'script-src', 'style-src', 'plugin-types']
+    _CSP_LOC_TYPES = ['default-src', 'connect-src', 'child-src', 'font-src', 'form-action', 'frame-ancestors',
+                      'frame-src', 'img-src', 'media-src', 'object-src', 'script-src', 'style-src', 'plugin-types']
 
     # special location types, as they appear in the CSP_DICT; they will
     # be placed in single quotes in the HTTP header automatically
