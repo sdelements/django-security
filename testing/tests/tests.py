@@ -582,17 +582,29 @@ class ContentSecurityPolicyTests(TestCase):
     def test_csp_gen_1(self):
 
         csp_dict = {
-            'default-src': ['self', 'cdn.example.com'], 'script-src': ['self', 'js.example.com'], 'style-src': ['self', 'css.example.com'], 'img-src': ['self', 'img.example.com'], 'connect-src': ['self'], 'font-src': ['fonts.example.com'], 'object-src': ['self'], 'media-src': ['media.example.com'], 'frame-src': ['self'], 'sandbox':[''], 'report-uri':'http://example.com/csp-report',
+            'default-src': ['self', 'cdn.example.com'],
+            'script-src': ['self', 'js.example.com'],
+            'style-src': ['self', 'css.example.com'],
+            'img-src': ['self', 'img.example.com'],
+            'connect-src': ['self', ],
+            'font-src': ['fonts.example.com', ],
+            'object-src': ['self'],
+            'media-src': ['media.example.com', ],
+            'frame-src': ['self', ],
+            'sandbox': ['', ],
+            'reflected-xss': 'filter',
+            'report-uri': 'http://example.com/csp-report',
             }
-        expected = " script-src 'self' js.example.com; default-src 'self' cdn.example.com; img-src 'self' img.example.com; connect-src 'self'; style-src 'self' css.example.com; report-uri http://example.com/csp-report; frame-src 'self'; sandbox ; object-src 'self'; media-src media.example.com; font-src fonts.example.com;"
+        expected = " script-src 'self' js.example.com; default-src 'self' cdn.example.com; img-src 'self' img.example.com; connect-src 'self'; reflected-xss filter; style-src 'self' css.example.com; report-uri http://example.com/csp-report; frame-src 'self'; sandbox ; object-src 'self'; media-src media.example.com; font-src fonts.example.com;"
 
         csp = ContentSecurityPolicyMiddleware()
         generated = csp._csp_builder(csp_dict)
-        self.assertEqual(generated,expected)
+
+        self.assertEqual(generated, expected)
 
     def test_csp_gen_2(self):
-        csp_dict = { 'default-src' : ['self'] }
-        expected = " default-src 'self';"
+        csp_dict = {'default-src': ['none', ]}
+        expected = " default-src 'none';"
 
         csp = ContentSecurityPolicyMiddleware()
         generated = csp._csp_builder(csp_dict)
@@ -601,16 +613,22 @@ class ContentSecurityPolicyTests(TestCase):
 
     def test_csp_gen_3(self):
 
-        csp_dict = { 'script-src' : ['self','www.google-analytics.com','ajax.googleapis.com'] }
+        csp_dict = {'script-src' : ['self','www.google-analytics.com','ajax.googleapis.com'] }
         expected = " script-src 'self' www.google-analytics.com ajax.googleapis.com;"
 
         csp = ContentSecurityPolicyMiddleware()
         generated = csp._csp_builder(csp_dict)
 
-        self.assertEqual(generated,expected)
+        self.assertEqual(generated, expected)
 
     def test_csp_gen_err(self):
-        csp_dict = { 'default-src' : 'self' } # argument not passed as array
+        csp_dict = {'default-src': 'self'}  # argument not passed as array, expect failure
+
+        csp = ContentSecurityPolicyMiddleware()
+        self.assertRaises(MiddlewareNotUsed, csp._csp_builder, csp_dict)
+
+    def test_csp_gen_err2(self):
+        csp_dict = {'invalid': 'self'}  # invalid directive
 
         csp = ContentSecurityPolicyMiddleware()
         self.assertRaises(MiddlewareNotUsed, csp._csp_builder, csp_dict)
