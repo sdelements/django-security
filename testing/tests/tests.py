@@ -4,7 +4,6 @@ import datetime
 import json
 import time # We monkeypatch this.
 
-from django.conf.urls import *
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, MiddlewareNotUsed

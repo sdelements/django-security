@@ -1,7 +1,5 @@
 # Copyright (c) 2011, SD Elements. See LICENSE.txt for details.
 
-import re
-
 from django.core.validators import RegexValidator
 from django.forms import ValidationError as VE
 from django.utils.translation import gettext as _
