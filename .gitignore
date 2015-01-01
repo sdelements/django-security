@@ -8,3 +8,6 @@
 
 # ignore setup.py build dir
 build/
+
+# ignore sphinx built documentation
+_build/
