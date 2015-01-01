@@ -60,7 +60,7 @@ MIDDLEWARE_CLASSES = (
     'security.auth_throttling.Middleware',
 )
 ROOT_URLCONF = 'testing.urls'
-TEMPLATE_DIRS = (_os.path.join(_PROJECT_PATH, "templates"))
+TEMPLATE_DIRS = (_os.path.join(_PROJECT_PATH, "templates"),)
 INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
