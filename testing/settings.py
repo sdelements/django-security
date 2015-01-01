@@ -52,7 +52,6 @@ MIDDLEWARE_CLASSES = (
     'security.middleware.ContentNoSniff',
     'security.middleware.ContentSecurityPolicyMiddleware',
     'security.middleware.StrictTransportSecurityMiddleware',
-    'django.middleware.transaction.TransactionMiddleware',
     'security.middleware.P3PPolicyMiddleware',
     'security.middleware.XssProtectMiddleware',
     'security.middleware.MandatoryPasswordChangeMiddleware',
