@@ -92,7 +92,7 @@ class DoNotTrackMiddleware:
     - `Do Not Track: A Universal Third-Party Web Tracking Opt Out <http://tools.ietf.org/html/draft-mayer-do-not-track-00>`_
     """
 
-    def process_request(request):
+    def process_request(self, request):
         """ Read DNT header from browser request and create request attribute """
         if 'HTTP_DNT' in request.META:
             if request.META['HTTP_DNT'] == '1':
