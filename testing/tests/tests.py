@@ -112,10 +112,10 @@ class LoginRequiredMiddlewareTests(TestCase):
         self.login_url = reverse("django.contrib.auth.views.login")
 
     def test_aborts_if_auth_middleware_missing(self):
-        middlware_classes = settings.MIDDLEWARE_CLASSES
+        middleware_classes = settings.MIDDLEWARE_CLASSES
         auth_middleware = 'django.contrib.auth.middleware.AuthenticationMiddleware'
-        middlware_classes = [m for m in middlware_classes if m != auth_middleware]
-        with self.settings(MIDDLEWARE_CLASSES=middlware_classes):
+        middleware_classes = [m for m in middleware_classes if m != auth_middleware]
+        with self.settings(MIDDLEWARE_CLASSES=middleware_classes):
             self.assertRaises(ImproperlyConfigured, self.client.get, '/home/')
 
     def test_redirects_unauthenticated_request(self):
