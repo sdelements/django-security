@@ -11,3 +11,6 @@ build/
 
 # ignore sphinx built documentation
 _build/
+
+# ignore tox files
+.tox/
