@@ -726,7 +726,7 @@ class LoginRequiredMiddleware(BaseMiddleware):
     def process_request(self, request):
         if not hasattr(request, 'user'):
             raise ImproperlyConfigured("The Login Required middleware"
-                "requires authentication middleware to be installed.")
+                " requires authentication middleware to be installed.")
         if request.user.is_authenticated() and not request.user.is_active:
             logout(request)
         if not request.user.is_authenticated():
