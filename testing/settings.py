@@ -73,7 +73,9 @@ INSTALLED_APPS = (
     'security',
     'tests'
 )
-TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+
+if is_version((1, 6)):
+    TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
 LOGIN_REDIRECT_URL="/home/"
 
