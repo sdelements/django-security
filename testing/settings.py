@@ -1,4 +1,8 @@
 import os as _os
+import django
+
+def is_version(version):
+    return all(x >= y for x, y in zip(django.VERSION, version))
 
 
 _PROJECT_PATH = _os.path.abspath(_os.path.dirname(__file__))
