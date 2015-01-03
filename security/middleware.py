@@ -742,7 +742,7 @@ class LoginRequiredMiddleware(BaseMiddleware):
                 if request.is_ajax():
                     response = {"login_url": login_url}
                     return HttpResponse(json.dumps(response), status=401,
-                            mimetype="application/json")
+                            content_type="application/json")
                 else:
                     if next_url:
                         login_url = login_url + '?next=' + next_url
