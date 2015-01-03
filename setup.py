@@ -39,6 +39,6 @@ setup(name="django-security",
           'Topic :: Software Development :: Libraries :: Python Modules',
 	  'Topic :: Security',
       ],
-      install_requires=['django>=1.4',],
+      requires=['django (>=1.4)',],
       cmdclass={'test': Test})
 
