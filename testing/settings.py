@@ -127,7 +127,7 @@ LOGGING = {
     'disable_existing_loggers': False,
     'handlers': {
         'console': {
-            'level': 'ERROR',
+            'level': 'CRITICAL',
             'class': 'logging.StreamHandler',
         },
     },
