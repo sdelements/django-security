@@ -26,6 +26,7 @@ def require_ajax(view):
 def csp_report(request, csp_save=False, csp_log=True):
     """
     .. _csp_report:
+
     Collect Content Security Policy reports from browsers. This view has
     two optional keyword arguments:
 

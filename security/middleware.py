@@ -349,6 +349,7 @@ XFrameOptionsDenyMiddleware = XFrameOptionsMiddleware
 class ContentSecurityPolicyMiddleware:
     """
     .. _ContentSecurityPolicyMiddleware:
+
     Adds Content Security Policy (CSP) header to HTTP response.
     CSP provides fine grained instructions to the browser on
     location of allowed resources loaded by the page, thus mitigating
