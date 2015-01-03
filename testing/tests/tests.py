@@ -595,7 +595,14 @@ class ContentSecurityPolicyTests(TestCase):
 
         csp = ContentSecurityPolicyMiddleware()
         generated = csp._csp_builder(csp_dict)
-        self.assertEqual(generated,expected)
+
+        # We can't assume the iteration order on the csp_dict, so we split the
+        # output, sort, and ensure we got all the results back, regardless of
+        # the order.
+        expected_list = sorted(expected.split(';'))
+        generated_list = sorted(generated.split(';'))
+
+        self.assertEqual(generated_list, expected_list)
 
     def test_csp_gen_2(self):
         csp_dict = { 'default-src' : ['self'] }
