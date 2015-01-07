@@ -111,11 +111,11 @@ class LoginRequiredMiddlewareTests(TestCase):
     def setUp(self):
         self.login_url = reverse("django.contrib.auth.views.login")
 
-    def test_aborts_if_auth_middlware_missing(self):
-        middlware_classes = settings.MIDDLEWARE_CLASSES
+    def test_aborts_if_auth_middleware_missing(self):
+        middleware_classes = settings.MIDDLEWARE_CLASSES
         auth_middleware = 'django.contrib.auth.middleware.AuthenticationMiddleware'
-        middlware_classes = [m for m in middlware_classes if m != auth_middleware]
-        with self.settings(MIDDLEWARE_CLASSES=middlware_classes):
+        middleware_classes = [m for m in middleware_classes if m != auth_middleware]
+        with self.settings(MIDDLEWARE_CLASSES=middleware_classes):
             self.assertRaises(ImproperlyConfigured, self.client.get, '/home/')
 
     def test_redirects_unauthenticated_request(self):
@@ -595,7 +595,14 @@ class ContentSecurityPolicyTests(TestCase):
 
         csp = ContentSecurityPolicyMiddleware()
         generated = csp._csp_builder(csp_dict)
-        self.assertEqual(generated,expected)
+
+        # We can't assume the iteration order on the csp_dict, so we split the
+        # output, sort, and ensure we got all the results back, regardless of
+        # the order.
+        expected_list = sorted(expected.split(';'))
+        generated_list = sorted(generated.split(';'))
+
+        self.assertEqual(generated_list, expected_list)
 
     def test_csp_gen_2(self):
         csp_dict = { 'default-src' : ['self'] }

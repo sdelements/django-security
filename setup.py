@@ -1,11 +1,25 @@
 # Copyright (c) 2011, SD Elements. See LICENSE.txt for details.
 
 import os
-from distutils.core import setup
+import sys
+import subprocess
+from distutils.core import setup, Command
 
 f = open(os.path.join(os.path.dirname(__file__), 'README.md'))
 readme = f.read()
 f.close()
+
+class Test(Command):
+    user_options = []
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        errno = subprocess.call([sys.executable, 'testing/manage.py', 'test'])
+        raise SystemExit(errno)
 
 setup(name="django-security",
       description='A collection of tools to help secure a Django project.',
@@ -25,6 +39,6 @@ setup(name="django-security",
           'Topic :: Software Development :: Libraries :: Python Modules',
 	  'Topic :: Security',
       ],
-      install_requires=['django>=1.4',],
-      )
+      requires=['django (>=1.4)',],
+      cmdclass={'test': Test})
 

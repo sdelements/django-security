@@ -349,6 +349,7 @@ XFrameOptionsDenyMiddleware = XFrameOptionsMiddleware
 class ContentSecurityPolicyMiddleware:
     """
     .. _ContentSecurityPolicyMiddleware:
+
     Adds Content Security Policy (CSP) header to HTTP response.
     CSP provides fine grained instructions to the browser on
     location of allowed resources loaded by the page, thus mitigating
@@ -726,7 +727,7 @@ class LoginRequiredMiddleware(BaseMiddleware):
     def process_request(self, request):
         if not hasattr(request, 'user'):
             raise ImproperlyConfigured("The Login Required middleware"
-                "requires authentication middleware to be installed.")
+                " requires authentication middleware to be installed.")
         if request.user.is_authenticated() and not request.user.is_active:
             logout(request)
         if not request.user.is_authenticated():
@@ -741,7 +742,7 @@ class LoginRequiredMiddleware(BaseMiddleware):
                 if request.is_ajax():
                     response = {"login_url": login_url}
                     return HttpResponse(json.dumps(response), status=401,
-                            mimetype="application/json")
+                            content_type="application/json")
                 else:
                     if next_url:
                         login_url = login_url + '?next=' + next_url
