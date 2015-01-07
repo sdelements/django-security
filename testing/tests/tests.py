@@ -4,7 +4,6 @@ import datetime
 import json
 import time # We monkeypatch this.
 
-from django.conf.urls import *
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, MiddlewareNotUsed
@@ -112,11 +111,11 @@ class LoginRequiredMiddlewareTests(TestCase):
     def setUp(self):
         self.login_url = reverse("django.contrib.auth.views.login")
 
-    def test_aborts_if_auth_middlware_missing(self):
-        middlware_classes = settings.MIDDLEWARE_CLASSES
+    def test_aborts_if_auth_middleware_missing(self):
+        middleware_classes = settings.MIDDLEWARE_CLASSES
         auth_middleware = 'django.contrib.auth.middleware.AuthenticationMiddleware'
-        middlware_classes = [m for m in middlware_classes if m != auth_middleware]
-        with self.settings(MIDDLEWARE_CLASSES=middlware_classes):
+        middleware_classes = [m for m in middleware_classes if m != auth_middleware]
+        with self.settings(MIDDLEWARE_CLASSES=middleware_classes):
             self.assertRaises(ImproperlyConfigured, self.client.get, '/home/')
 
     def test_redirects_unauthenticated_request(self):
@@ -329,6 +328,14 @@ class XFrameOptionsDenyTests(TestCase):
         response = self.client.get('/accounts/login/')
         self.assertEqual(response['X-Frame-Options'], settings.X_FRAME_OPTIONS)
 
+    def test_exclude_urls(self):
+        """
+        Verify that pages can be excluded from the X-Frame-Options header.
+        """
+        response = self.client.get('/home/')
+        self.assertEqual(response['X-Frame-Options'], settings.X_FRAME_OPTIONS)
+        response = self.client.get('/test1/')
+        self.assertNotIn('X-Frame-Options', response)
 
 class XXssProtectTests(TestCase):
 
@@ -600,7 +607,13 @@ class ContentSecurityPolicyTests(TestCase):
         csp = ContentSecurityPolicyMiddleware()
         generated = csp._csp_builder(csp_dict)
 
-        self.assertEqual(generated, expected)
+        # We can't assume the iteration order on the csp_dict, so we split the
+        # output, sort, and ensure we got all the results back, regardless of
+        # the order.
+        expected_list = sorted(expected.split(';'))
+        generated_list = sorted(generated.split(';'))
+
+        self.assertEqual(generated_list, expected_list)
 
     def test_csp_gen_2(self):
         csp_dict = {'default-src': ['none', ]}

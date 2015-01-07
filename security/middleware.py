@@ -1,5 +1,6 @@
 # Copyright (c) 2011, SD Elements. See LICENSE.txt for details.
 
+import json
 import logging
 from re import compile
 
@@ -11,7 +12,6 @@ from django.core.urlresolvers import reverse, resolve
 from django.http import HttpResponseRedirect, HttpResponse
 from django.test.signals import setting_changed
 from django.utils import timezone
-import json
 import django.views.static
 
 from password_expiry import password_is_expired
@@ -62,8 +62,9 @@ class DoNotTrackMiddleware:
     browser configuration settings.
 
     The parameter can take True, False or None values based on the presence of
-    the ``DNT`` (do not track) HTTP header in client's request. The header indicates
-    client's general preference to opt-out from behavioral profiling and third-party tracking.
+    the ``Do Not Track`` HTTP header in client's request, which in turn depends
+    on browser's configuration. The header indicates client's general preference
+    to opt-out from behavioral profiling and third-party tracking.
 
     The parameter does **not** change behaviour of Django in any way as its sole
     purpose is to pass the user's preference to application. It's then up to the owner
@@ -119,7 +120,7 @@ class XssProtectMiddleware(BaseMiddleware):
       ``on``         enable full XSS filter blocking XSS requests (may `leak document.referrer <http://homakov.blogspot.com/2013/02/hacking-with-xss-auditor.html>_`)
       ``off``        completely disable XSS filter
 
-    Reference: 
+    Reference:
 
     - `Controlling the XSS Filter <http://blogs.msdn.com/b/ieinternals/archive/2011/01/31/controlling-the-internet-explorer-xss-filter-with-the-x-xss-protection-http-header.aspx>`_
     """
@@ -157,8 +158,8 @@ class ContentNoSniff:
     where web page would for example load a script that was disguised as an user-
     supplied image.
 
-    Reference: 
-    
+    Reference:
+
     - `MIME-Handling Change: X-Content-Type-Options: nosniff <http://msdn.microsoft.com/en-us/library/ie/gg622941(v=vs.85).aspx>`_
     """
 
@@ -238,7 +239,7 @@ class NoConfidentialCachingMiddleware(BaseMiddleware):
 
     .. _cache_control: https://docs.djangoproject.com/en/dev/topics/cache/#controlling-cache-using-other-headers
 
-    Reference: 
+    Reference:
 
     - `HTTP/1.1 Header definitions - What is Cacheable <http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9.1>`_
     """
@@ -295,32 +296,56 @@ class XFrameOptionsMiddleware(BaseMiddleware):
       - ``allow-from URL``  allow frames from specified *URL*
 
     **Note:** Frames and inline frames are frequently used by ads, social media
-    plugins and similar widgets so test these features after setting this flag. For
-    more granular control use ContentSecurityPolicyMiddleware_.
+    plugins and similar widgets so test these features after setting this flag.
 
-    References: 
-    
-    - `RFC 7034: HTTP Header Field X-Frame-Options <http://tools.ietf.org/html/rfc7034>`_
+    You can exclude certain URLs from this header by setting
+    ``X_FRAME_OPTIONS_EXCLUDE_URLS`` to a list of URL regexes like so::
+
+        X_FRAME_OPTIONS_EXCLUDE_URLS = (
+            r'^/some/url/here$',        # Note the initial slash
+            r'^/another/to/exclude$',
+        )
+
+    The header will be sent unless ``request.path`` matches any of the above list.
+    For more granular control, use ContentSecurityPolicyMiddleware_.
+
+    References:
+
+      - `RFC 7034: HTTP Header Field X-Frame-Options <http://tools.ietf.org/html/rfc7034>`_
     """
 
-    OPTIONAL_SETTINGS = ('X_FRAME_OPTIONS',)
+    OPTIONAL_SETTINGS = ('X_FRAME_OPTIONS', 'X_FRAME_OPTIONS_EXCLUDE_URLS')
 
     DEFAULT = 'deny'
 
     def load_setting(self, setting, value):
-        if not value:
-            self.option = XFrameOptionsMiddleware.DEFAULT
-            return
-        value = value.lower()
-        if value not in ['sameorigin', 'deny'] and not value.startswith('allow-from:'):
-            raise ImproperlyConfigured(XFrameOptionsMiddleware.__name__ + " invalid option for X_FRAME_OPTIONS.")
-        self.option = value
+        if setting == 'X_FRAME_OPTIONS':
+            if value:
+                value = value.lower()
+                if value not in ['sameorigin', 'deny'] and not value.startswith('allow-from:'):
+                    raise ImproperlyConfigured(self.__class__.__name__+" invalid option for X_FRAME_OPTIONS.")
+                self.option = value
+            else:
+                self.option = XFrameOptionsMiddleware.DEFAULT
+        elif setting == 'X_FRAME_OPTIONS_EXCLUDE_URLS':
+            if value:
+                try:
+                    self.exclude_urls = [compile(url) for url in value]
+                except TypeError:
+                    raise ImproperlyConfigured(self.__class__.__name__+" invalid option for X_FRAME_OPTIONS_EXCLUDE_URLS")
+            else:
+                self.exclude_urls = []
 
     def process_response(self, request, response):
         """
         And X-Frame-Options and Frame-Options to the response header.
         """
-        response['X-Frame-Options'] = self.option
+        for url in self.exclude_urls:
+            if url.match(request.path):
+                break
+        else:
+            response['X-Frame-Options'] = self.option
+
         return response
 
 # preserve older django-security API
@@ -331,6 +356,7 @@ XFrameOptionsDenyMiddleware = XFrameOptionsMiddleware
 class ContentSecurityPolicyMiddleware:
     """
     .. _ContentSecurityPolicyMiddleware:
+
     Adds Content Security Policy (CSP) header to HTTP response.
     CSP provides fine grained instructions to the browser on
     location of allowed resources loaded by the page, thus mitigating
@@ -562,8 +588,8 @@ class StrictTransportSecurityMiddleware:
       - ``STS_PRELOAD``               add ``preload`` flag to the STS header  so that your website can be
                                       added to preloaded websites list
 
-    Reference: 
-    
+    Reference:
+
     - `HTTP Strict Transport Security (HSTS) <https://datatracker.ietf.org/doc/rfc6797/>`_
     _ `Preloaded HSTS sites <http://www.chromium.org/sts>`_
     """
@@ -609,7 +635,7 @@ class P3PPolicyMiddleware(BaseMiddleware):
     **Note:** P3P work stopped in 2002 and the only popular
     browser with **limited** P3P support is MSIE.
 
-    Reference: 
+    Reference:
 
     - `The Platform for Privacy Preferences 1.0 (P3P1.0) Specification - The Compact Policies <http://www.w3.org/TR/P3P/#compact_policies>`_
     """
@@ -757,7 +783,7 @@ class LoginRequiredMiddleware(BaseMiddleware):
     def process_request(self, request):
         if not hasattr(request, 'user'):
             raise ImproperlyConfigured("The Login Required middleware"
-                                       "requires authentication middleware to be installed.")
+                " requires authentication middleware to be installed.")
         if request.user.is_authenticated() and not request.user.is_active:
             logout(request)
         if not request.user.is_authenticated():
@@ -772,7 +798,7 @@ class LoginRequiredMiddleware(BaseMiddleware):
                 if request.is_ajax():
                     response = {"login_url": login_url}
                     return HttpResponse(json.dumps(response), status=401,
-                                        mimetype="application/json")
+                            content_type="application/json")
                 else:
                     if next_url:
                         login_url = login_url + '?next=' + next_url

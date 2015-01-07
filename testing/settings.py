@@ -1,4 +1,8 @@
 import os as _os
+import django
+
+def is_version(version):
+    return all(x >= y for x, y in zip(django.VERSION, version))
 
 
 _PROJECT_PATH = _os.path.abspath(_os.path.dirname(__file__))
@@ -27,7 +31,6 @@ MEDIA_ROOT = ''
 MEDIA_URL = ''
 STATIC_ROOT = ''
 STATIC_URL = '/static/'
-ADMIN_MEDIA_PREFIX = '/static/admin/'
 STATICFILES_DIRS = ()
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
@@ -52,7 +55,6 @@ MIDDLEWARE_CLASSES = (
     'security.middleware.ContentNoSniff',
     'security.middleware.ContentSecurityPolicyMiddleware',
     'security.middleware.StrictTransportSecurityMiddleware',
-    'django.middleware.transaction.TransactionMiddleware',
     'security.middleware.P3PPolicyMiddleware',
     'security.middleware.XssProtectMiddleware',
     'security.middleware.MandatoryPasswordChangeMiddleware',
@@ -60,7 +62,7 @@ MIDDLEWARE_CLASSES = (
     'security.auth_throttling.Middleware',
 )
 ROOT_URLCONF = 'testing.urls'
-TEMPLATE_DIRS = (_os.path.join(_PROJECT_PATH, "templates"))
+TEMPLATE_DIRS = (_os.path.join(_PROJECT_PATH, "templates"),)
 INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -70,6 +72,11 @@ INSTALLED_APPS = (
     'security',
     'tests'
 )
+
+if is_version((1, 6)):
+    TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+else:
+    TEST_RUNNER = 'discover_runner.DiscoverRunner'
 
 LOGIN_REDIRECT_URL="/home/"
 
@@ -106,6 +113,9 @@ AUTHENTICATION_THROTTLING = {
 
 XSS_PROTECT = 'on'
 X_FRAME_OPTIONS = 'allow-from: http://example.com'
+X_FRAME_OPTIONS_EXCLUDE_URLS = (
+    r'^/test\d/$',
+)
 CSP_STRING="allow 'self'; script-src *.google.com"
 CSP_MODE='enforce'
 P3P_POLICY_URL = '/w3c/p3p.xml'
