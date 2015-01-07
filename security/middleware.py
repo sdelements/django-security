@@ -445,57 +445,57 @@ class ContentSecurityPolicyMiddleware:
             if k in self._CSP_LOC_TYPES:
 
                 if type(v) is not list:
-                    logger.warning('Arguments to {} must be given as an array, found {} instead ({}) - ignoring'.format(k, type(v), v))
+                    logger.warning('Arguments to {0} must be given as an array, found {1} instead ({2}) - ignoring'.format(k, type(v), v))
                     raise django.core.exceptions.MiddlewareNotUsed
 
                 # contents taking location
-                csp_string += " {}".format(k);
+                csp_string += " {0}".format(k);
                 for loc in v:
                     if loc in self._CSP_LOCATIONS:
-                        csp_string += " '{}'".format(loc)  # quoted
+                        csp_string += " '{0}'".format(loc)  # quoted
                     elif loc == '*':
                         csp_string += ' *'  # not quoted
                     else:
-                        csp_string += " {}".format(loc)  # not quoted
+                        csp_string += " {0}".format(loc)  # not quoted
                 csp_string += ';'
 
             elif k == 'sandbox':
 
                 if type(v) is not list:
-                    logger.warning('Arguments to {} must be given as an array, found {} instead ({}) - ignoring'.format(k, type(v), v))
+                    logger.warning('Arguments to {0} must be given as an array, found {1} instead ({2}) - ignoring'.format(k, type(v), v))
                     raise django.core.exceptions.MiddlewareNotUsed
 
-                csp_string += " {}".format(k);
+                csp_string += " {0}".format(k);
                 for opt in v:
                     if opt in self._CSP_SANDBOX_ARGS:
-                        csp_string += " {}".format(opt)
+                        csp_string += " {0}".format(opt)
                     else:
-                        logger.warning('Invalid CSP sandbox argument {}'.format(opt))
+                        logger.warning('Invalid CSP sandbox argument {0}'.format(opt))
                         raise django.core.exceptions.MiddlewareNotUsed
                 csp_string += ';'
 
             elif k == 'report-uri':
 
-                csp_string += " {} {};".format(k, v);
+                csp_string += " {0} {1};".format(k, v);
 
             elif k == 'referrer':
 
                 if v in self._CSP_REF_ARGS:
-                    csp_string += " {} {};".format(k, v)
+                    csp_string += " {0} {1};".format(k, v)
                 else:
-                    logger.warning('Invalid CSP {} value {0}'.format(k, v))
+                    logger.warning('Invalid CSP {0} value {1}'.format(k, v))
                     raise django.core.exceptions.MiddlewareNotUsed
 
             elif k == 'reflected-xss':
 
                 if v in self._CSP_XSS_ARGS:
-                    csp_string += " {} {};".format(k, v)
+                    csp_string += " {0} {1};".format(k, v)
                 else:
-                    logger.warning('Invalid CSP {} value {}'.format(k, v))
+                    logger.warning('Invalid CSP {0} value {1}'.format(k, v))
                     raise django.core.exceptions.MiddlewareNotUsed
 
             else:
-                logger.warning('Invalid CSP type {}'.format(k))
+                logger.warning('Invalid CSP type {0}'.format(k))
                 raise django.core.exceptions.MiddlewareNotUsed
 
         return csp_string
@@ -515,15 +515,15 @@ class ContentSecurityPolicyMiddleware:
             elif mode == 'report-only':
                 self._enforce = False
             else:
-                logger.warn('Invalid CSP_MODE {}, only "enforce" or "report-only" is valid'.format(mode))
+                logger.warn('Invalid CSP_MODE {0}, only "enforce" or "report-only" is valid'.format(mode))
                 raise django.core.exceptions.MiddlewareNotUsed
 
         if not (has_csp_string or has_csp_dict):
-            logger.warning('{}, none found'.format(err_msg))
+            logger.warning('{0}, none found'.format(err_msg))
             raise django.core.exceptions.MiddlewareNotUsed
 
         if has_csp_dict and has_csp_string:
-            logger.warning('{}, not both'.format(err_msg))
+            logger.warning('{0}, not both'.format(err_msg))
             raise django.core.exceptions.MiddlewareNotUsed
 
         # build or copy CSP as string
