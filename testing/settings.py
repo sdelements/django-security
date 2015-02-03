@@ -129,7 +129,7 @@ LOGGING = {
     'disable_existing_loggers': False,
     'handlers': {
         'console': {
-            'level': 'CRITICAL',
+            'level': 'DEBUG',
             'class': 'logging.StreamHandler',
         },
     },
