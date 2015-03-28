@@ -96,7 +96,9 @@ class DoNotTrackMiddleware(object):
       <http://tools.ietf.org/html/draft-mayer-do-not-track-00>`_
     """
     def process_request(self, request):
-        """ Read DNT header from browser request and create request attribute """
+        """
+        Read DNT header from browser request and create request attribute
+        """
         if 'HTTP_DNT' in request.META:
             if request.META['HTTP_DNT'] == '1':
                 request.dnt = True
@@ -107,7 +109,10 @@ class DoNotTrackMiddleware(object):
         # returns None in normal conditions
 
     def process_response(self, request, response):
-        """ Echo DNT header in response per section 8.4 of draft-mayer-do-not-track-00 """
+        """
+        Echo DNT header in response per section 8.4 of draft-mayer-do-not-
+        track-00
+        """
         if 'HTTP_DNT' in request.META:
             response['DNT'] = '1'
         return response
