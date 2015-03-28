@@ -4,7 +4,6 @@ import json
 import logging
 from re import compile
 
-import django # for VERSION
 import django.conf
 from django.contrib.auth import logout
 from django.core.exceptions import ImproperlyConfigured
