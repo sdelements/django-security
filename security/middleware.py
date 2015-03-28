@@ -17,6 +17,7 @@ from password_expiry import password_is_expired
 
 logger = logging.getLogger(__name__)
 
+
 class BaseMiddleware(object):
     """
     Abstract class containing some functionality common to all middleware that
@@ -110,6 +111,7 @@ class DoNotTrackMiddleware:
         if 'HTTP_DNT' in request.META:
             response['DNT'] = '1'
         return response
+
 
 class XssProtectMiddleware(BaseMiddleware):
     """
