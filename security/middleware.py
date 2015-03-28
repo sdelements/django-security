@@ -55,7 +55,7 @@ class BaseMiddleware(object):
             setting_changed.connect(self._on_setting_changed)
 
 
-class DoNotTrackMiddleware:
+class DoNotTrackMiddleware(object):
     """
     With this middleware views can access ``request.dnt`` parameter to check
     client's preference on user tracking.
@@ -160,7 +160,7 @@ class XssProtectMiddleware(BaseMiddleware):
 
 
 # http://msdn.microsoft.com/en-us/library/ie/gg622941(v=vs.85).aspx
-class ContentNoSniff:
+class ContentNoSniff(object):
     """
     Sends X-Content-Options HTTP header to disable autodetection of MIME type
     of files returned by the server in Microsoft Internet Explorer.
@@ -371,7 +371,7 @@ class XFrameOptionsMiddleware(BaseMiddleware):
 XFrameOptionsDenyMiddleware = XFrameOptionsMiddleware
 
 
-class ContentSecurityPolicyMiddleware:
+class ContentSecurityPolicyMiddleware(object):
     """
     .. _ContentSecurityPolicyMiddleware:
 
@@ -568,7 +568,7 @@ class ContentSecurityPolicyMiddleware:
         return response
 
 
-class StrictTransportSecurityMiddleware:
+class StrictTransportSecurityMiddleware(object):
     """
     Adds Strict-Transport-Security header to HTTP
     response that enforces SSL connections on compliant browsers. Two
