@@ -1,7 +1,7 @@
 # Copyright (c) 2011, SD Elements. See LICENSE.txt for details.
 
 from django.core.validators import RegexValidator
-from django.forms import ValidationError as VE
+from django.forms import ValidationError
 from django.utils.translation import gettext as _
 
 
@@ -13,7 +13,7 @@ def min_length(n):
     """
     def validate(password):
         if len(password) < n:
-            raise VE(_("It must contain at least %d characters.") % n)
+            raise ValidationError(_("It must contain at least %d characters.") % n)
     return validate
 
 # The error messages from the RegexValidators don't display properly unless we
