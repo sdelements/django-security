@@ -143,7 +143,11 @@ class XssProtectMiddleware(BaseMiddleware):
 
     OPTIONAL_SETTINGS = ("XSS_PROTECT",)
 
-    OPTIONS = {'on': '1; mode=block', 'off': '0', 'sanitize': '1',}
+    OPTIONS = {
+        'on': '1; mode=block',
+        'off': '0',
+        'sanitize': '1',
+    }
 
     DEFAULT = 'sanitize'
 
