@@ -747,4 +747,3 @@ class LoginRequiredMiddleware(BaseMiddleware):
                     if next_url:
                         login_url = login_url + '?next=' + next_url
                     return HttpResponseRedirect(login_url)
-
