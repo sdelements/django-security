@@ -19,15 +19,20 @@ def min_length(n):
 # The error messages from the RegexValidators don't display properly unless we
 # explicitly supply an empty error code.
 
-lowercase = RegexValidator(r"[a-z]",
-                           _("It must contain at least one lowercase letter."),
-                           '')
+lowercase = RegexValidator(
+    r"[a-z]",
+    _("It must contain at least one lowercase letter."),
+    '',
+)
 
-uppercase = RegexValidator(r"[A-Z]",
-                           _("It must contain at least one uppercase letter."),
-                           '')
+uppercase = RegexValidator(
+    r"[A-Z]",
+    _("It must contain at least one uppercase letter."),
+    '',
+)
 
-digit = RegexValidator(r"[0-9]",
-                       _("It must contain at least one decimal digit."),
-                       '')
-
+digit = RegexValidator(
+    r"[0-9]",
+    _("It must contain at least one decimal digit."),
+    '',
+)
