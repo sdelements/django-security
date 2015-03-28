@@ -6,6 +6,7 @@ env:
   - TOXENV=py27-django14
   - TOXENV=py27-django16
   - TOXENV=py27-django17
+  - TOXENV=docs
 install:
   - pip install tox
   - pip install coveralls
