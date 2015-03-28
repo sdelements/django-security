@@ -24,4 +24,3 @@ class PasswordChangeForm(django.contrib.auth.forms.PasswordChangeForm):
     def save(self, *args, **kwargs):
         super(PasswordChangeForm, self).save(*args, **kwargs)
         never_expire_password(self.user)
-
