@@ -54,7 +54,9 @@ class BaseMiddleware(object):
                         self.__class__.__name__ + " requires setting " + key)
 
             for key in self.OPTIONAL_SETTINGS:
-                self.load_setting(key, getattr(django.conf.settings, key, None))
+                self.load_setting(
+                    key, getattr(django.conf.settings, key, None)
+                )
 
             setting_changed.connect(self._on_setting_changed)
 
@@ -161,14 +163,18 @@ class XssProtectMiddleware(BaseMiddleware):
             return
         value = value.lower()
         if value not in XssProtectMiddleware.OPTIONS.keys():
-            raise ImproperlyConfigured(XssProtectMiddleware.__name__+" invalid option for XSS_PROTECT.")
+            raise ImproperlyConfigured(
+                XssProtectMiddleware.__name__ +
+                " invalid option for XSS_PROTECT.",
+            )
         self.option = value
 
     def process_response(self, request, response):
         """
         Add X-XSS-Protection to the reponse header.
         """
-        response['X-XSS-Protection'] = XssProtectMiddleware.OPTIONS[self.option]
+        response['X-XSS-Protection'] = \
+            XssProtectMiddleware.OPTIONS[self.option]
         return response
 
 
@@ -215,9 +221,14 @@ class MandatoryPasswordChangeMiddleware(BaseMiddleware):
 
     def load_setting(self, setting, value):
         if value and not value.has_key("URL_NAME"):
-            raise ImproperlyConfigured(MandatoryPasswordChangeMiddleware.__name__+" requires the URL_NAME setting")
+            raise ImproperlyConfigured(
+                MandatoryPasswordChangeMiddleware.__name__ +
+                " requires the URL_NAME setting",
+            )
         self.settings = value
-        self.exempt_urls = [compile(url) for url in self.settings.get("EXEMPT_URLS", ())]
+        self.exempt_urls = [
+            compile(url) for url in self.settings.get("EXEMPT_URLS", ())
+        ]
 
     def process_view(self, request, view, *args, **kwargs):
         if self.settings:
@@ -225,14 +236,14 @@ class MandatoryPasswordChangeMiddleware(BaseMiddleware):
             url_name = resolve(request.path_info).url_name
 
             # Check for an exempt URL before trying to resolve URL_NAME,
-            # because the reason the URL is exempt may be because a special
-            # URL config is in use (i.e. during a test) that doesn't have URL_NAME.
-            if (not request.user.is_authenticated() or
-                view == django.views.static.serve or # Mostly for testing, since
-                                                     # Django shouldn't be serving
-                                                     # media in production.
-                any(m.match(path) for m in self.exempt_urls) or
-                url_name in self.settings.get("EXEMPT_URL_NAMES", ())):
+            # because the reason the URL is exempt may be because a special URL
+            # config is in use (i.e. during a test) that doesn't have URL_NAME.
+            if (
+                not request.user.is_authenticated()
+                or view == django.views.static.serve
+                or any(m.match(path) for m in self.exempt_urls)
+                or url_name in self.settings.get("EXEMPT_URL_NAMES", ())
+            ):
                 return
 
             password_change_url = reverse(self.settings["URL_NAME"])
@@ -255,8 +266,8 @@ class NoConfidentialCachingMiddleware(BaseMiddleware):
         ``WHITELIST_ON``        all pages are confifendialt, except for pages
                                 explicitly whitelisted in ``WHITELIST_REGEXES``
 
-        ``WHITELIST_REGEXES``   list of regular expressions defining pages exempt
-                                from the no caching policy
+        ``WHITELIST_REGEXES``   list of regular expressions defining pages
+                                exempt from the no caching policy
 
         ``BLACKLIST_ON``        only pages defined in ``BLACKLIST_REGEXES``
                                 will have caching disabled
@@ -282,10 +293,12 @@ class NoConfidentialCachingMiddleware(BaseMiddleware):
         value = value or {}
         self.whitelist = value.get("WHITELIST_ON", False)
         if self.whitelist:
-            self.whitelist_url_regexes = map(compile, value['WHITELIST_REGEXES'])
+            self.whitelist_url_regexes = \
+                map(compile, value['WHITELIST_REGEXES'])
         self.blacklist = value.get("BLACKLIST_ON", False)
         if self.blacklist:
-            self.blacklist_url_regexes = map(compile, value['BLACKLIST_REGEXES'])
+            self.blacklist_url_regexes = \
+                map(compile, value['BLACKLIST_REGEXES'])
 
     def process_response(self, request, response):
         """
@@ -297,7 +310,8 @@ class NoConfidentialCachingMiddleware(BaseMiddleware):
             path = path.lstrip('/')
             return any(re.match(path) for re in match_list)
         def remove_response_caching(response):
-            response['Cache-control'] = 'no-cache, no-store, max-age=0, must-revalidate'
+            response['Cache-control'] = \
+                'no-cache, no-store, max-age=0, must-revalidate'
             response['Pragma'] = "no-cache"
             response['Expires'] = -1
 
@@ -353,8 +367,14 @@ class XFrameOptionsMiddleware(BaseMiddleware):
         if setting == 'X_FRAME_OPTIONS':
             if value:
                 value = value.lower()
-                if value not in ['sameorigin', 'deny'] and not value.startswith('allow-from:'):
-                    raise ImproperlyConfigured(self.__class__.__name__+" invalid option for X_FRAME_OPTIONS.")
+                if (
+                    value not in ['sameorigin', 'deny']
+                    and not value.startswith('allow-from:')
+                ):
+                    raise ImproperlyConfigured(
+                        self.__class__.__name__ +
+                        " invalid option for X_FRAME_OPTIONS.",
+                    )
                 self.option = value
             else:
                 self.option = XFrameOptionsMiddleware.DEFAULT
@@ -363,7 +383,10 @@ class XFrameOptionsMiddleware(BaseMiddleware):
                 try:
                     self.exclude_urls = [compile(url) for url in value]
                 except TypeError:
-                    raise ImproperlyConfigured(self.__class__.__name__+" invalid option for X_FRAME_OPTIONS_EXCLUDE_URLS")
+                    raise ImproperlyConfigured(
+                        self.__class__.__name__ +
+                        " invalid option for X_FRAME_OPTIONS_EXCLUDE_URLS",
+                    )
             else:
                 self.exclude_urls = []
 
@@ -473,8 +496,13 @@ class ContentSecurityPolicyMiddleware(object):
 
     # sandbox allowed arguments
     # http://www.w3.org/html/wg/drafts/html/master/single-page.html#sandboxing
-    _CSP_SANDBOX_ARGS = ['', 'allow-forms', 'allow-same-origin', 'allow-scripts',
-                       'allow-top-navigation']
+    _CSP_SANDBOX_ARGS = [
+        '',
+        'allow-forms',
+        'allow-same-origin',
+        'allow-scripts',
+        'allow-top-navigation',
+    ]
 
     # operational variables
     _csp_string = None
@@ -488,7 +516,9 @@ class ContentSecurityPolicyMiddleware(object):
             if k in self._CSP_LOC_TYPES:
 
                 if not type(v) == list:
-                    logger.warning('Arguments to {0} must be given as array'.format(k))
+                    logger.warning(
+                        'Arguments to {0} must be given as array'.format(k),
+                    )
                     raise django.core.exceptions.MiddlewareNotUsed
 
                 # contents taking location
@@ -506,7 +536,9 @@ class ContentSecurityPolicyMiddleware(object):
             elif k == 'sandbox':
 
                 if not type(v) == list:
-                    logger.warning('Arguments to {0} must be given as array'.format(k))
+                    logger.warning(
+                        'Arguments to {0} must be given as array'.format(k),
+                    )
                     raise django.core.exceptions.MiddlewareNotUsed
 
                 csp_string += " {0}".format(k);
@@ -514,7 +546,9 @@ class ContentSecurityPolicyMiddleware(object):
                     if opt in self._CSP_SANDBOX_ARGS:
                         csp_string += " {0}".format(opt)
                     else:
-                        logger.warning('Invalid CSP sandbox argument {0}'.format(opt))
+                        logger.warning(
+                            'Invalid CSP sandbox argument {0}'.format(opt),
+                        )
                         raise django.core.exceptions.MiddlewareNotUsed
                 csp_string += ';'
 
@@ -545,7 +579,10 @@ class ContentSecurityPolicyMiddleware(object):
             elif mode == 'report-only':
                 self._enforce = False
             else:
-                logger.warn('Invalid CSP_MODE {0}, "enforce" or "report-only" allowed'.format(mode))
+                logger.warn(
+                    'Invalid CSP_MODE {0}, "enforce" or "report-only" allowed'
+                    .format(mode),
+                )
                 raise django.core.exceptions.MiddlewareNotUsed
 
         if not (has_csp_string or has_csp_dict):
@@ -648,7 +685,10 @@ class P3PPolicyMiddleware(BaseMiddleware):
         """
         And P3P policy to the response header.
         """
-        response['P3P'] = 'policyref="{0}" CP="{1}"'.format(self.policy_url, self.policy)
+        response['P3P'] = 'policyref="{0}" CP="{1}"'.format(
+            self.policy_url,
+            self.policy,
+        )
         return response
 
 
@@ -675,10 +715,15 @@ class SessionExpiryPolicyMiddleware(BaseMiddleware):
     def load_setting(self, setting, value):
         if setting == 'SESSION_COOKIE_AGE':
             self.SESSION_COOKIE_AGE = value or 86400  # one day in seconds
-            logger.debug("Max Session Cookie Age is %d seconds" % self.SESSION_COOKIE_AGE)
+            logger.debug("Max Session Cookie Age is %d seconds" % (
+                self.SESSION_COOKIE_AGE,
+            ))
         elif setting == 'SESSION_INACTIVITY_TIMEOUT':
-            self.SESSION_INACTIVITY_TIMEOUT = value or 1800  # half an hour in seconds
-            logger.debug("Session Inactivity Timeout is %d seconds" % self.SESSION_INACTIVITY_TIMEOUT)
+            # half an hour in seconds
+            self.SESSION_INACTIVITY_TIMEOUT = value or 1800
+            logger.debug("Session Inactivity Timeout is %d seconds" % (
+                self.SESSION_INACTIVITY_TIMEOUT,
+            ))
 
     def process_request(self, request):
         """
@@ -696,32 +741,51 @@ class SessionExpiryPolicyMiddleware(BaseMiddleware):
             timezone.is_naive(request.session[self.START_TIME_KEY]) or
             timezone.is_naive(request.session[self.LAST_ACTIVITY_KEY])):
 
-            logger.debug("New session %s started: %s" % (request.session.session_key, now))
+            logger.debug("New session %s started: %s" % (
+                request.session.session_key,
+                now,
+            ))
             request.session[self.START_TIME_KEY] = now
             request.session[self.LAST_ACTIVITY_KEY] = now
         else:
             start_time = request.session[self.START_TIME_KEY]
             last_activity_time = request.session[self.LAST_ACTIVITY_KEY]
-            logger.debug("Session %s started: %s" % (request.session.session_key, start_time))
-            logger.debug("Session %s last active: %s" % (request.session.session_key, last_activity_time))
+            logger.debug("Session %s started: %s" % (
+                request.session.session_key,
+                start_time,
+            ))
+            logger.debug("Session %s last active: %s" % (
+                request.session.session_key,
+                last_activity_time,
+            ))
 
             # Is this session older than SESSION_COOKIE_AGE?
             # We don't worry about microseconds.
             SECONDS_PER_DAY = 86400
             start_time_diff = now - start_time
             last_activity_diff = now - last_activity_time
-            session_too_old = (start_time_diff.days * SECONDS_PER_DAY + start_time_diff.seconds >
-                    self.SESSION_COOKIE_AGE)
-            session_inactive = (last_activity_diff.days * SECONDS_PER_DAY + last_activity_diff.seconds >
-                    self.SESSION_INACTIVITY_TIMEOUT)
+            session_too_old = (
+                (start_time_diff.days * SECONDS_PER_DAY)
+                + start_time_diff.seconds > self.SESSION_COOKIE_AGE
+            )
+            session_inactive = (
+                (last_activity_diff.days * SECONDS_PER_DAY)
+                + last_activity_diff.seconds > self.SESSION_INACTIVITY_TIMEOUT
+            )
 
             if session_too_old or session_inactive:
-                logger.debug("Session %s is inactive." % request.session.session_key)
+                logger.debug("Session %s is inactive." % (
+                    request.session.session_key,
+                ))
                 logout(request)
             else:
                 # The session is good, update the last activity value
-                logger.debug("Session %s is still active." % request.session.session_key)
-                request.session[SessionExpiryPolicyMiddleware.LAST_ACTIVITY_KEY] = now
+                logger.debug("Session %s is still active." % (
+                    request.session.session_key,
+                ))
+                request.session[
+                    SessionExpiryPolicyMiddleware.LAST_ACTIVITY_KEY
+                ] = now
 
 
 # Modified a little bit by us.
