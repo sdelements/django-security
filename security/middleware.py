@@ -29,10 +29,11 @@ class BaseMiddleware(object):
 
     def load_setting(self, setting, value):
         """
-        Called initially for each of the keys in REQUIRED_SETTINGS and OPTIONAL_SETTINGS,
-        and again whenever any of these settings change (from the setting_changed signal).
-        Passed the setting key and the new value, which may be None for the keys in
-        OPTIONAL_SETTINGS. If no setting keys are defined then this method is never called.
+        Called initially for each of the keys in REQUIRED_SETTINGS and
+        OPTIONAL_SETTINGS, and again whenever any of these settings change
+        (from the setting_changed signal). Passed the setting key and the new
+        value, which may be None for the keys in OPTIONAL_SETTINGS. If no
+        setting keys are defined then this method is never called.
         """
 
     def _on_setting_changed(self, sender, setting, value, **kwargs):
@@ -61,33 +62,38 @@ class DoNotTrackMiddleware:
 
     The parameter can take True, False or None values based on the presence of
     the ``Do Not Track`` HTTP header in client's request, which in turn depends
-    on browser's configuration. The header indicates client's general preference
-    to opt-out from behavioral profiling and third-party tracking.
+    on browser's configuration. The header indicates client's general
+    preference to opt-out from behavioral profiling and third-party tracking.
 
     The parameter does **not** change Django's behaviour in any way as its sole
-    purpose is to pass the user's preference to application and it's up to the owner
-    to implement a particular policy based on this information. Compliant website should
-    adapt its behaviour depending on one of user's preferences:
+    purpose is to pass the user's preference to application and it's up to the
+    owner to implement a particular policy based on this information. Compliant
+    website should adapt its behaviour depending on one of user's preferences:
 
-    - Explicit opt-out (``request.dnt=True``): Disable third party tracking for this request
-      and delete all previously stored tracking data.
+    - Explicit opt-out (``request.dnt=True``): Disable third party tracking for
+      this request and delete all previously stored tracking data.
     - Explicit opt-in (``request.dnt=False``): Website may track user.
-    - Header not present (``request.dnt=None``): Website may track user, but should not draw any
-      conclusions on user's preferences.
+    - Header not present (``request.dnt=None``): Website may track user, but
+      should not draw any conclusions on user's preferences.
 
-    For example, a website might respond to ``request.dnt=True`` by disabling template parts
-    responsible for personalized statistics, targeted advertisements or switching to DNT aware ones.
+    For example, a website might respond to ``request.dnt=True`` by disabling
+    template parts responsible for personalized statistics, targeted
+    advertisements or switching to DNT aware ones.
 
     Examples:
 
     - `Do Not Track (DNT) tutorial for Django <http://ipsec.pl/node/1101>`_
-    - `Do Not Track - Web Application Templates <http://donottrack.us/application>`_
-    - `Opt-out of tailoring Twitter <https://dev.twitter.com/docs/tweet-button#optout>`_
+    - `Do Not Track - Web Application Templates
+      <http://donottrack.us/application>`_
+    - `Opt-out of tailoring Twitter <https://dev.twitter.com/docs/tweet-
+      button#optout>`_
 
     References:
 
-    - `Web Tracking Protection <http://www.w3.org/Submission/web-tracking-protection/>`_
-    - `Do Not Track: A Universal Third-Party Web Tracking Opt Out <http://tools.ietf.org/html/draft-mayer-do-not-track-00>`_
+    - `Web Tracking Protection <http://www.w3.org/Submission/web-tracking-
+      protection/>`_
+    - `Do Not Track: A Universal Third-Party Web Tracking Opt Out
+      <http://tools.ietf.org/html/draft-mayer-do-not-track-00>`_
     """
     def process_request(self, request):
         """ Read DNT header from browser request and create request attribute """
@@ -108,16 +114,25 @@ class DoNotTrackMiddleware:
 
 class XssProtectMiddleware(BaseMiddleware):
     """
-    Sends X-XSS-Protection HTTP header that controls Cross-Site Scripting filter
-    on MSIE. Use XSS_PROTECT option in settings file with the following values:
+    Sends X-XSS-Protection HTTP header that controls Cross-Site Scripting
+    filter on MSIE. Use XSS_PROTECT option in settings file with the following
+    values:
 
-      ``sanitize``   enable XSS filter that tries to sanitize requests instead of blocking (*default*)
-      ``on``         enable full XSS filter blocking XSS requests (may `leak document.referrer <http://homakov.blogspot.com/2013/02/hacking-with-xss-auditor.html>_`)
+      ``sanitize``   enable XSS filter that tries to sanitize requests instead
+      of blocking (*default*)
+
+      ``on``         enable full XSS filter blocking XSS requests (may `leak
+      document.referrer <http://homakov.blogspot.com/2013/02/hacking-with-xss-
+      auditor.html>`_)
+
       ``off``        completely disable XSS filter
 
     Reference:
 
-    - `Controlling the XSS Filter <http://blogs.msdn.com/b/ieinternals/archive/2011/01/31/controlling-the-internet-explorer-xss-filter-with-the-x-xss-protection-http-header.aspx>`_
+    - `Controlling the XSS Filter
+      <http://blogs.msdn.com/b/ieinternals/archive/2011/01/31/controlling-the-
+      internet-explorer-xss-filter-with-the-x-xss-protection-http-
+      header.aspx>`_
     """
 
     OPTIONAL_SETTINGS = ("XSS_PROTECT",)
@@ -147,15 +162,16 @@ class XssProtectMiddleware(BaseMiddleware):
 class ContentNoSniff:
     """
     Sends X-Content-Options HTTP header to disable autodetection of MIME type
-    of files returned by the server in Microsoft Internet Explorer. Specifically
-    if this flag is enabled, MSIE will not load external CSS and JavaScript files
-    unless server correctly declares their MIME type. This mitigates attacks
-    where web page would for example load a script that was disguised as an user-
-    supplied image.
+    of files returned by the server in Microsoft Internet Explorer.
+    Specifically if this flag is enabled, MSIE will not load external CSS and
+    JavaScript files unless server correctly declares their MIME type. This
+    mitigates attacks where web page would for example load a script that was
+    disguised as an user- supplied image.
 
     Reference:
 
-    - `MIME-Handling Change: X-Content-Type-Options: nosniff <http://msdn.microsoft.com/en-us/library/ie/gg622941(v=vs.85).aspx>`_
+    - `MIME-Handling Change: X-Content-Type-Options: nosniff
+      <http://msdn.microsoft.com/en-us/library/ie/gg622941(v=vs.85).aspx>`_
     """
 
     def process_response(self, request, response):
@@ -176,7 +192,9 @@ class MandatoryPasswordChangeMiddleware(BaseMiddleware):
     keys:
 
         ``URL_NAME``            name of of the password change view
-        ``EXEMPT_URL_NAMES``    list of URLs that do not trigger password change request
+
+        ``EXEMPT_URL_NAMES``    list of URLs that do not trigger password
+        change request
     """
 
     OPTIONAL_SETTINGS = ("MANDATORY_PASSWORD_CHANGE",)
@@ -216,27 +234,32 @@ class NoConfidentialCachingMiddleware(BaseMiddleware):
     """
     Adds No-Cache and No-Store headers to confidential pages. You can either
     whitelist non-confidential pages and treat all others as non-confidential,
-    or specifically blacklist pages as confidential. The behaviouri is configured
-    in ``NO_CONFIDENTIAL_CACHING`` dictionary in settings file with the
-    following keys:
+    or specifically blacklist pages as confidential. The behaviour is
+    configured in ``NO_CONFIDENTIAL_CACHING`` dictionary in settings file with
+    the following keys:
 
-        ``WHITELIST_ON``        all pages are confifendialt, except for
-                                pages explicitly whitelisted in ``WHITELIST_REGEXES``
+        ``WHITELIST_ON``        all pages are confifendialt, except for pages
+                                explicitly whitelisted in ``WHITELIST_REGEXES``
+
         ``WHITELIST_REGEXES``   list of regular expressions defining pages exempt
                                 from the no caching policy
-        ``BLACKLIST_ON``        only pages defined in ``BLACKLIST_REGEXES`` will
-                                have caching disabled
-        ``BLACKLIST_REGEXES``   list of regular expressions defining confidential
-                                pages for which caching should be prohibited
 
-    **Note:** Django cache_control_ decorator allows more granular control
-    of caching on individual view level.
+        ``BLACKLIST_ON``        only pages defined in ``BLACKLIST_REGEXES``
+                                will have caching disabled
 
-    .. _cache_control: https://docs.djangoproject.com/en/dev/topics/cache/#controlling-cache-using-other-headers
+        ``BLACKLIST_REGEXES``   list of regular expressions defining
+                                confidential pages for which caching should be
+                                prohibited
+
+    **Note:** Django's `cache_control
+    <https://docs.djangoproject.com/en/dev/topics/cache/#controlling-cache-
+    using-other-headers>`_ decorator allows more granular control of caching on
+    individual view level.
 
     Reference:
 
-    - `HTTP/1.1 Header definitions - What is Cacheable <http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9.1>`_
+    - `HTTP/1.1 Header definitions - What is Cacheable
+      <http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9.1>`_
     """
 
     OPTIONAL_SETTINGS = ("NO_CONFIDENTIAL_CACHING",)
@@ -253,8 +276,8 @@ class NoConfidentialCachingMiddleware(BaseMiddleware):
     def process_response(self, request, response):
         """
         Add the Cache control no-store to anything confidential. You can either
-        whitelist non-confidential pages and treat all others as non-confidential,
-        or specifically blacklist pages as confidential
+        whitelist non-confidential pages and treat all others as non-
+        confidential, or specifically blacklist pages as confidential
         """
         def match(path, match_list):
             path = path.lstrip('/')
@@ -299,12 +322,13 @@ class XFrameOptionsMiddleware(BaseMiddleware):
             r'^/another/to/exclude$',
         )
 
-    The header will be sent unless ``request.path`` matches any of the above list.
-    For more granular control, use ContentSecurityPolicyMiddleware_.
+    The header will be sent unless ``request.path`` matches any of the above
+    list. For more granular control, use ContentSecurityPolicyMiddleware_.
 
     References:
 
-      - `RFC 7034: HTTP Header Field X-Frame-Options <http://tools.ietf.org/html/rfc7034>`_
+      - `RFC 7034: HTTP Header Field X-Frame-Options
+        <http://tools.ietf.org/html/rfc7034>`_
     """
 
     OPTIONAL_SETTINGS = ('X_FRAME_OPTIONS', 'X_FRAME_OPTIONS_EXCLUDE_URLS')
@@ -360,12 +384,13 @@ class ContentSecurityPolicyMiddleware:
 
         ``CSP_MODE='enforce'``        browser will enforce policy settings and
                                       log violations (*default*)
-        ``CSP_MODE='report-only'``    browser will not enforce policy, only report
-                                      violations
 
-    The policy itself is a dictionary of content type keys and values containing
-    list of allowed locations. For example, ``img-src`` specifies locations
-    of images allowed to be loaded by this page:
+        ``CSP_MODE='report-only'``    browser will not enforce policy, only
+                                      report violations
+
+    The policy itself is a dictionary of content type keys and values
+    containing list of allowed locations. For example, ``img-src`` specifies
+    locations of images allowed to be loaded by this page:
 
         ``'img-src' : [ 'img.example.com' ]``
 
@@ -399,16 +424,24 @@ class ContentSecurityPolicyMiddleware:
 
     **Notes:**
 
-    - This middleware supports CSP header syntax for MSIE 10 (``X-Content-Security-Policy``), Firefox and Chrome (``Content-Security-Policy``) and Safari (``X-WebKit-CSP``).
-    - Enabling CSP has significant impact on browser behavior - for example inline JavaScript is disabled. Read `Default Policy Restrictions <http://developer.chrome.com/extensions/contentSecurityPolicy.html>`_ to see how pages need to be adapted to work under CSP.
-    - Browsers will log CSP violations in JavaScript console and to a remote server configured by ``report-uri`` option. This package provides a view (csp_report_) to collect these alerts in your application.
+    - This middleware supports CSP header syntax for MSIE 10
+      (``X-Content-Security-Policy``), Firefox and Chrome
+      (``Content-Security-Policy``) and Safari (``X-WebKit-CSP``).
+    - Enabling CSP has significant impact on browser behavior - for example
+      inline JavaScript is disabled. Read `Default Policy Restrictions
+      <http://developer.chrome.com/extensions/contentSecurityPolicy.html>`_ to
+      see how pages need to be adapted to work under CSP.
+    - Browsers will log CSP violations in JavaScript console and to a remote
+      server configured by ``report-uri`` option. This package provides a view
+      (csp_report_) to collect these alerts in your application.
 
     .. _References:
 
     **References:**
 
     - `Content Security Policy 1.0 <http://www.w3.org/TR/CSP/>`_,
-    - `HTML5.1 - Sandboxing <http://www.w3.org/html/wg/drafts/html/master/single-page.html#sandboxing>`_
+    - `HTML5.1 - Sandboxing <http://www.w3.org/html/wg/drafts/html/master
+      /single-page.html#sandboxing>`_
     """
     # these types accept CSP locations as arguments
     _CSP_LOC_TYPES = ['default-src',
@@ -541,12 +574,15 @@ class StrictTransportSecurityMiddleware:
     parameters can be set in settings file, otherwise reasonable
     defaults will be used:
 
-      - ``STS_MAX_AGE``               time in seconds to preserve host's STS policy (default: 1 year)
-      - ``STS_INCLUDE_SUBDOMAINS``    True if subdomains should be covered by the policy as well (default: True)
+      - ``STS_MAX_AGE``               time in seconds to preserve host's STS
+        policy (default: 1 year)
+      - ``STS_INCLUDE_SUBDOMAINS``    True if subdomains should be covered by
+        the policy as well (default: True)
 
     Reference:
 
-    - `HTTP Strict Transport Security (HSTS) <https://datatracker.ietf.org/doc/rfc6797/>`_
+    - `HTTP Strict Transport Security (HSTS)
+      <https://datatracker.ietf.org/doc/rfc6797/>`_
     """
 
     def __init__(self):
@@ -581,7 +617,8 @@ class P3PPolicyMiddleware(BaseMiddleware):
 
     Reference:
 
-    - `The Platform for Privacy Preferences 1.0 (P3P1.0) Specification - The Compact Policies <http://www.w3.org/TR/P3P/#compact_policies>`_
+    - `The Platform for Privacy Preferences 1.0 (P3P1.0) Specification - The
+      Compact Policies <http://www.w3.org/TR/P3P/#compact_policies>`_
     """
 
     REQUIRED_SETTINGS = ("P3P_COMPACT_POLICY",)
