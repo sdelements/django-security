@@ -13,12 +13,12 @@ class PasswordChangeForm(django.contrib.auth.forms.PasswordChangeForm):
     new_password1 = forms.CharField(
         label=_("New password"),
         widget=forms.PasswordInput,
-        validators=[
+        validators=(
             auth.min_length(6),
             auth.uppercase,
             auth.lowercase,
             auth.digit,
-        ],
+        ),
     )
 
     def __init__(self, *args, **kwargs):
