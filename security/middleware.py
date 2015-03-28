@@ -37,7 +37,10 @@ class BaseMiddleware(object):
         """
 
     def _on_setting_changed(self, sender, setting, value, **kwargs):
-        if setting in self.REQUIRED_SETTINGS or setting in self.OPTIONAL_SETTINGS:
+        if (
+            setting in self.REQUIRED_SETTINGS
+            or setting in self.OPTIONAL_SETTINGS
+        ):
             self.load_setting(setting, value)
 
     def __init__(self):
