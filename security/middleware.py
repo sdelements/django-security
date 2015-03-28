@@ -726,8 +726,10 @@ class LoginRequiredMiddleware(BaseMiddleware):
 
     def process_request(self, request):
         if not hasattr(request, 'user'):
-            raise ImproperlyConfigured("The Login Required middleware"
-                " requires authentication middleware to be installed.")
+            raise ImproperlyConfigured(
+                "The Login Required middleware requires authentication "
+                "middleware to be installed."
+            )
         if request.user.is_authenticated() and not request.user.is_active:
             logout(request)
         if not request.user.is_authenticated():
@@ -741,8 +743,11 @@ class LoginRequiredMiddleware(BaseMiddleware):
             if not any(m.match(path) for m in self.exempt_urls):
                 if request.is_ajax():
                     response = {"login_url": login_url}
-                    return HttpResponse(json.dumps(response), status=401,
-                            content_type="application/json")
+                    return HttpResponse(
+                        json.dumps(response),
+                        status=401,
+                        content_type="application/json",
+                    )
                 else:
                     if next_url:
                         login_url = login_url + '?next=' + next_url
