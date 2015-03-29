@@ -452,7 +452,7 @@ class AuthenticationThrottlingTests(TestCase):
         self.assertEqual("0 seconds", delay_message(0))
         self.assertEqual("1 second", delay_message(0.1))
         self.assertEqual("1 second", delay_message(1))
-        self.assertEqual("1 minute", delay_message(30))
+        self.assertEqual("1 minute", delay_message(31))
         self.assertEqual("1 minute", delay_message(60))
         self.assertEqual("1 minute", delay_message(61))
         self.assertEqual("2 minutes", delay_message(90))
