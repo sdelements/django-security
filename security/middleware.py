@@ -221,7 +221,7 @@ class MandatoryPasswordChangeMiddleware(BaseMiddleware):
     OPTIONAL_SETTINGS = ("MANDATORY_PASSWORD_CHANGE",)
 
     def load_setting(self, setting, value):
-        if value and not value.has_key("URL_NAME"):
+        if value and "URL_NAME" not in value:
             raise ImproperlyConfigured(
                 MandatoryPasswordChangeMiddleware.__name__ +
                 " requires the URL_NAME setting",
