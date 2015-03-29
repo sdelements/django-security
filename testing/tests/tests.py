@@ -489,11 +489,11 @@ class AuthenticationThrottlingTests(TestCase):
         self.assertEqual(delay(0, 100), (0, 0))
 
         # first 3 incorrect attempts with a username will not be delayed.
-        for i in xrange(3):
+        for i in range(3):
             self.assertEqual(delay(i, 0), (0, 0))
 
         # forth, fifth, sixth attempts are throttled
-        for i in xrange(4, 7):
+        for i in range(4, 7):
             self.assertEqual(delay(i, 0), (5 * 2 ** (i - 3), 0))
 
         # we max out at 24 hours
