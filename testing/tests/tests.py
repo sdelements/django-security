@@ -21,7 +21,7 @@ from security.auth_throttling import (
 )
 from security.middleware import (
     BaseMiddleware, ContentSecurityPolicyMiddleware,
-    SessionExpiryPolicyMiddleware
+    SessionExpiryPolicyMiddleware, DoNotTrackMiddleware
 )
 from security.models import PasswordExpiry
 from security.password_expiry import never_expire_password
@@ -757,3 +757,40 @@ class ContentSecurityPolicyTests(TestCase):
 
         csp = ContentSecurityPolicyMiddleware()
         self.assertRaises(MiddlewareNotUsed, csp._csp_builder, csp_dict)
+
+
+class DoNotTrackTests(TestCase):
+
+    def setUp(self):
+        self.dnt = DoNotTrackMiddleware()
+        self.request = HttpRequest()
+        self.response = HttpResponse()
+
+    def test_set_DNT_on(self):
+        self.request.META['HTTP_DNT'] = '1'
+        self.dnt.process_request(self.request)
+        self.assertTrue(self.request.dnt)
+
+    def test_set_DNT_off(self):
+        self.request.META['HTTP_DNT'] = 'off'
+        self.dnt.process_request(self.request)
+        self.assertFalse(self.request.dnt)
+
+    def test_default_DNT(self):
+        self.dnt.process_request(self.request)
+        self.assertFalse(self.request.dnt)
+
+    def test_DNT_echo_on(self):
+        self.request.META['HTTP_DNT'] = '1'
+        self.dnt.process_response(self.request, self.response)
+        self.assertIn('DNT', self.response)
+        self.assertEqual(self.response['DNT'], '1')
+
+    def test_DNT_echo_off(self):
+        self.request.META['HTTP_DNT'] = 'off'
+        self.dnt.process_response(self.request, self.response)
+        self.assertNotIn('DNT', self.response)
+
+    def test_DNT_echo_default(self):
+        self.dnt.process_response(self.request, self.response)
+        self.assertNotIn('DNT', self.response)
