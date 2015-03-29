@@ -20,9 +20,9 @@ from security.auth_throttling import (
     reset_counters, Middleware as AuthThrottlingMiddleware
 )
 from security.middleware import (
-    BaseMiddleware, ContentSecurityPolicyMiddleware,
-    SessionExpiryPolicyMiddleware, DoNotTrackMiddleware, XssProtectMiddleware,
-    MandatoryPasswordChangeMiddleware
+    BaseMiddleware, ContentSecurityPolicyMiddleware, DoNotTrackMiddleware,
+    SessionExpiryPolicyMiddleware, MandatoryPasswordChangeMiddleware,
+    XssProtectMiddleware,
 )
 from security.models import PasswordExpiry
 from security.password_expiry import never_expire_password
