@@ -622,7 +622,9 @@ class ContentSecurityPolicyMiddleware(object):
                 csp_components.append(self._csp_referrer_builder(key, value))
 
             elif key == 'reflected-xss':
-                csp_components.append(self._csp_referrer_builder(key, value))
+                csp_components.append(
+                    self._csp_reflected_xss_builder(key, value),
+                )
 
             else:
                 logger.warning('Invalid CSP type {0}'.format(key))
