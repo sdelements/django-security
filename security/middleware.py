@@ -295,11 +295,11 @@ class NoConfidentialCachingMiddleware(BaseMiddleware):
         self.whitelist = value.get("WHITELIST_ON", False)
         if self.whitelist:
             self.whitelist_url_regexes = \
-                map(compile, value['WHITELIST_REGEXES'])
+                [compile(x) for x in value['WHITELIST_REGEXES']]
         self.blacklist = value.get("BLACKLIST_ON", False)
         if self.blacklist:
             self.blacklist_url_regexes = \
-                map(compile, value['BLACKLIST_REGEXES'])
+                [compile(x) for x in value['BLACKLIST_REGEXES']]
 
     def process_response(self, request, response):
         """
