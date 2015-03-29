@@ -67,7 +67,7 @@ def increment_counters(**counters):
     existing = cache.get_many(keys)
     for key in keys:
         existing[key] = (existing.get(key, (0,))[0] + 1, t)
-    cache.set_many(existing, timeout=48 * 60 * 60)
+    cache.set_many(existing, timeout=48 * 60 * 60)  # 48 hours
 
 
 def _extract_username(request):
