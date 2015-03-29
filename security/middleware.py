@@ -736,11 +736,12 @@ class SessionExpiryPolicyMiddleware(BaseMiddleware):
 
         # If the session has no start time or last activity time, set those
         # two values. We assume we have a brand new session.
-        if (self.START_TIME_KEY not in request.session or
+        if (
+            self.START_TIME_KEY not in request.session or
             self.LAST_ACTIVITY_KEY not in request.session or
             timezone.is_naive(request.session[self.START_TIME_KEY]) or
-            timezone.is_naive(request.session[self.LAST_ACTIVITY_KEY])):
-
+            timezone.is_naive(request.session[self.LAST_ACTIVITY_KEY])
+        ):
             logger.debug("New session %s started: %s" % (
                 request.session.session_key,
                 now,
