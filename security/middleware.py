@@ -645,7 +645,7 @@ class StrictTransportSecurityMiddleware(object):
             self.max_age = django.conf.settings.STS_MAX_AGE
             self.subdomains = django.conf.settings.STS_INCLUDE_SUBDOMAINS
         except AttributeError:
-            self.max_age = 3600*24*365 # one year
+            self.max_age = 3600 * 24 * 365  # one year
             self.subdomains = True
         self.value = 'max-age={0}'.format(self.max_age)
         if self.subdomains:
