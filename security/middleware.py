@@ -515,19 +515,19 @@ class ContentSecurityPolicyMiddleware(object):
     def _csp_builder(self, csp_dict):
         csp_string = ""
 
-        for k, v in csp_dict.items():
+        for key, value in csp_dict.items():
 
-            if k in self._CSP_LOC_TYPES:
+            if key in self._CSP_LOC_TYPES:
 
-                if not type(v) == list:
+                if not type(value) == list:
                     logger.warning(
-                        'Arguments to {0} must be given as array'.format(k),
+                        'Arguments to {0} must be given as array'.format(key),
                     )
                     raise django.core.exceptions.MiddlewareNotUsed
 
                 # contents taking location
-                csp_string += " {0}".format(k)
-                for loc in v:
+                csp_string += " {0}".format(key)
+                for loc in value:
                     if loc in self._CSP_LOCATIONS:
                         csp_string += " '{0}'".format(loc)  # quoted
                     elif loc == '*':
@@ -537,16 +537,16 @@ class ContentSecurityPolicyMiddleware(object):
                         csp_string += " {0}".format(loc)   # not quoted
                 csp_string += ';'
 
-            elif k == 'sandbox':
+            elif key == 'sandbox':
 
-                if not type(v) == list:
+                if not type(value) == list:
                     logger.warning(
-                        'Arguments to {0} must be given as array'.format(k),
+                        'Arguments to {0} must be given as array'.format(key),
                     )
                     raise django.core.exceptions.MiddlewareNotUsed
 
-                csp_string += " {0}".format(k)
-                for opt in v:
+                csp_string += " {0}".format(key)
+                for opt in value:
                     if opt in self._CSP_SANDBOX_ARGS:
                         csp_string += " {0}".format(opt)
                     else:
@@ -556,14 +556,14 @@ class ContentSecurityPolicyMiddleware(object):
                         raise django.core.exceptions.MiddlewareNotUsed
                 csp_string += ';'
 
-            elif k == 'report-uri':
+            elif key == 'report-uri':
                 # XXX: add valid URL check
-                csp_string += " {0}".format(k)
-                csp_string += " {0}".format(v)
+                csp_string += " {0}".format(key)
+                csp_string += " {0}".format(value)
                 csp_string += ';'
 
             else:
-                logger.warning('Invalid CSP type {0}'.format(k))
+                logger.warning('Invalid CSP type {0}'.format(key))
                 raise django.core.exceptions.MiddlewareNotUsed
 
         return csp_string
