@@ -21,7 +21,8 @@ from security.auth_throttling import (
 )
 from security.middleware import (
     BaseMiddleware, ContentSecurityPolicyMiddleware,
-    SessionExpiryPolicyMiddleware, DoNotTrackMiddleware, XssProtectMiddleware
+    SessionExpiryPolicyMiddleware, DoNotTrackMiddleware, XssProtectMiddleware,
+    MandatoryPasswordChangeMiddleware
 )
 from security.models import PasswordExpiry
 from security.password_expiry import never_expire_password
@@ -247,6 +248,15 @@ class RequirePasswordChangeTests(TestCase):
         finally:
             self.client.logout()
             user.delete()
+
+    def test_raises_improperly_configured(self):
+        change = MandatoryPasswordChangeMiddleware()
+        self.assertRaises(
+            ImproperlyConfigured,
+            change.load_setting,
+            'MANDATORY_PASSWORD_CHANGE',
+            {'EXEMPT_URLS': []},
+        )
 
 
 class DecoratorTest(TestCase):
