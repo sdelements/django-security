@@ -1,6 +1,7 @@
 import os as _os
 import django
 
+
 def is_version(version):
     return all(x >= y for x, y in zip(django.VERSION, version))
 
@@ -35,13 +36,11 @@ STATICFILES_DIRS = ()
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-#    'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 SECRET_KEY = 'p_2zsf+@4uw$kcdl$!tkf0lrh%w^!#@2@iwo4plef2n$(@uj4_'
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.Loader',
     'django.template.loaders.app_directories.Loader',
-#     'django.template.loaders.eggs.Loader',
 )
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
@@ -78,7 +77,7 @@ if is_version((1, 6)):
 else:
     TEST_RUNNER = 'discover_runner.DiscoverRunner'
 
-LOGIN_REDIRECT_URL="/home/"
+LOGIN_REDIRECT_URL = "/home/"
 
 # The tests for django.contrib.auth use certain URLs, and they'll fail if we
 # interfere with these.
@@ -116,13 +115,13 @@ X_FRAME_OPTIONS = 'allow-from: http://example.com'
 X_FRAME_OPTIONS_EXCLUDE_URLS = (
     r'^/test\d/$',
 )
-CSP_STRING="allow 'self'; script-src *.google.com"
-CSP_MODE='enforce'
+CSP_STRING = "allow 'self'; script-src *.google.com"
+CSP_MODE = 'enforce'
 P3P_POLICY_URL = '/w3c/p3p.xml'
 P3P_COMPACT_POLICY = 'PRIVATE'
 
 # Django 1.6 uses JSONSerializer which can't handle datetime
-SESSION_SERIALIZER='django.contrib.sessions.serializers.PickleSerializer'
+SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 
 LOGGING = {
     'version': 1,
