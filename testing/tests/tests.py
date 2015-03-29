@@ -10,7 +10,7 @@ from django.core.exceptions import ImproperlyConfigured, MiddlewareNotUsed
 from django.core.urlresolvers import reverse
 from django.forms import ValidationError
 from django.http import HttpResponseForbidden, HttpRequest, HttpResponse
-from django.test import TestCase
+from django.test import TestCase, Client
 from django.test.utils import override_settings
 from django.utils import timezone
 
@@ -579,6 +579,13 @@ class AuthenticationThrottlingTests(TestCase):
     })
     def test_improperly_configured_middleware(self):
         self.assertRaises(ImproperlyConfigured, AuthThrottlingMiddleware)
+
+    def test_throttle_reset_404_on_unauthorized(self):
+        resp = self.client.post(
+            reverse("reset_username_throttle", args=[self.user.id]),
+        )
+
+        self.assertEqual(resp.status_code, 404)
 
 
 class P3PPolicyTests(TestCase):
