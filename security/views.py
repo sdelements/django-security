@@ -58,7 +58,10 @@ def csp_report(request, csp_save=False, csp_log=True):
         log.debug('Unexpect CSP report method {0}'.format(request.method))
         return HttpResponseForbidden()
 
-    if (not request.META.has_key('CONTENT_TYPE')) or request.META['CONTENT_TYPE'] != 'application/json':
+    if (
+        not request.META.has_key('CONTENT_TYPE')
+        or request.META['CONTENT_TYPE'] != 'application/json'
+    ):
         log.debug('Missing CSP report Content-Type {0}'.format(request.META))
         return HttpResponseForbidden()
 
@@ -78,7 +81,12 @@ def csp_report(request, csp_save=False, csp_log=True):
 
     # log message about received CSP violation to Django log
     if csp_log:
-        log.warn('Content Security Policy violation: {0}, reporting IP {1}, user agent {2}'.format(report, reporting_ip, reporting_ua))
+        log.warn(
+            'Content Security Policy violation: '
+            '{0}, reporting IP {1}, user agent {2}'.format(
+                report, reporting_ip, reporting_ua,
+            ),
+        )
 
     # save received CSP violation to database
     if csp_save:
