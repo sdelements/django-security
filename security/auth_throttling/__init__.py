@@ -132,9 +132,11 @@ def attempt_count(attempt_type, id):
 class _ThrottlingForm(AuthenticationForm):
     def __init__(self, delay, *args, **kwargs):
         super(_ThrottlingForm, self).__init__(*args, **kwargs)
-        message = ("Due to the failure of previous attempts, your login "
-                   "request has been denied as a security precaution. Please "
-                   "try again in at least %s." % delay_message(delay))
+        message = (
+            "Due to the failure of previous attempts, your login request has "
+            "been denied as a security precaution. Please try again in at "
+            "least %s." % delay_message(delay)
+        )
         self._errors = {"__all__": self.error_class([message])}
 
 
