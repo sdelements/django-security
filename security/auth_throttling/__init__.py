@@ -45,8 +45,8 @@ def _key(counter_type, counter_name):
     too long, and it's possible the POST data we get could contain characters
     that memcache doesn't like.
     """
-    k = "security.authentication_throttling.%s:%s" % (counter_type, counter_name)
-    return hashlib.sha1(k).hexdigest()
+    key = "security.authentication_throttling.%s:%s" % (counter_type, counter_name)
+    return hashlib.sha1(key).hexdigest()
 
 
 def reset_counters(**counters):
