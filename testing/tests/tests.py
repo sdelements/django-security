@@ -747,7 +747,7 @@ class ContentSecurityPolicyTests(TestCase):
             'font-src': ['fonts.example.com', ],
             'object-src': ['self'],
             'media-src': ['media.example.com', ],
-            'frame-src': ['self', ],
+            'frame-src': ['*', ],
             'sandbox': ['', ],
             'reflected-xss': 'filter',
             'report-uri': 'http://example.com/csp-report',
@@ -761,7 +761,7 @@ class ContentSecurityPolicyTests(TestCase):
             "reflected-xss filter;"
             "style-src 'self' css.example.com;"
             "report-uri http://example.com/csp-report;"
-            "frame-src 'self';"
+            "frame-src *;"
             "sandbox ;"
             "object-src 'self';"
             "media-src media.example.com;"
