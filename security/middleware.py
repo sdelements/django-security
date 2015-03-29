@@ -515,7 +515,7 @@ class ContentSecurityPolicyMiddleware(object):
     def _csp_builder(self, csp_dict):
         csp_string = ""
 
-        for k,v in csp_dict.items():
+        for k, v in csp_dict.items():
 
             if k in self._CSP_LOC_TYPES:
 
@@ -611,9 +611,9 @@ class ContentSecurityPolicyMiddleware(object):
         """
         # choose headers based enforcement mode
         if self._enforce:
-            headers = ['Content-Security-Policy',]
+            headers = ['Content-Security-Policy', ]
         else:
-            headers = ['Content-Security-Policy-Report-Only',]
+            headers = ['Content-Security-Policy-Report-Only', ]
 
         # actually add appropriate headers
         for h in headers:
