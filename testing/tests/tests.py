@@ -372,6 +372,7 @@ class XFrameOptionsDenyTests(TestCase):
         response = self.client.get('/test1/')
         self.assertNotIn('X-Frame-Options', response)
 
+
 class XXssProtectTests(TestCase):
 
     def test_option_set(self):
@@ -425,6 +426,7 @@ class AuthenticationThrottlingTests(TestCase):
                                 {"username": "foo",
                                  "password": password},
                                 follow=True)
+
     def reset(self):
         self.client.logout()
         cache.clear()
