@@ -608,9 +608,10 @@ class ContentSecurityPolicyMiddleware(object):
 
             if key in self._CSP_LOC_TYPES:
 
-                if not type(value) == list:
+                if not isinstance(value, (list, tuple)):
                     logger.warn(
-                        'Arguments to {0} must be given as list'.format(key),
+                        'Arguments to {0} must be given as list or tuple'
+                        .format(key),
                     )
                     raise django.core.exceptions.MiddlewareNotUsed
 
@@ -618,9 +619,10 @@ class ContentSecurityPolicyMiddleware(object):
 
             elif key == 'sandbox':
 
-                if not type(value) == list:
+                if not isinstance(value, (list, tuple)):
                     logger.warn(
-                        'Arguments to {0} must be given as list'.format(key),
+                        'Arguments to {0} must be given as list or tuple'
+                        .format(key),
                     )
                     raise django.core.exceptions.MiddlewareNotUsed
 

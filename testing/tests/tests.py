@@ -630,13 +630,16 @@ class ContentSecurityPolicyTests(TestCase):
         self.assertEqual(generated_list, expected_list)
 
     def test_csp_gen_2(self):
-        csp_dict = {'default-src': ('none',)}
-        expected = "default-src 'none'"
+        csp_dict = {'default-src': ('none',), 'script-src': ['none']}
+        expected = "default-src 'none'; script-src 'none'"
 
         csp = ContentSecurityPolicyMiddleware()
         generated = csp._csp_builder(csp_dict)
 
-        self.assertEqual(generated, expected)
+        expected_list = sorted(x.strip() for x in expected.split(';'))
+        generated_list = sorted(x.strip() for x in generated.split(';'))
+
+        self.assertEqual(generated_list, expected_list)
 
     def test_csp_gen_3(self):
         csp_dict = {
