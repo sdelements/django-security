@@ -143,8 +143,10 @@ class LoginRequiredMiddlewareTests(TestCase):
             HTTP_X_REQUESTED_WITH='XMLHttpRequest',
         )
         self.assertEqual(response.status_code, 401)
-        self.assertEqual(json.loads(response.content),
-                         {"login_url": self.login_url})
+        self.assertEqual(
+            json.loads(response.content),
+            {"login_url": self.login_url},
+        )
 
     def test_redirects_to_custom_login_url(self):
         middlware_classes = list(settings.MIDDLEWARE_CLASSES)
