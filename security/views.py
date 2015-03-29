@@ -21,6 +21,7 @@ def require_ajax(view):
             return view(request, *args, **kwargs)
         else:
             return HttpResponseForbidden()
+
     return check_ajax
 
 
