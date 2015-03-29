@@ -750,6 +750,7 @@ class ContentSecurityPolicyTests(TestCase):
             'frame-src': ['*', ],
             'sandbox': ['', ],
             'reflected-xss': 'filter',
+            'referrer': 'origin',
             'report-uri': 'http://example.com/csp-report',
         }
 
@@ -765,6 +766,7 @@ class ContentSecurityPolicyTests(TestCase):
             "sandbox ;"
             "object-src 'self';"
             "media-src media.example.com;"
+            "referrer origin;"
             "font-src fonts.example.com"
         )
 
