@@ -822,6 +822,32 @@ class ContentSecurityPolicyTests(TestCase):
         csp = ContentSecurityPolicyMiddleware()
         self.assertRaises(MiddlewareNotUsed, csp._csp_builder, csp_dict)
 
+    def test_csp_gen_err3(self):
+        csp_dict = {'sandbox': 'none'}  # not a list or tuple, expect failure
+
+        csp = ContentSecurityPolicyMiddleware()
+        self.assertRaises(MiddlewareNotUsed, csp._csp_builder, csp_dict)
+
+    def test_csp_gen_err4(self):
+        # Not an allowed directive, expect failure
+        csp_dict = {'sandbox': ('invalid', )}
+
+        csp = ContentSecurityPolicyMiddleware()
+        self.assertRaises(MiddlewareNotUsed, csp._csp_builder, csp_dict)
+
+    def test_csp_gen_err5(self):
+        # Not an allowed directive, expect failure
+        csp_dict = {'referrer': 'invalid'}
+
+        csp = ContentSecurityPolicyMiddleware()
+        self.assertRaises(MiddlewareNotUsed, csp._csp_builder, csp_dict)
+
+    def test_csp_gen_err6(self):
+        # Not an allowed directive, expect failure
+        csp_dict = {'reflected-xss': 'invalid'}
+
+        csp = ContentSecurityPolicyMiddleware()
+        self.assertRaises(MiddlewareNotUsed, csp._csp_builder, csp_dict)
 
 class DoNotTrackTests(TestCase):
 
