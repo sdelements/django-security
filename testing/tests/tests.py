@@ -849,6 +849,57 @@ class ContentSecurityPolicyTests(TestCase):
         csp = ContentSecurityPolicyMiddleware()
         self.assertRaises(MiddlewareNotUsed, csp._csp_builder, csp_dict)
 
+    def test_enforced_by_default(self):
+        with self.settings(CSP_MODE=None):
+            response = self.client.get('/accounts/login/')
+            self.assertIn('Content-Security-Policy', response)
+            self.assertNotIn('Content-Security-Policy-Report-Only', response)
+
+    def test_enforced_when_on(self):
+        with self.settings(CSP_MODE='enforce'):
+            response = self.client.get('/accounts/login/')
+            self.assertIn('Content-Security-Policy', response)
+            self.assertNotIn('Content-Security-Policy-Report-Only', response)
+
+    def test_report_only_set(self):
+        with self.settings(CSP_MODE='report-only'):
+            response = self.client.get('/accounts/login/')
+            self.assertNotIn('Content-Security-Policy', response)
+            self.assertIn('Content-Security-Policy-Report-Only', response)
+
+    def test_invalid_csp_mode(self):
+        with self.settings(CSP_MODE='invalid'):
+            self.assertRaises(
+                MiddlewareNotUsed,
+                ContentSecurityPolicyMiddleware,
+            )
+
+    def test_no_csp_options_set(self):
+        with self.settings(CSP_DICT=None, CSP_STRING=None):
+            self.assertRaises(
+                MiddlewareNotUsed,
+                ContentSecurityPolicyMiddleware,
+            )
+
+    def test_both_csp_options_set(self):
+        with self.settings(CSP_DICT={'x': 'y'}, CSP_STRING='x y;'):
+            self.assertRaises(
+                MiddlewareNotUsed,
+                ContentSecurityPolicyMiddleware,
+            )
+
+    def test_sets_from_csp_dict(self):
+        with self.settings(
+            CSP_DICT={'default-src': ('self',)},
+            CSP_STRING=None,
+        ):
+            response = self.client.get('/accounts/login/')
+            self.assertEqual(
+                response['Content-Security-Policy'],
+                "default-src 'self'",
+            )
+
+
 class DoNotTrackTests(TestCase):
 
     def setUp(self):
