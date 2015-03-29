@@ -118,6 +118,10 @@ class BaseMiddlewareTests(TestCase):
             response = self.client.get('/home/')
             self.assertEqual(123, response.loaded_settings['R1'])
 
+    def test_load_setting_abstract_method(self):
+        base = BaseMiddleware()
+        self.assertRaises(NotImplementedError, base.load_setting, None, None)
+
 
 class LoginRequiredMiddlewareTests(TestCase):
     def setUp(self):
