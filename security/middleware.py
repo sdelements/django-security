@@ -504,7 +504,6 @@ class ContentSecurityPolicyMiddleware(object):
 
     **References:**
 
-<<<<<<< HEAD
     - `Content Security Policy Level 2 <http://www.w3.org/TR/CSP11/>`_,
     - `HTML5.1 - Sandboxing <http://www.w3.org/html/wg/drafts/html/master
       /single-page.html#sandboxing>`_
