@@ -64,9 +64,9 @@ class BaseMiddleware(object):
 
 class DoNotTrackMiddleware(object):
     """
-    When this middleware is installed Django views can access a new ``request.dnt``
-    parameter to check client's preference on user tracking as expressed by their
-    browser configuration settings.
+    When this middleware is installed Django views can access a new
+    ``request.dnt`` parameter to check client's preference on user tracking as
+    expressed by their browser configuration settings.
 
     The parameter can take True, False or None values based on the presence of
     the ``Do Not Track`` HTTP header in client's request, which in turn depends
@@ -484,16 +484,20 @@ class ContentSecurityPolicyMiddleware(object):
     - The special locations ('self', 'none', 'unsafe-eval', 'unsafe-inline')
       come **without** the additional single quotes in `CSP_DICT` and they
       will be automatically quoted by the middleware in the HTTP header.
-    - The ``CSP_STRING`` on the other hand should be a verbatim copy of the HTTP header
-      contents. It's not going the be processed in any way.
-    - This middleware only sets the standard HTTP header variants (``Content-Security-Policy``).
-      The experimental ones (``X-WebKit-CSP`` and ``Content-Security-Policy``) are now obsolete.
-    - Enabling CSP has significant impact on browser behaviour - for example inline
-      JavaScript is disabled. Read `Default Policy Restrictions <http://developer.chrome.com/extensions/contentSecurityPolicy.html>`_ to see how pages need to be adapted to work under CSP.
-    - Browsers will log CSP violations in JavaScript console and to a remote server
-      configured by ``report-uri`` option. This package provides a view (csp_report_)
-      to collect these alerts in your application. They can be then viewed using Django
-      admin interface. For more advanced analytics try `CspBuilder <https://cspbuilder.info/>`_.
+    - The ``CSP_STRING`` on the other hand should be a verbatim copy of the
+      HTTP header contents. It's not going the be processed in any way.
+    - This middleware only sets the standard HTTP header variants
+      (``Content-Security-Policy``). The experimental ones (``X-WebKit-CSP``
+      and ``Content-Security-Policy``) are now obsolete.
+    - Enabling CSP has significant impact on browser behaviour - for example
+      inline JavaScript is disabled. Read `Default Policy Restrictions
+      <http://developer.chrome.com/extensions/contentSecurityPolicy.html>`_ to
+      see how pages need to be adapted to work under CSP.
+    - Browsers will log CSP violations in JavaScript console and to a remote
+      server configured by ``report-uri`` option. This package provides a view
+      (csp_report_) to collect these alerts in your application. They can be
+      then viewed using Django admin interface. For more advanced analytics try
+      `CspBuilder <https://cspbuilder.info/>`_.
     - The middleware partially supports CSP 1.1 draft syntax.
 
     .. _References:
@@ -502,7 +506,8 @@ class ContentSecurityPolicyMiddleware(object):
 
 <<<<<<< HEAD
     - `Content Security Policy Level 2 <http://www.w3.org/TR/CSP11/>`_,
-    - `HTML5.1 - Sandboxing <http://www.w3.org/html/wg/drafts/html/master/single-page.html#sandboxing>`_
+    - `HTML5.1 - Sandboxing <http://www.w3.org/html/wg/drafts/html/master
+      /single-page.html#sandboxing>`_
     """
     # these types accept CSP locations as arguments
     _CSP_LOC_TYPES = [
@@ -540,7 +545,13 @@ class ContentSecurityPolicyMiddleware(object):
 
     # referrer allowed arguments
     # http://www.w3.org/TR/CSP11/#directive-referrer
-    _CSP_REF_ARGS = ["none", "none-when-downgrade", "origin", "origin-when-cross-origin", "unsafe-url"]
+    _CSP_REF_ARGS = [
+        "none",
+        "none-when-downgrade",
+        "origin",
+        "origin-when-cross-origin",
+        "unsafe-url",
+    ]
 
     # operational variables
     _csp_string = None
@@ -692,10 +703,12 @@ class StrictTransportSecurityMiddleware(object):
     parameters can be set in settings file, otherwise reasonable
     defaults will be used:
 
-      - ``STS_MAX_AGE``               time in seconds to preserve host's STS policy (default: 1 year)
-      - ``STS_INCLUDE_SUBDOMAINS``    True if subdomains should be covered by the policy as well (default: True)
-      - ``STS_PRELOAD``               add ``preload`` flag to the STS header  so that your website can be
-                                      added to preloaded websites list
+      - ``STS_MAX_AGE``               time in seconds to preserve host's STS
+        policy (default: 1 year)
+      - ``STS_INCLUDE_SUBDOMAINS``    True if subdomains should be covered by
+        the policy as well (default: True)
+      - ``STS_PRELOAD``               add ``preload`` flag to the STS header
+        so that your website can be added to preloaded websites list
 
     Reference:
 
