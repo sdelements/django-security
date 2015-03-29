@@ -621,8 +621,8 @@ class ContentSecurityPolicyTests(TestCase):
         # We can't assume the iteration order on the csp_dict, so we split the
         # output, sort, and ensure we got all the results back, regardless of
         # the order.
-        expected_list = sorted(expected.split(';'))
-        generated_list = sorted(generated.split(';'))
+        expected_list = sorted(x.strip() for x in expected.split(';'))
+        generated_list = sorted(x.strip() for x in generated.split(';'))
 
         self.assertEqual(generated_list, expected_list)
 
