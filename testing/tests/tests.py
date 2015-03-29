@@ -21,7 +21,7 @@ from security.auth_throttling import (
 )
 from security.middleware import (
     BaseMiddleware, ContentSecurityPolicyMiddleware,
-    SessionExpiryPolicyMiddleware, DoNotTrackMiddleware
+    SessionExpiryPolicyMiddleware, DoNotTrackMiddleware, XssProtectMiddleware
 )
 from security.models import PasswordExpiry
 from security.password_expiry import never_expire_password
@@ -395,6 +395,25 @@ class XXssProtectTests(TestCase):
         """
         response = self.client.get('/accounts/login/')
         self.assertNotEqual(response['X-XSS-Protection'], None)
+
+    def test_default_setting(self):
+        with self.settings(XSS_PROTECT=None):
+            response = self.client.get('/accounts/login/')
+            self.assertEqual(response['X-XSS-Protection'], '1')  # sanitize
+
+    def test_option_off(self):
+        with self.settings(XSS_PROTECT='off'):
+            response = self.client.get('/accounts/login/')
+            self.assertEqual(response['X-XSS-Protection'], '0')  # off
+
+    def test_improper_configuration_raises(self):
+        xss = XssProtectMiddleware()
+        self.assertRaises(
+            ImproperlyConfigured,
+            xss.load_setting,
+            'XSS_PROTECT',
+            'invalid',
+        )
 
 
 class ContentNoSniffTests(TestCase):
