@@ -557,6 +557,13 @@ class ContentSecurityPolicyMiddleware(object):
     _csp_mode = None
 
     def _csp_loc_builder(self, key, value):
+        if not isinstance(value, (list, tuple)):
+            logger.warn(
+                'Arguments to {0} must be given as list or tuple'
+                .format(key),
+            )
+            raise django.core.exceptions.MiddlewareNotUsed
+
         csp_loc_string = "{0}".format(key)
         for loc in value:
             if loc in self._CSP_LOCATIONS:
@@ -570,6 +577,13 @@ class ContentSecurityPolicyMiddleware(object):
         return csp_loc_string
 
     def _csp_sandbox_builder(self, key, value):
+        if not isinstance(value, (list, tuple)):
+            logger.warn(
+                'Arguments to {0} must be given as list or tuple'
+                .format(key),
+            )
+            raise django.core.exceptions.MiddlewareNotUsed
+
         csp_sandbox_string = "{0}".format(key)
         for opt in value:
             if opt in self._CSP_SANDBOX_ARGS:
@@ -606,25 +620,9 @@ class ContentSecurityPolicyMiddleware(object):
         for key, value in csp_dict.items():
 
             if key in self._CSP_LOC_TYPES:
-
-                if not isinstance(value, (list, tuple)):
-                    logger.warn(
-                        'Arguments to {0} must be given as list or tuple'
-                        .format(key),
-                    )
-                    raise django.core.exceptions.MiddlewareNotUsed
-
                 csp_components.append(self._csp_loc_builder(key, value))
 
             elif key == 'sandbox':
-
-                if not isinstance(value, (list, tuple)):
-                    logger.warn(
-                        'Arguments to {0} must be given as list or tuple'
-                        .format(key),
-                    )
-                    raise django.core.exceptions.MiddlewareNotUsed
-
                 csp_components.append(self._csp_sandbox_builder(key, value))
 
             elif key == 'report-uri':
