@@ -79,7 +79,10 @@ class BaseMiddlewareTestMiddleware(BaseMiddleware):
 
 
 class BaseMiddlewareTests(TestCase):
-    MIDDLEWARE_NAME = __module__ + '.BaseMiddlewareTestMiddleware'
+    def __init__(self, *args, **kwargs):
+        super(BaseMiddlewareTests, self).__init__(*args, **kwargs)
+        self.MIDDLEWARE_NAME = \
+            BaseMiddlewareTests.__module__ + '.BaseMiddlewareTestMiddleware'
 
     def test_settings_initially_loaded(self):
         expected_settings = {'R1': 1, 'R2': 2, 'O1': 3, 'O2': 4}
