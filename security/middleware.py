@@ -526,7 +526,7 @@ class ContentSecurityPolicyMiddleware(object):
                     raise django.core.exceptions.MiddlewareNotUsed
 
                 # contents taking location
-                csp_string += " {0}".format(k);
+                csp_string += " {0}".format(k)
                 for loc in v:
                     if loc in self._CSP_LOCATIONS:
                         csp_string += " '{0}'".format(loc) # quoted
@@ -545,7 +545,7 @@ class ContentSecurityPolicyMiddleware(object):
                     )
                     raise django.core.exceptions.MiddlewareNotUsed
 
-                csp_string += " {0}".format(k);
+                csp_string += " {0}".format(k)
                 for opt in v:
                     if opt in self._CSP_SANDBOX_ARGS:
                         csp_string += " {0}".format(opt)
@@ -558,8 +558,8 @@ class ContentSecurityPolicyMiddleware(object):
 
             elif k == 'report-uri':
                 # XXX: add valid URL check
-                csp_string += " {0}".format(k);
-                csp_string += " {0}".format(v);
+                csp_string += " {0}".format(k)
+                csp_string += " {0}".format(v)
                 csp_string += ';'
 
             else:
