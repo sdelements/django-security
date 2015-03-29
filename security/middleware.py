@@ -51,7 +51,8 @@ class BaseMiddleware(object):
                     self.load_setting(key, getattr(django.conf.settings, key))
                 else:
                     raise django.core.exceptions.ImproperlyConfigured(
-                        self.__class__.__name__ + " requires setting " + key)
+                        self.__class__.__name__ + " requires setting " + key,
+                    )
 
             for key in self.OPTIONAL_SETTINGS:
                 self.load_setting(
@@ -481,15 +482,17 @@ class ContentSecurityPolicyMiddleware(object):
       /single-page.html#sandboxing>`_
     """
     # these types accept CSP locations as arguments
-    _CSP_LOC_TYPES = ['default-src',
-            'script-src',
-            'style-src',
-            'img-src',
-            'connect-src',
-            'font-src',
-            'object-src',
-            'media-src',
-            'frame-src',]
+    _CSP_LOC_TYPES = [
+        'default-src',
+        'script-src',
+        'style-src',
+        'img-src',
+        'connect-src',
+        'font-src',
+        'object-src',
+        'media-src',
+        'frame-src',
+    ]
 
     # arguments to location types
     _CSP_LOCATIONS = ['self', 'none', 'unsafe-eval', 'unsafe-inline']
