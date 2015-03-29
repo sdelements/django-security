@@ -40,8 +40,11 @@ def login_user(func):
         username_local = 'a2fcf54f63993b7'
         password_local = 'd8327deb882cf90'
         email_local = 'testuser@example.com'
-        user = User.objects.create_user(username=username_local,
-                email=email_local, password=password_local)
+        user = User.objects.create_user(
+            username=username_local,
+            email=email_local,
+            password=password_local,
+        )
         user.is_superuser = True
         user.save()
         PasswordExpiry.objects.create(user=user).never_expire()
