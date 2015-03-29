@@ -47,13 +47,13 @@ class CspReport(models.Model):
     a single alert raised by client browser in response to CSP received from
     the server.
 
-    Each alert means the browser was unable to access a web resource
-    (image, CSS, frame, script) because server's policy prohibited it from accessing
+    Each alert means the browser was unable to access a web resource (image,
+    CSS, frame, script) because server's policy prohibited it from accessing
     it. These alerts should be reviewed on regular basis, as they will occur in
-    two cases: first, false positives where too
-    restrictive CSP is blocking legitimate website features and needs tuning. Second,
-    when real attacks were fired against the user and this raises a question how
-    the malicious code appeared on your website.
+    two cases: first, false positives where too restrictive CSP is blocking
+    legitimate website features and needs tuning. Second, when real attacks
+    were fired against the user and this raises a question how the malicious
+    code appeared on your website.
 
     CSP reports are available in Django admin view. To be logged into databse,
     CSP reports view needs to be configured properly. See csp_report_
