@@ -9,6 +9,7 @@ from security.models import CspReport
 import logging
 log = logging.getLogger(__name__)
 
+
 def require_ajax(view):
     """
     A view decorator which ensures that the request being proccessed
@@ -21,6 +22,7 @@ def require_ajax(view):
         else:
             return HttpResponseForbidden()
     return check_ajax
+
 
 @csrf_exempt
 def csp_report(request, csp_save=False, csp_log=True):
