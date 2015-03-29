@@ -2,7 +2,7 @@
 
 import datetime
 import json
-import time # We monkeypatch this.
+import time  # We monkeypatch this.
 
 from django.contrib.auth.models import User
 from django.core.cache import cache
