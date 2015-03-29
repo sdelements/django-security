@@ -53,7 +53,7 @@ def _key(counter_type, counter_name):
         counter_type,
         counter_name,
     )
-    return hashlib.sha1(key).hexdigest()
+    return hashlib.sha1(key.encode('ascii')).hexdigest()
 
 
 def reset_counters(**counters):
