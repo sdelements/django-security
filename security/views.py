@@ -67,7 +67,7 @@ def csp_report(request, csp_save=False, csp_log=True):
 
     try:
         csp_dict = json.loads(request.body)
-    except:
+    except ValueError:
         log.debug('Cannot JSON decode CSP report {0}'.format(request.body))
         return HttpResponseForbidden()
 
