@@ -19,7 +19,7 @@ def reset_username_throttle(request, user_id=None, redirect_url="/"):
         raise Http404
     try:
         username = User.objects.get(id=user_id).username
-    except:
+    except User.DoesNotExist:
         logger.error("Couldn't find username for user id %s." % user_id)
         raise Http404()
     reset_counters(username=username)
