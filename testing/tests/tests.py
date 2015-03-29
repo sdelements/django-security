@@ -627,13 +627,13 @@ class ContentSecurityPolicyTests(TestCase):
         self.assertEqual(generated_list, expected_list)
 
     def test_csp_gen_2(self):
-        csp_dict = { 'default-src' : ['self'] }
         expected = " default-src 'self';"
+        csp_dict = {'default-src': ['self']}
 
         csp = ContentSecurityPolicyMiddleware()
         generated = csp._csp_builder(csp_dict)
 
-        self.assertEqual(generated,expected)
+        self.assertEqual(generated, expected)
 
     def test_csp_gen_3(self):
 
