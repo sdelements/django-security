@@ -512,60 +512,69 @@ class ContentSecurityPolicyMiddleware(object):
     _csp_string = None
     _csp_mode = None
 
+    def _csp_loc_builder(self, key, value):
+        csp_loc_string = " {0}".format(key)
+        for loc in value:
+            if loc in self._CSP_LOCATIONS:
+                csp_loc_string += " '{0}'".format(loc)  # quoted
+            elif loc == '*':
+                csp_loc_string += ' *'                   # not quoted
+            else:
+                # XXX: check for valid hostname or URL
+                csp_loc_string += " {0}".format(loc)   # not quoted
+
+        return csp_loc_string
+
+    def _csp_sandbox_builder(self, key, value):
+        csp_sandbox_string = " {0}".format(key)
+        for opt in value:
+            if opt in self._CSP_SANDBOX_ARGS:
+                csp_sandbox_string += " {0}".format(opt)
+            else:
+                logger.warn(
+                    'Invalid CSP sandbox argument {0}'.format(opt),
+                )
+                raise django.core.exceptions.MiddlewareNotUsed
+
+        return csp_sandbox_string
+
+    def _csp_report_uri_builder(self, key, value):
+        # XXX: add valid URL check
+        return ' {0} {1}'.format(key, value)
+
     def _csp_builder(self, csp_dict):
-        csp_string = ""
+        csp_components = []
 
         for key, value in csp_dict.items():
 
             if key in self._CSP_LOC_TYPES:
 
                 if not type(value) == list:
-                    logger.warning(
+                    logger.warn(
                         'Arguments to {0} must be given as array'.format(key),
                     )
                     raise django.core.exceptions.MiddlewareNotUsed
 
-                # contents taking location
-                csp_string += " {0}".format(key)
-                for loc in value:
-                    if loc in self._CSP_LOCATIONS:
-                        csp_string += " '{0}'".format(loc)  # quoted
-                    elif loc == '*':
-                        csp_string += ' *'                   # not quoted
-                    else:
-                        # XXX: check for valid hostname or URL
-                        csp_string += " {0}".format(loc)   # not quoted
+                csp_components.append(self._csp_loc_builder(key, value))
 
             elif key == 'sandbox':
 
                 if not type(value) == list:
-                    logger.warning(
+                    logger.warn(
                         'Arguments to {0} must be given as array'.format(key),
                     )
                     raise django.core.exceptions.MiddlewareNotUsed
 
-                csp_string += " {0}".format(key)
-                for opt in value:
-                    if opt in self._CSP_SANDBOX_ARGS:
-                        csp_string += " {0}".format(opt)
-                    else:
-                        logger.warning(
-                            'Invalid CSP sandbox argument {0}'.format(opt),
-                        )
-                        raise django.core.exceptions.MiddlewareNotUsed
+                csp_components.append(self._csp_sandbox_builder(key, value))
 
             elif key == 'report-uri':
-                # XXX: add valid URL check
-                csp_string += " {0}".format(key)
-                csp_string += " {0}".format(value)
+                csp_components.append(self._csp_report_uri_builder(key, value))
 
             else:
                 logger.warning('Invalid CSP type {0}'.format(key))
                 raise django.core.exceptions.MiddlewareNotUsed
 
-            csp_string += ';'
-
-        return csp_string
+        return ';'.join(csp_components)
 
     def __init__(self):
         # sanity checks
