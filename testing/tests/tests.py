@@ -62,7 +62,7 @@ class CustomLoginURLMiddleware(object):
 
 
 class BaseMiddlewareTestMiddleware(BaseMiddleware):
-    REQUIRED_SETTINGS =('R1', 'R2')
+    REQUIRED_SETTINGS = ('R1', 'R2')
     OPTIONAL_SETTINGS = ('O1', 'O2')
 
     def load_setting(self, setting, value):
