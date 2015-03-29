@@ -156,11 +156,15 @@ class LoginRequiredMiddlewareTests(TestCase):
         ):
             response = self.client.get('/home/')
             self.assertRedirects(response, '/custom-login/')
-            response = self.client.get('/home/',
-                                       HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+            response = self.client.get(
+                '/home/',
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+            )
             self.assertEqual(response.status_code, 401)
-            self.assertEqual(json.loads(response.content),
-                             {"login_url": '/custom-login/'})
+            self.assertEqual(
+                json.loads(response.content),
+                {"login_url": '/custom-login/'},
+            )
 
 
 class RequirePasswordChangeTests(TestCase):
