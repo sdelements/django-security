@@ -576,6 +576,20 @@ class ContentSecurityPolicyMiddleware(object):
         # XXX: add valid URL check
         return '{0} {1}'.format(key, value)
 
+    def _csp_referrer_builder(self, key, value):
+        if value not in self._CSP_REF_ARGS:
+            logger.warning('Invalid CSP {0} value {1}'.format(key, value))
+            raise django.core.exceptions.MiddlewareNotUsed
+
+        return "{0} {1}".format(key, value)
+
+    def _csp_reflected_xss_builder(self, key, value):
+        if value not in self._CSP_XSS_ARGS:
+            logger.warning('Invalid CSP {0} value {1}'.format(key, value))
+            raise django.core.exceptions.MiddlewareNotUsed
+
+        return "{0} {1}".format(key, value)
+
     def _csp_builder(self, csp_dict):
         csp_components = []
 
@@ -603,6 +617,12 @@ class ContentSecurityPolicyMiddleware(object):
 
             elif key == 'report-uri':
                 csp_components.append(self._csp_report_uri_builder(key, value))
+
+            elif key == 'referrer':
+                csp_components.append(self._csp_referrer_builder(key, value))
+
+            elif key == 'reflected-xss':
+                csp_components.append(self._csp_referrer_builder(key, value))
 
             else:
                 logger.warning('Invalid CSP type {0}'.format(key))
