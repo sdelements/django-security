@@ -109,4 +109,3 @@ def csp_report(request, csp_save=False, csp_log=True):
     resp.status_code = 204
 
     return resp
-
