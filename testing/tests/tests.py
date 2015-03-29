@@ -588,6 +588,13 @@ class AuthenticationThrottlingTests(TestCase):
         self.assertEqual(resp.status_code, 404)
 
     def test_throttle_reset_404_on_not_found(self):
+        admin = User.objects.create_user(
+            username="bar",
+            password="bar",
+            email="a@bar.org",
+        )
+        admin.is_superuser = True
+        admin.save()
         self.client.login(username="bar", password="bar")
         resp = self.client.post(
             reverse("reset_username_throttle", args=[999]),
