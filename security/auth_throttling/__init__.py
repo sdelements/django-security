@@ -233,7 +233,9 @@ class Middleware(BaseMiddleware):
             current_site = get_current_site(request)
             # Template-compatible with 'django.contrib.auth.views.login'.
             return csrf_protect(
-                lambda request: render_to_response(template_name, {
+                lambda request: render_to_response(
+                    template_name,
+                    {
                         "form": form,
                         self.redirect_field_name: redirect_url,
                         "site": current_site,
