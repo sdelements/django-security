@@ -10,7 +10,7 @@ from django.core.exceptions import ImproperlyConfigured, MiddlewareNotUsed
 from django.core.urlresolvers import reverse
 from django.forms import ValidationError
 from django.http import HttpResponseForbidden, HttpRequest, HttpResponse
-from django.test import TestCase, Client
+from django.test import TestCase
 from django.test.utils import override_settings
 from django.utils import timezone
 
