@@ -232,19 +232,16 @@ class Middleware(BaseMiddleware):
             redirect_url = request.REQUEST.get(self.redirect_field_name, "")
             current_site = get_current_site(request)
             # Template-compatible with 'django.contrib.auth.views.login'.
-            return csrf_protect(lambda request:
-                                  render_to_response(template_name,
-                                                     {"form":
-                                                        form,
-                                                      self.redirect_field_name:
-                                                        redirect_url,
-                                                      "site":
-                                                        current_site,
-                                                      "site_name":
-                                                        current_site.name},
-                                                     context_instance=
-                                                      RequestContext(request))
-                                )(request)
+            return csrf_protect(
+                lambda request: render_to_response(template_name, {
+                        "form": form,
+                        self.redirect_field_name: redirect_url,
+                        "site": current_site,
+                        "site_name": current_site.name
+                    },
+                    context_instance=RequestContext(request)
+                ),
+            )(request)
 
     def process_response(self, request, response):
         if request.META.get("login_request_permitted", False):
