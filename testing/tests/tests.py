@@ -22,7 +22,7 @@ from security.auth_throttling import (
 from security.middleware import (
     BaseMiddleware, ContentSecurityPolicyMiddleware, DoNotTrackMiddleware,
     SessionExpiryPolicyMiddleware, MandatoryPasswordChangeMiddleware,
-    XssProtectMiddleware,
+    XssProtectMiddleware, XFrameOptionsMiddleware,
 )
 from security.models import PasswordExpiry
 from security.password_expiry import never_expire_password
@@ -395,6 +395,39 @@ class XFrameOptionsDenyTests(TestCase):
         self.assertEqual(response['X-Frame-Options'], settings.X_FRAME_OPTIONS)
         response = self.client.get('/test1/')
         self.assertNotIn('X-Frame-Options', response)
+
+    def test_improperly_configured(self):
+        xframe = XFrameOptionsMiddleware()
+        self.assertRaises(
+            ImproperlyConfigured,
+            xframe.load_setting,
+            'X_FRAME_OPTIONS',
+            'invalid',
+        )
+
+        self.assertRaises(
+            ImproperlyConfigured,
+            xframe.load_setting,
+            'X_FRAME_OPTIONS_EXCLUDE_URLS',
+            1,
+        )
+
+    def test_default_exclude_urls(self):
+        with self.settings(X_FRAME_OPTIONS_EXCLUDE_URLS=None):
+            # This URL is excluded in other tests, see settings.py
+            response = self.client.get('/test1/')
+            self.assertEqual(
+                response['X-Frame-Options'],
+                settings.X_FRAME_OPTIONS,
+            )
+
+    def test_default_xframe_option(self):
+        with self.settings(X_FRAME_OPTIONS=None):
+            response = self.client.get('/home/')
+            self.assertEqual(
+                response['X-Frame-Options'],
+                'deny',
+            )
 
 
 class XXssProtectTests(TestCase):
