@@ -26,4 +26,3 @@ def reset_username_throttle(request, user_id=None, redirect_url="/"):
     logger.info("Authentication throttling reset for user id %s." % user_id)
     # TODO: Sanitize redirect_url, even though it's coming from an admin?
     return HttpResponseRedirect(redirect_url)
-
