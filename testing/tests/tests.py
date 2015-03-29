@@ -630,7 +630,7 @@ class ContentSecurityPolicyTests(TestCase):
 
     def test_csp_gen_2(self):
         csp_dict = {'default-src': ('none',)}
-        expected = " default-src 'none';"
+        expected = "default-src 'none'"
 
         csp = ContentSecurityPolicyMiddleware()
         generated = csp._csp_builder(csp_dict)
