@@ -310,6 +310,7 @@ class NoConfidentialCachingMiddleware(BaseMiddleware):
         def match(path, match_list):
             path = path.lstrip('/')
             return any(re.match(path) for re in match_list)
+
         def remove_response_caching(response):
             response['Cache-control'] = \
                 'no-cache, no-store, max-age=0, must-revalidate'
