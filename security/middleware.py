@@ -125,7 +125,7 @@ class DoNotTrackMiddleware(object):
         track-00
         """
         if 'HTTP_DNT' in request.META:
-            response['DNT'] = '1'
+            response['DNT'] = request.META['HTTP_DNT']
         return response
 
 

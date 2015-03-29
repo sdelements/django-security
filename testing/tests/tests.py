@@ -789,7 +789,7 @@ class DoNotTrackTests(TestCase):
     def test_DNT_echo_off(self):
         self.request.META['HTTP_DNT'] = 'off'
         self.dnt.process_response(self.request, self.response)
-        self.assertNotIn('DNT', self.response)
+        self.assertEqual(self.response['DNT'], 'off')
 
     def test_DNT_echo_default(self):
         self.dnt.process_response(self.request, self.response)
