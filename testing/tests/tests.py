@@ -485,7 +485,7 @@ class AuthenticationThrottlingTests(TestCase):
             self.assertEqual(delay(i, 0), (0, 0))
 
         # forth, fifth, sixth attempts are throttled
-        for i in xrange(4,7):
+        for i in xrange(4, 7):
             self.assertEqual(delay(i, 0), (5 * 2 ** (i - 3), 0))
 
         # we max out at 24 hours
