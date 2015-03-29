@@ -588,7 +588,7 @@ class AuthTests(TestCase):
 
 class ContentSecurityPolicyTests(TestCase):
 
-    class FakeHttpRequest():
+    class FakeHttpRequest(object):
         method = 'POST'
         body = """{
           "csp-report": {
