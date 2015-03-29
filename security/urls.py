@@ -1,6 +1,9 @@
 from django.conf.urls import patterns, url
 
+from security import views
+
+
 urlpatterns = patterns(
-    'security.views',
-    url('^/csp-report/$', 'csp_report'),
+    '',
+    url('^/csp-report/$', views.csp_report),
 )
