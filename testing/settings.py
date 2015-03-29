@@ -95,6 +95,7 @@ _DJANGO_TESTING_URLS = [
 LOGIN_EXEMPT_URLS = [
     "accounts/login",
     "custom-login",
+    "admin/reset-account-throttling",
 ] + _DJANGO_TESTING_URLS
 
 MANDATORY_PASSWORD_CHANGE = {
