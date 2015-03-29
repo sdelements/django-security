@@ -638,7 +638,7 @@ class ContentSecurityPolicyTests(TestCase):
     def test_csp_gen_3(self):
 
         csp_dict = { 'script-src' : ['self','www.google-analytics.com','ajax.googleapis.com'] }
-        expected = " script-src 'self' www.google-analytics.com ajax.googleapis.com;"
+        expected = "script-src 'self' www.google-analytics.com ajax.googleapis.com"
 
         csp = ContentSecurityPolicyMiddleware()
         generated = csp._csp_builder(csp_dict)
