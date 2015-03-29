@@ -147,8 +147,9 @@ class LoginRequiredMiddlewareTests(TestCase):
     def test_redirects_to_custom_login_url(self):
         middlware_classes = list(settings.MIDDLEWARE_CLASSES)
         custom_login_middleware = 'tests.tests.CustomLoginURLMiddleware'
-        with self.settings(MIDDLEWARE_CLASSES=[custom_login_middleware] +
-                                              middlware_classes):
+        with self.settings(
+            MIDDLEWARE_CLASSES=[custom_login_middleware] + middlware_classes,
+        ):
             response = self.client.get('/home/')
             self.assertRedirects(response, '/custom-login/')
             response = self.client.get('/home/',
@@ -305,9 +306,10 @@ class SessionExpiryTests(TestCase):
         """
         delta = SessionExpiryPolicyMiddleware().SESSION_INACTIVITY_TIMEOUT + 1
         expired = timezone.now() - datetime.timedelta(seconds=delta)
-        self.session_expiry_test(SessionExpiryPolicyMiddleware()
-                                   .LAST_ACTIVITY_KEY,
-                                 expired)
+        self.session_expiry_test(
+            SessionExpiryPolicyMiddleware().LAST_ACTIVITY_KEY,
+            expired,
+        )
 
 
 class ConfidentialCachingTests(TestCase):
