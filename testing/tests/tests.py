@@ -637,19 +637,23 @@ class ContentSecurityPolicyTests(TestCase):
 
     def test_csp_gen_3(self):
 
-        csp_dict = { 'script-src' : ['self','www.google-analytics.com','ajax.googleapis.com'] }
-        expected = "script-src 'self' www.google-analytics.com ajax.googleapis.com"
+        csp_dict = {
+            'script-src': [
+                'self',
+                'www.google-analytics.com',
+                'ajax.googleapis.com',
+            ],
+        }
+        expected = \
+            "script-src 'self' www.google-analytics.com ajax.googleapis.com"
 
         csp = ContentSecurityPolicyMiddleware()
         generated = csp._csp_builder(csp_dict)
 
-        self.assertEqual(generated,expected)
+        self.assertEqual(generated, expected)
 
     def test_csp_gen_err(self):
-        csp_dict = { 'default-src' : 'self' } # argument not passed as array
+        csp_dict = {'default-src': 'self'}  # argument not passed as array
 
         csp = ContentSecurityPolicyMiddleware()
         self.assertRaises(MiddlewareNotUsed, csp._csp_builder, csp_dict)
-
-
-
