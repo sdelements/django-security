@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 @require_http_methods(["POST"])
 def reset_username_throttle(request, user_id=None, redirect_url="/"):
     if not request.user.is_superuser:
-        raise Http404
+        raise Http404()
     try:
         username = User.objects.get(id=user_id).username
     except User.DoesNotExist:
