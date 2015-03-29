@@ -191,8 +191,14 @@ class Middleware(BaseMiddleware):
                 "AuthenticationThrottlingMiddleware disabled."
             )
 
-        self.delay_function = value.get("DELAY_FUNCTION", default_delay_function)
-        self.redirect_field_name = value.get("REDIRECT_FIELD_NAME", REDIRECT_FIELD_NAME)
+        self.delay_function = value.get(
+            "DELAY_FUNCTION",
+            default_delay_function,
+        )
+        self.redirect_field_name = value.get(
+            "REDIRECT_FIELD_NAME",
+            REDIRECT_FIELD_NAME,
+        )
 
     def process_request(self, request):
         """
