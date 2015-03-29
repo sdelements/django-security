@@ -610,7 +610,7 @@ class ContentSecurityPolicyMiddleware(object):
 
                 if not type(value) == list:
                     logger.warn(
-                        'Arguments to {0} must be given as array'.format(key),
+                        'Arguments to {0} must be given as list'.format(key),
                     )
                     raise django.core.exceptions.MiddlewareNotUsed
 
@@ -620,7 +620,7 @@ class ContentSecurityPolicyMiddleware(object):
 
                 if not type(value) == list:
                     logger.warn(
-                        'Arguments to {0} must be given as array'.format(key),
+                        'Arguments to {0} must be given as list'.format(key),
                     )
                     raise django.core.exceptions.MiddlewareNotUsed
 
