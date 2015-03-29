@@ -648,7 +648,10 @@ class ContentSecurityPolicyMiddleware(object):
         has_csp_dict = hasattr(django.conf.settings, 'CSP_DICT')
         err_msg = 'Middleware requires either CSP_STRING or CSP_DICT setting'
 
-        if not hasattr(django.conf.settings, 'CSP_MODE'):
+        if (
+            not hasattr(django.conf.settings, 'CSP_MODE')
+            or not django.conf.settings.CSP_MODE
+        ):
             self._enforce = True
         else:
             mode = django.conf.settings.CSP_MODE
