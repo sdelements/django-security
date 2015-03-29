@@ -34,13 +34,14 @@ def csp_report(request, csp_save=False, csp_log=True):
     two optional keyword arguments:
 
         ``csp_save``    if True, reports will be saved as ``CspReport`` objects
-                        in database; this table is registered with Django Admin,
-                        so they can be later viewed in admin console
+                        in database; this table is registered with Django
+                        Admin, so they can be later viewed in admin console.
+
         ``csp_log``     if True, reports will be logged through Django logging
                         facility under ``security`` class
 
-    By default only logging is enabled. To collect reports, this view needs to be added
-    to project's urls.py. Examples:
+    By default only logging is enabled. To collect reports, this view needs to
+    be added to project's urls.py. Examples:
 
     Default mode, only logger enable, no database logging:
 
@@ -48,7 +49,8 @@ def csp_report(request, csp_save=False, csp_log=True):
 
     Logger and database enabled:
 
-        ``url(r'^csp-report/$', security.views.csp_report, kwargs={'csp_save':True,'csp_log':True}),``
+        ``url(r'^csp-report/$', security.views.csp_report,
+        kwargs={'csp_save':True,'csp_log':True}),``
     """
 
     # http://www.w3.org/TR/CSP/#sample-violation-report
