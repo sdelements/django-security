@@ -144,7 +144,7 @@ class LoginRequiredMiddlewareTests(TestCase):
         )
         self.assertEqual(response.status_code, 401)
         self.assertEqual(
-            json.loads(response.content),
+            json.loads(response.content.decode('utf-8')),
             {"login_url": self.login_url},
         )
 
