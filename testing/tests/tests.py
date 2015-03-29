@@ -601,20 +601,21 @@ class ContentSecurityPolicyTests(TestCase):
             'sandbox': ['', ],
             'reflected-xss': 'filter',
             'report-uri': 'http://example.com/csp-report',
-            }
+        }
+
         expected = (
-            " script-src 'self' js.example.com;"
-            " default-src 'self' cdn.example.com;"
-            " img-src 'self' img.example.com;"
-            " connect-src 'self';"
-            " reflected-xss filter;"
-            " style-src 'self' css.example.com;"
-            " report-uri http://example.com/csp-report;"
-            " frame-src 'self';"
-            " sandbox ;"
-            " object-src 'self';"
-            " media-src media.example.com;"
-            " font-src fonts.example.com;"
+            "script-src 'self' js.example.com;"
+            "default-src 'self' cdn.example.com;"
+            "img-src 'self' img.example.com;"
+            "connect-src 'self';"
+            "reflected-xss filter;"
+            "style-src 'self' css.example.com;"
+            "report-uri http://example.com/csp-report;"
+            "frame-src 'self';"
+            "sandbox ;"
+            "object-src 'self';"
+            "media-src media.example.com;"
+            "font-src fonts.example.com"
         )
 
         csp = ContentSecurityPolicyMiddleware()
