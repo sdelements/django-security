@@ -92,7 +92,10 @@ _DJANGO_TESTING_URLS = [
     'admin/auth/user/',
 ]
 
-LOGIN_EXEMPT_URLS = ["accounts/login", "custom-login"] + _DJANGO_TESTING_URLS
+LOGIN_EXEMPT_URLS = [
+    "accounts/login",
+    "custom-login",
+] + _DJANGO_TESTING_URLS
 
 MANDATORY_PASSWORD_CHANGE = {
     "URL_NAME": "change_password",
