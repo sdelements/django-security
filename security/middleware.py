@@ -766,15 +766,15 @@ class SessionExpiryPolicyMiddleware(BaseMiddleware):
 
             # Is this session older than SESSION_COOKIE_AGE?
             # We don't worry about microseconds.
-            SECONDS_PER_DAY = 86400
+            seconds_per_day = 86400
             start_time_diff = now - start_time
             last_activity_diff = now - last_activity_time
             session_too_old = (
-                (start_time_diff.days * SECONDS_PER_DAY)
+                (start_time_diff.days * seconds_per_day)
                 + start_time_diff.seconds > self.SESSION_COOKIE_AGE
             )
             session_inactive = (
-                (last_activity_diff.days * SECONDS_PER_DAY)
+                (last_activity_diff.days * seconds_per_day)
                 + last_activity_diff.seconds > self.SESSION_INACTIVITY_TIMEOUT
             )
 
