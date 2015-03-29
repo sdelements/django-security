@@ -171,6 +171,21 @@ class LoginRequiredMiddlewareTests(TestCase):
                 {"login_url": '/custom-login/'},
             )
 
+    def test_logs_out_inactive_users(self):
+        user = User.objects.create_user(
+            username="foo",
+            password="foo",
+            email="a@foo.org",
+        )
+        never_expire_password(user)
+        self.client.login(username="foo", password="foo")
+        resp = self.client.get('/home/')
+        self.assertEqual(resp.status_code, 200)  # check we are logged in
+        user.is_active = False
+        user.save()
+        resp = self.client.get('/home/')
+        self.assertRedirects(resp, self.login_url + "?next=/home/")
+
 
 class RequirePasswordChangeTests(TestCase):
     def test_require_password_change(self):
