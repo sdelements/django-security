@@ -535,7 +535,6 @@ class ContentSecurityPolicyMiddleware(object):
                     else:
                         # XXX: check for valid hostname or URL
                         csp_string += " {0}".format(loc)   # not quoted
-                csp_string += ';'
 
             elif key == 'sandbox':
 
@@ -554,17 +553,17 @@ class ContentSecurityPolicyMiddleware(object):
                             'Invalid CSP sandbox argument {0}'.format(opt),
                         )
                         raise django.core.exceptions.MiddlewareNotUsed
-                csp_string += ';'
 
             elif key == 'report-uri':
                 # XXX: add valid URL check
                 csp_string += " {0}".format(key)
                 csp_string += " {0}".format(value)
-                csp_string += ';'
 
             else:
                 logger.warning('Invalid CSP type {0}'.format(key))
                 raise django.core.exceptions.MiddlewareNotUsed
+
+            csp_string += ';'
 
         return csp_string
 
