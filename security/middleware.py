@@ -513,7 +513,7 @@ class ContentSecurityPolicyMiddleware(object):
     _csp_mode = None
 
     def _csp_loc_builder(self, key, value):
-        csp_loc_string = " {0}".format(key)
+        csp_loc_string = "{0}".format(key)
         for loc in value:
             if loc in self._CSP_LOCATIONS:
                 csp_loc_string += " '{0}'".format(loc)  # quoted
@@ -526,7 +526,7 @@ class ContentSecurityPolicyMiddleware(object):
         return csp_loc_string
 
     def _csp_sandbox_builder(self, key, value):
-        csp_sandbox_string = " {0}".format(key)
+        csp_sandbox_string = "{0}".format(key)
         for opt in value:
             if opt in self._CSP_SANDBOX_ARGS:
                 csp_sandbox_string += " {0}".format(opt)
@@ -540,7 +540,7 @@ class ContentSecurityPolicyMiddleware(object):
 
     def _csp_report_uri_builder(self, key, value):
         # XXX: add valid URL check
-        return ' {0} {1}'.format(key, value)
+        return '{0} {1}'.format(key, value)
 
     def _csp_builder(self, csp_dict):
         csp_components = []
@@ -574,7 +574,7 @@ class ContentSecurityPolicyMiddleware(object):
                 logger.warning('Invalid CSP type {0}'.format(key))
                 raise django.core.exceptions.MiddlewareNotUsed
 
-        return ';'.join(csp_components)
+        return '; '.join(csp_components)
 
     def __init__(self):
         # sanity checks
