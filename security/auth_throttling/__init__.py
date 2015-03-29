@@ -3,7 +3,7 @@
 import hashlib
 import logging
 from math import ceil
-import time # Monkeypatched by the tests.
+import time  # Monkeypatched by the tests.
 
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.contrib.auth.forms import AuthenticationForm
