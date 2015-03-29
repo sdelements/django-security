@@ -13,7 +13,7 @@ from django.test.signals import setting_changed
 from django.utils import timezone
 import django.views.static
 
-from password_expiry import password_is_expired
+from .password_expiry import password_is_expired
 
 logger = logging.getLogger(__name__)
 
