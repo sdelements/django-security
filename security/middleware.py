@@ -611,9 +611,9 @@ class ContentSecurityPolicyMiddleware(object):
         """
         # choose headers based enforcement mode
         if self._enforce:
-            headers = ['Content-Security-Policy', ]
+            headers = ('Content-Security-Policy',)
         else:
-            headers = ['Content-Security-Policy-Report-Only', ]
+            headers = ('Content-Security-Policy-Report-Only',)
 
         # actually add appropriate headers
         for h in headers:
