@@ -61,7 +61,6 @@ class CspReport(models.Model):
     on for a web application using ContentSecurityPolicyMiddleware_ middleware.
     """
 
-    # data from CSP report
     document_uri = models.URLField(
         max_length=1000,
         help_text="The address of the protected resource, "
@@ -86,7 +85,6 @@ class CspReport(models.Model):
         help_text="The original policy as received by the user-agent.",
     )
 
-    # metadata
     date_received = models.DateTimeField(
         auto_now_add=True,
         help_text="When this report was received",
