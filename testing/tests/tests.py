@@ -587,6 +587,14 @@ class AuthenticationThrottlingTests(TestCase):
 
         self.assertEqual(resp.status_code, 404)
 
+    def test_throttle_reset_404_on_not_found(self):
+        self.client.login(username="bar", password="bar")
+        resp = self.client.post(
+            reverse("reset_username_throttle", args=[999]),
+        )
+
+        self.assertEqual(resp.status_code, 404)
+
 
 class P3PPolicyTests(TestCase):
 
