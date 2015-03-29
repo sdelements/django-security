@@ -4,7 +4,8 @@ from django.conf.urls import patterns
 from django.http import HttpResponse
 
 
-urlpatterns = patterns("",
+urlpatterns = patterns(
+    "",
     ("^accounts/login/$", "django.contrib.auth.views.login"),
     ("^change_password/$", "django.contrib.auth.views.password_change",
      {"post_change_redirect": "/home/"}, "change_password"),
