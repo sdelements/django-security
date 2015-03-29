@@ -59,7 +59,7 @@ def csp_report(request, csp_save=False, csp_log=True):
         return HttpResponseForbidden()
 
     if (
-        not request.META.has_key('CONTENT_TYPE')
+        'CONTENT_TYPE' not in request.META
         or request.META['CONTENT_TYPE'] != 'application/json'
     ):
         log.debug('Missing CSP report Content-Type {0}'.format(request.META))
@@ -71,7 +71,7 @@ def csp_report(request, csp_save=False, csp_log=True):
         log.debug('Cannot JSON decode CSP report {0}'.format(request.body))
         return HttpResponseForbidden()
 
-    if not csp_dict.has_key('csp-report'):
+    if 'csp-report' not in csp_dict:
         log.debug('Invalid CSP report structure {0}'.format(csp_dict))
         return HttpResponseForbidden()
 
