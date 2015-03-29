@@ -17,7 +17,7 @@ from django.utils import timezone
 from security.auth import min_length
 from security.auth_throttling import (
     attempt_count, default_delay_function, delay_message, increment_counters,
-    reset_counters,
+    reset_counters, Middleware as AuthThrottlingMiddleware
 )
 from security.middleware import (
     BaseMiddleware, ContentSecurityPolicyMiddleware,
@@ -573,6 +573,12 @@ class AuthenticationThrottlingTests(TestCase):
         )
         self.client.logout()
         self._succeed()
+
+    @override_settings(AUTHENTICATION_THROTTLING={
+        "DELAY_FUNCTION": lambda x, y: (x, y),
+    })
+    def test_improperly_configured_middleware(self):
+        self.assertRaises(ImproperlyConfigured, AuthThrottlingMiddleware)
 
 
 class P3PPolicyTests(TestCase):
