@@ -205,10 +205,12 @@ class Middleware(BaseMiddleware):
         Block the request if it is a login attempt to which a throttling delay
         is applicable. We don't process requests that are not PUTs or POSTs.
         """
-        if not (request.method == "POST" or request.method == "PUT"): return
+        if not (request.method == "POST" or request.method == "PUT"):
+            return
 
         for url, template_name in self.logins:
-            if request.path[1:] != url: continue
+            if request.path[1:] != url:
+                continue
 
             username = _extract_username(request)
             ip = request.META["REMOTE_ADDR"]
