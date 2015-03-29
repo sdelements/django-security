@@ -64,27 +64,30 @@ class BaseMiddleware(object):
 
 class DoNotTrackMiddleware(object):
     """
-    With this middleware views can access ``request.dnt`` parameter to check
-    client's preference on user tracking.
+    When this middleware is installed Django views can access a new ``request.dnt``
+    parameter to check client's preference on user tracking as expressed by their
+    browser configuration settings.
 
     The parameter can take True, False or None values based on the presence of
     the ``Do Not Track`` HTTP header in client's request, which in turn depends
     on browser's configuration. The header indicates client's general
     preference to opt-out from behavioral profiling and third-party tracking.
 
-    The parameter does **not** change Django's behaviour in any way as its sole
-    purpose is to pass the user's preference to application and it's up to the
-    owner to implement a particular policy based on this information. Compliant
-    website should adapt its behaviour depending on one of user's preferences:
+    The parameter does **not** change behaviour of Django in any way as its
+    sole purpose is to pass the user's preference to application. It's then up
+    to the owner to implement a particular policy based on this information.
+    Compliant website should adapt its behaviour depending on one of user's
+    preferences:
 
-    - Explicit opt-out (``request.dnt=True``): Disable third party tracking for
-      this request and delete all previously stored tracking data.
-    - Explicit opt-in (``request.dnt=False``): Website may track user.
-    - Header not present (``request.dnt=None``): Website may track user, but
-      should not draw any conclusions on user's preferences.
+    - Explicit opt-out (``request.dnt`` is ``True``): Disable third party
+      tracking for this request and delete all previously stored tracking data.
+    - Explicit opt-in (``request.dnt`` is ``False``): Website may track user.
+    - Header not present (``request.dnt`` is ``None``): Website may track user,
+      but should not draw any definite conclusions on user's preferences as the
+      user has not expressed it.
 
-    For example, a website might respond to ``request.dnt=True`` by disabling
-    template parts responsible for personalized statistics, targeted
+    For example, if ``request.dnt`` is `` True`` the website might respond by
+    disabling template parts responsible for personalized statistics, targeted
     advertisements or switching to DNT aware ones.
 
     Examples:
@@ -102,6 +105,7 @@ class DoNotTrackMiddleware(object):
     - `Do Not Track: A Universal Third-Party Web Tracking Opt Out
       <http://tools.ietf.org/html/draft-mayer-do-not-track-00>`_
     """
+
     def process_request(self, request):
         """
         Read DNT header from browser request and create request attribute
@@ -113,7 +117,7 @@ class DoNotTrackMiddleware(object):
                 request.dnt = False
         else:
             request.dnt = None
-        # returns None in normal conditions
+            # returns None in normal conditions
 
     def process_response(self, request, response):
         """
@@ -168,6 +172,7 @@ class XssProtectMiddleware(BaseMiddleware):
                 XssProtectMiddleware.__name__ +
                 " invalid option for XSS_PROTECT.",
             )
+
         self.option = value
 
     def process_response(self, request, response):
@@ -226,6 +231,7 @@ class MandatoryPasswordChangeMiddleware(BaseMiddleware):
                 MandatoryPasswordChangeMiddleware.__name__ +
                 " requires the URL_NAME setting",
             )
+
         self.settings = value
         self.exempt_urls = [
             compile(url) for url in self.settings.get("EXEMPT_URLS", ())
@@ -307,6 +313,7 @@ class NoConfidentialCachingMiddleware(BaseMiddleware):
         whitelist non-confidential pages and treat all others as non-
         confidential, or specifically blacklist pages as confidential
         """
+
         def match(path, match_list):
             path = path.lstrip('/')
             return any(re.match(path) for re in match_list)
@@ -434,12 +441,7 @@ class ContentSecurityPolicyMiddleware(object):
         ``'img-src' : [ 'img.example.com' ]``
 
     Content types and special location types (such as ``none`` or ``self``)
-    are defined in CSP draft (see References_). The policy can be specified
-    either as a dictionary, or a raw policy string:
-
-    Example of raw policy string (suitable for short policies):
-
-        ``CSP_STRING="allow 'self'; script-src *.google.com"``
+    are defined in CSP draft (see References_).
 
     Example of policy dictionary (suitable for long, complex policies), with
     all supported content types (but not listing all supported locations):
@@ -447,52 +449,76 @@ class ContentSecurityPolicyMiddleware(object):
     ::
 
         CSP_DICT = {
-            'default-src' : ['self', 'cdn.example.com' ],
-            'script-src' : ['self', 'js.example.com' ],
-            'style-src' : ['self', 'css.example.com' ],
-            'img-src' : ['self', 'img.example.com' ],
-            'connect-src' : ['self' ],
-            'font-src' : ['fonts.example.com' ],
-            'object-src' : ['self' ],
-            'media-src' : ['media.example.com' ],
-            'frame-src' : ['self' ],
-            'sandbox' : [ '' ],
-            # report URI is *not* array
-            'report-uri' : 'http://example.com/csp-report',
+            # arrays of allowed locations
+            "default-src" : ["self", "https:" ],
+            "script-src" : ["self", "http://js.example.com" ],
+            "style-src" : ["self", "http://css.example.com" ],
+            "img-src" : ["self", "https://img.example.com" ],
+            "connect-src" : ["self" ],
+            "font-src" : ["https://*.example.com" ],
+            "object-src" : ["none" ],
+            "media-src" : ["http://media.example.com" ],
+            "frame-src" : ["self" ],
+
+            # array of allowed sandbox features
+            "sandbox" : [ "" ],
+
+            # array of allowed MIME types
+            "plugin-types" : [ "application/pdf" ],
+
+            # these are **not** arrays
+            "reflected-xss" : 'filter',
+            "report-uri" : "http://example.com/csp-report",
         }
+
+    You can also supply a raw policy string, which is more suitable for short
+    policies:
+
+        ``CSP_STRING="default-src 'self'; script-src *.google.com"``
+
+    If both ``CSP_DICT`` and ``CSP_STRING`` are set the middleware will throw
+    an exception.
 
     **Notes:**
 
-    - This middleware supports CSP header syntax for MSIE 10
-      (``X-Content-Security-Policy``), Firefox and Chrome
-      (``Content-Security-Policy``) and Safari (``X-WebKit-CSP``).
-    - Enabling CSP has significant impact on browser behavior - for example
-      inline JavaScript is disabled. Read `Default Policy Restrictions
-      <http://developer.chrome.com/extensions/contentSecurityPolicy.html>`_ to
-      see how pages need to be adapted to work under CSP.
-    - Browsers will log CSP violations in JavaScript console and to a remote
-      server configured by ``report-uri`` option. This package provides a view
-      (csp_report_) to collect these alerts in your application.
+    - The special locations ('self', 'none', 'unsafe-eval', 'unsafe-inline')
+      come **without** the additional single quotes in `CSP_DICT` and they
+      will be automatically quoted by the middleware in the HTTP header.
+    - The ``CSP_STRING`` on the other hand should be a verbatim copy of the HTTP header
+      contents. It's not going the be processed in any way.
+    - This middleware only sets the standard HTTP header variants (``Content-Security-Policy``).
+      The experimental ones (``X-WebKit-CSP`` and ``Content-Security-Policy``) are now obsolete.
+    - Enabling CSP has significant impact on browser behaviour - for example inline
+      JavaScript is disabled. Read `Default Policy Restrictions <http://developer.chrome.com/extensions/contentSecurityPolicy.html>`_ to see how pages need to be adapted to work under CSP.
+    - Browsers will log CSP violations in JavaScript console and to a remote server
+      configured by ``report-uri`` option. This package provides a view (csp_report_)
+      to collect these alerts in your application. They can be then viewed using Django
+      admin interface. For more advanced analytics try `CspBuilder <https://cspbuilder.info/>`_.
+    - The middleware partially supports CSP 1.1 draft syntax.
 
     .. _References:
 
     **References:**
 
-    - `Content Security Policy 1.0 <http://www.w3.org/TR/CSP/>`_,
-    - `HTML5.1 - Sandboxing <http://www.w3.org/html/wg/drafts/html/master
-      /single-page.html#sandboxing>`_
+<<<<<<< HEAD
+    - `Content Security Policy Level 2 <http://www.w3.org/TR/CSP11/>`_,
+    - `HTML5.1 - Sandboxing <http://www.w3.org/html/wg/drafts/html/master/single-page.html#sandboxing>`_
     """
     # these types accept CSP locations as arguments
     _CSP_LOC_TYPES = [
         'default-src',
+        'connect-src',
+        'child-src',
+        'font-src',
+        'form-action',
+        'frame-ancestors',
+        'frame-src',
+        'img-src',
+        'media-src',
+        'object-src',
         'script-src',
         'style-src',
-        'img-src',
-        'connect-src',
-        'font-src',
-        'object-src',
-        'media-src',
-        'frame-src',
+        'plugin-types',
     ]
 
     # arguments to location types
@@ -507,6 +533,14 @@ class ContentSecurityPolicyMiddleware(object):
         'allow-scripts',
         'allow-top-navigation',
     ]
+
+    # reflected-xss allowed arguments
+    # http://www.w3.org/TR/CSP11/#directive-reflected-xss
+    _CSP_XSS_ARGS = ['allow', 'block', 'filter']
+
+    # referrer allowed arguments
+    # http://www.w3.org/TR/CSP11/#directive-referrer
+    _CSP_REF_ARGS = ["none", "none-when-downgrade", "origin", "origin-when-cross-origin", "unsafe-url"]
 
     # operational variables
     _csp_string = None
@@ -619,13 +653,12 @@ class ContentSecurityPolicyMiddleware(object):
         """
         # choose headers based enforcement mode
         if self._enforce:
-            headers = ('Content-Security-Policy',)
+            header = 'Content-Security-Policy'
         else:
-            headers = ('Content-Security-Policy-Report-Only',)
+            header = 'Content-Security-Policy-Report-Only'
 
         # actually add appropriate headers
-        for h in headers:
-            response[h] = self._csp_string
+        response[header] = self._csp_string
 
         return response
 
@@ -637,27 +670,40 @@ class StrictTransportSecurityMiddleware(object):
     parameters can be set in settings file, otherwise reasonable
     defaults will be used:
 
-      - ``STS_MAX_AGE``               time in seconds to preserve host's STS
-        policy (default: 1 year)
-      - ``STS_INCLUDE_SUBDOMAINS``    True if subdomains should be covered by
-        the policy as well (default: True)
+      - ``STS_MAX_AGE``               time in seconds to preserve host's STS policy (default: 1 year)
+      - ``STS_INCLUDE_SUBDOMAINS``    True if subdomains should be covered by the policy as well (default: True)
+      - ``STS_PRELOAD``               add ``preload`` flag to the STS header  so that your website can be
+                                      added to preloaded websites list
 
     Reference:
 
-    - `HTTP Strict Transport Security (HSTS)
-      <https://datatracker.ietf.org/doc/rfc6797/>`_
+    - `HTTP Strict Transport Security (HSTS) <https://datatracker.ietf.org/doc/rfc6797/>`_
+    _ `Preloaded HSTS sites <http://www.chromium.org/sts>`_
     """
 
     def __init__(self):
         try:
             self.max_age = django.conf.settings.STS_MAX_AGE
-            self.subdomains = django.conf.settings.STS_INCLUDE_SUBDOMAINS
         except AttributeError:
             self.max_age = 3600 * 24 * 365  # one year
+
+        try:
+            self.subdomains = django.conf.settings.STS_INCLUDE_SUBDOMAINS
+        except AttributeError:
             self.subdomains = True
+
+        try:
+            self.preload = django.conf.settings.STS_PRELOAD
+        except AttributeError:
+            self.preload = True
+
         self.value = 'max-age={0}'.format(self.max_age)
+
         if self.subdomains:
             self.value += ' ; includeSubDomains'
+
+        if self.preload:
+            self.value += ' ; preload'
 
     def process_response(self, request, response):
         """
@@ -777,6 +823,7 @@ class SessionExpiryPolicyMiddleware(BaseMiddleware):
             seconds_per_day = 86400
             start_time_diff = now - start_time
             last_activity_diff = now - last_activity_time
+
             session_too_old = (
                 (start_time_diff.days * seconds_per_day)
                 + start_time_diff.seconds > self.SESSION_COOKIE_AGE
@@ -808,9 +855,9 @@ class SessionExpiryPolicyMiddleware(BaseMiddleware):
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-#     * Redistributions of source code must retain the above copyright
-#       notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright
+# * Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+# * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the organization nor the
