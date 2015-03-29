@@ -529,7 +529,7 @@ class ContentSecurityPolicyMiddleware(object):
                 csp_string += " {0}".format(k)
                 for loc in v:
                     if loc in self._CSP_LOCATIONS:
-                        csp_string += " '{0}'".format(loc) # quoted
+                        csp_string += " '{0}'".format(loc)  # quoted
                     elif loc == '*':
                         csp_string += ' *'                   # not quoted
                     else:
