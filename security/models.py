@@ -34,7 +34,7 @@ class PasswordExpiry(models.Model):
         self.password_expiry_date = None
         self.save()
 
-    class Meta:
+    class Meta(object):
         verbose_name_plural = "PasswordExpiries"
 
 
