@@ -936,25 +936,34 @@ class LoginRequiredMiddleware(BaseMiddleware):
                 "The Login Required middleware requires authentication "
                 "middleware to be installed."
             )
+
         if request.user.is_authenticated() and not request.user.is_active:
             logout(request)
-        if not request.user.is_authenticated():
-            if hasattr(request, 'login_url'):
-                login_url = request.login_url
-                next_url = None
-            else:
-                login_url = self.login_url
-                next_url = request.path
-            path = request.path_info.lstrip('/')
-            if not any(m.match(path) for m in self.exempt_urls):
-                if request.is_ajax():
-                    response = {"login_url": login_url}
-                    return HttpResponse(
-                        json.dumps(response),
-                        status=401,
-                        content_type="application/json",
-                    )
-                else:
-                    if next_url:
-                        login_url = login_url + '?next=' + next_url
-                    return HttpResponseRedirect(login_url)
+
+        if request.user.is_authenticated():
+            return
+
+        path = request.path_info.lstrip('/')
+
+        if any(m.match(path) for m in self.exempt_urls):
+            return
+
+        if hasattr(request, 'login_url'):
+            login_url = request.login_url
+            next_url = None
+        else:
+            login_url = self.login_url
+            next_url = request.path
+
+        if request.is_ajax():
+            response = {"login_url": login_url}
+            return HttpResponse(
+                json.dumps(response),
+                status=401,
+                content_type="application/json",
+            )
+
+        if next_url:
+            login_url = login_url + '?next=' + next_url
+
+        return HttpResponseRedirect(login_url)
