@@ -772,7 +772,7 @@ class P3PPolicyMiddleware(BaseMiddleware):
         if setting == 'P3P_COMPACT_POLICY':
             self.policy = value
         elif setting == 'P3P_POLICY_URL':
-            self.policy_url = value if value else '/w3c/p3p.xml'
+            self.policy_url = value or '/w3c/p3p.xml'
 
     def process_response(self, request, response):
         """
