@@ -31,12 +31,15 @@ def delay_message(remainder):
     """
     # TODO: There's probably a library for this.
     minutes = round(float(remainder) / 60)
-    return (
-        _("1 minute") if minutes == 1 else
-        _("%d minutes") % minutes if minutes > 1 else
-        _("1 second") if ceil(remainder) == 1 else
-        _("%d seconds") % ceil(remainder)
-    )
+
+    if minutes == 1:
+        return _("1 minute")
+    elif minutes > 1:
+        return _("%d minutes") % minutes
+    elif ceil(remainder) == 1:
+        return _("1 second")
+    else:
+        return _("%d seconds") % ceil(remainder)
 
 
 def _key(counter_type, counter_name):
