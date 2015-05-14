@@ -5,10 +5,7 @@ from models import PasswordExpiry
 
 def password_is_expired(user):
     password_expiry, _ = PasswordExpiry.objects.get_or_create(user=user)
-    return (
-        not user.is_superuser
-        and (password_expiry.is_expired())
-    )
+    return not user.is_superuser and password_expiry.is_expired()
 
 
 def never_expire_password(user):
