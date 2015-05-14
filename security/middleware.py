@@ -389,14 +389,14 @@ class XFrameOptionsMiddleware(BaseMiddleware):
                 return
 
             value = value.lower()
+            options = ['sameorigin', 'deny']
 
-            if value in ['sameorigin', 'deny'] or value.startswith('allow-from:'):
+            if value in options or value.startswith('allow-from:'):
                 self.option = value
                 return
 
             raise ImproperlyConfigured(
-                self.__class__.__name__ +
-                cls_name + " invalid option for X_FRAME_OPTIONS.",
+                self.__class__.__name__ + " invalid option for X_FRAME_OPTIONS"
             )
 
         elif setting == 'X_FRAME_OPTIONS_EXCLUDE_URLS':
