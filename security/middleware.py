@@ -39,27 +39,29 @@ class BaseMiddleware(object):
 
     def _on_setting_changed(self, sender, setting, value, **kwargs):
         if (
-            setting in self.REQUIRED_SETTINGS
-            or setting in self.OPTIONAL_SETTINGS
+            setting in self.REQUIRED_SETTINGS or
+            setting in self.OPTIONAL_SETTINGS
         ):
             self.load_setting(setting, value)
 
     def __init__(self):
-        if self.REQUIRED_SETTINGS or self.OPTIONAL_SETTINGS:
-            for key in self.REQUIRED_SETTINGS:
-                if hasattr(django.conf.settings, key):
-                    self.load_setting(key, getattr(django.conf.settings, key))
-                else:
-                    raise django.core.exceptions.ImproperlyConfigured(
-                        self.__class__.__name__ + " requires setting " + key,
-                    )
+        if not self.REQUIRED_SETTINGS and not self.OPTIONAL_SETTINGS:
+            return
 
-            for key in self.OPTIONAL_SETTINGS:
-                self.load_setting(
-                    key, getattr(django.conf.settings, key, None)
+        for key in self.REQUIRED_SETTINGS:
+            if hasattr(django.conf.settings, key):
+                self.load_setting(key, getattr(django.conf.settings, key))
+            else:
+                raise ImproperlyConfigured(
+                    self.__class__.__name__ + " requires setting " + key
                 )
 
-            setting_changed.connect(self._on_setting_changed)
+        for key in self.OPTIONAL_SETTINGS:
+            self.load_setting(
+                key, getattr(django.conf.settings, key, None)
+            )
+
+        setting_changed.connect(self._on_setting_changed)
 
 
 class DoNotTrackMiddleware(object):
@@ -164,27 +166,28 @@ class XssProtectMiddleware(BaseMiddleware):
 
     def load_setting(self, setting, value):
         if not value:
-            self.option = XssProtectMiddleware.DEFAULT
+            self.option = self.DEFAULT
             return
-        value = value.lower()
-        if value not in XssProtectMiddleware.OPTIONS.keys():
-            raise ImproperlyConfigured(
-                XssProtectMiddleware.__name__ +
-                " invalid option for XSS_PROTECT.",
-            )
 
-        self.option = value
+        value = value.lower()
+
+        if value in self.OPTIONS.keys():
+            self.option = value
+            return
+
+        raise ImproperlyConfigured(
+            self.__class__.__name__ + " invalid option for XSS_PROTECT."
+        )
 
     def process_response(self, request, response):
         """
         Add X-XSS-Protection to the reponse header.
         """
-        response['X-XSS-Protection'] = \
-            XssProtectMiddleware.OPTIONS[self.option]
+        header = self.OPTIONS[self.option]
+        response['X-XSS-Protection'] = header
         return response
 
 
-# http://msdn.microsoft.com/en-us/library/ie/gg622941(v=vs.85).aspx
 class ContentNoSniff(object):
     """
     Sends X-Content-Options HTTP header to disable autodetection of MIME type
@@ -228,8 +231,7 @@ class MandatoryPasswordChangeMiddleware(BaseMiddleware):
     def load_setting(self, setting, value):
         if value and "URL_NAME" not in value:
             raise ImproperlyConfigured(
-                MandatoryPasswordChangeMiddleware.__name__ +
-                " requires the URL_NAME setting",
+                self.__class__.__name__ + " requires the URL_NAME setting"
             )
 
         self.settings = value
@@ -238,28 +240,36 @@ class MandatoryPasswordChangeMiddleware(BaseMiddleware):
         ]
 
     def process_view(self, request, view, *args, **kwargs):
-        if self.settings:
-            path = request.path_info.lstrip('/')
-            url_name = resolve(request.path_info).url_name
+        if not self.settings:
+            return
 
-            # Check for an exempt URL before trying to resolve URL_NAME,
-            # because the reason the URL is exempt may be because a special URL
-            # config is in use (i.e. during a test) that doesn't have URL_NAME.
-            if (
-                not request.user.is_authenticated()
-                or view == django.views.static.serve
-                or any(m.match(path) for m in self.exempt_urls)
-                or url_name in self.settings.get("EXEMPT_URL_NAMES", ())
-            ):
-                return
+        if not request.user.is_authenticated():
+            return
 
-            password_change_url = reverse(self.settings["URL_NAME"])
+        if view == django.views.static.serve:
+            return
 
-            if request.path == password_change_url:
-                return
+        # Check for an exempt URL before trying to resolve URL_NAME,
+        # because the reason the URL is exempt may be because a special URL
+        # config is in use (i.e. during a test) that doesn't have URL_NAME.
 
-            if password_is_expired(request.user):
-                return HttpResponseRedirect(password_change_url)
+        path = request.path_info.lstrip('/')
+
+        if any(m.match(path) for m in self.exempt_urls):
+            return
+
+        url_name = resolve(request.path_info).url_name
+
+        if url_name in self.settings.get("EXEMPT_URL_NAMES", ()):
+            return
+
+        password_change_url = reverse(self.settings["URL_NAME"])
+
+        if request.path == password_change_url:
+            return
+
+        if password_is_expired(request.user):
+            return HttpResponseRedirect(password_change_url)
 
 
 class NoConfidentialCachingMiddleware(BaseMiddleware):
@@ -374,30 +384,33 @@ class XFrameOptionsMiddleware(BaseMiddleware):
 
     def load_setting(self, setting, value):
         if setting == 'X_FRAME_OPTIONS':
-            if value:
-                value = value.lower()
-                if (
-                    value not in ['sameorigin', 'deny']
-                    and not value.startswith('allow-from:')
-                ):
-                    raise ImproperlyConfigured(
-                        self.__class__.__name__ +
-                        " invalid option for X_FRAME_OPTIONS.",
-                    )
-                self.option = value
-            else:
+            if not value:
                 self.option = XFrameOptionsMiddleware.DEFAULT
+                return
+
+            value = value.lower()
+
+            if value in ['sameorigin', 'deny'] or value.startswith('allow-from:'):
+                self.option = value
+                return
+
+            raise ImproperlyConfigured(
+                self.__class__.__name__ +
+                cls_name + " invalid option for X_FRAME_OPTIONS.",
+            )
+
         elif setting == 'X_FRAME_OPTIONS_EXCLUDE_URLS':
-            if value:
-                try:
-                    self.exclude_urls = [compile(url) for url in value]
-                except TypeError:
-                    raise ImproperlyConfigured(
-                        self.__class__.__name__ +
-                        " invalid option for X_FRAME_OPTIONS_EXCLUDE_URLS",
-                    )
-            else:
+            if not value:
                 self.exclude_urls = []
+                return
+
+            try:
+                self.exclude_urls = [compile(url) for url in value]
+            except TypeError:
+                raise ImproperlyConfigured(
+                    self.__class__.__name__ +
+                    " invalid option for X_FRAME_OPTIONS_EXCLUDE_URLS",
+                )
 
     def process_response(self, request, response):
         """
@@ -933,8 +946,8 @@ class LoginRequiredMiddleware(BaseMiddleware):
     def process_request(self, request):
         if not hasattr(request, 'user'):
             raise ImproperlyConfigured(
-                "The Login Required middleware requires authentication "
-                "middleware to be installed."
+                "The Login Required middleware "
+                "requires authentication middleware to be installed."
             )
 
         if request.user.is_authenticated() and not request.user.is_active:
