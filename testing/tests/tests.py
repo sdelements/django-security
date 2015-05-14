@@ -81,8 +81,8 @@ class BaseMiddlewareTestMiddleware(BaseMiddleware):
 class BaseMiddlewareTests(TestCase):
     def __init__(self, *args, **kwargs):
         super(BaseMiddlewareTests, self).__init__(*args, **kwargs)
-        self.MIDDLEWARE_NAME = \
-            BaseMiddlewareTests.__module__ + '.BaseMiddlewareTestMiddleware'
+        module_name = BaseMiddlewareTests.__module__
+        self.MIDDLEWARE_NAME = module_name + '.BaseMiddlewareTestMiddleware'
 
     def test_settings_initially_loaded(self):
         expected_settings = {'R1': 1, 'R2': 2, 'O1': 3, 'O2': 4}
@@ -125,10 +125,9 @@ class LoginRequiredMiddlewareTests(TestCase):
 
     def test_aborts_if_auth_middleware_missing(self):
         middleware_classes = settings.MIDDLEWARE_CLASSES
-        auth_middleware = \
-            'django.contrib.auth.middleware.AuthenticationMiddleware'
+        auth_mw = 'django.contrib.auth.middleware.AuthenticationMiddleware'
         middleware_classes = [
-            m for m in middleware_classes if m != auth_middleware
+            m for m in middleware_classes if m != auth_mw
         ]
         with self.settings(MIDDLEWARE_CLASSES=middleware_classes):
             self.assertRaises(ImproperlyConfigured, self.client.get, '/home/')
@@ -697,8 +696,11 @@ class ContentSecurityPolicyTests(TestCase):
                 'ajax.googleapis.com',
             ],
         }
-        expected = \
-            "script-src 'self' www.google-analytics.com ajax.googleapis.com"
+
+        expected = (
+            "script-src "
+            "'self' www.google-analytics.com ajax.googleapis.com"
+        )
 
         csp = ContentSecurityPolicyMiddleware()
         generated = csp._csp_builder(csp_dict)
