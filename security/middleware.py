@@ -801,19 +801,22 @@ class SessionExpiryPolicyMiddleware(BaseMiddleware):
 
     OPTIONAL_SETTINGS = ('SESSION_COOKIE_AGE', 'SESSION_INACTIVITY_TIMEOUT')
 
+    SECONDS_PER_DAY = 86400
+    SECONDS_PER_30MINS = 1800
+
     # Session keys
     START_TIME_KEY = 'starttime'
     LAST_ACTIVITY_KEY = 'lastactivity'
 
     def load_setting(self, setting, value):
         if setting == 'SESSION_COOKIE_AGE':
-            self.SESSION_COOKIE_AGE = value or 86400  # one day in seconds
+            self.SESSION_COOKIE_AGE = value or self.SECONDS_PER_DAY
             logger.debug("Max Session Cookie Age is %d seconds" % (
                 self.SESSION_COOKIE_AGE,
             ))
         elif setting == 'SESSION_INACTIVITY_TIMEOUT':
             # half an hour in seconds
-            self.SESSION_INACTIVITY_TIMEOUT = value or 1800
+            self.SESSION_INACTIVITY_TIMEOUT = value or self.SECONDS_PER_30MINS
             logger.debug("Session Inactivity Timeout is %d seconds" % (
                 self.SESSION_INACTIVITY_TIMEOUT,
             ))
@@ -825,63 +828,56 @@ class SessionExpiryPolicyMiddleware(BaseMiddleware):
         is the case. We set the last activity time to now() if the session
         is still active.
         """
-        now = timezone.now()
-
-        # If the session has no start time or last activity time, set those
-        # two values. We assume we have a brand new session.
         if (
             self.START_TIME_KEY not in request.session or
             self.LAST_ACTIVITY_KEY not in request.session or
             timezone.is_naive(request.session[self.START_TIME_KEY]) or
             timezone.is_naive(request.session[self.LAST_ACTIVITY_KEY])
         ):
-            logger.debug("New session %s started: %s" % (
-                request.session.session_key,
-                now,
-            ))
-            request.session[self.START_TIME_KEY] = now
-            request.session[self.LAST_ACTIVITY_KEY] = now
+            self.process_new_session(request)
         else:
-            start_time = request.session[self.START_TIME_KEY]
-            last_activity_time = request.session[self.LAST_ACTIVITY_KEY]
-            logger.debug("Session %s started: %s" % (
-                request.session.session_key,
-                start_time,
-            ))
-            logger.debug("Session %s last active: %s" % (
-                request.session.session_key,
-                last_activity_time,
-            ))
+            self.process_existing_session(request)
 
-            # Is this session older than SESSION_COOKIE_AGE?
-            # We don't worry about microseconds.
-            seconds_per_day = 86400
-            start_time_diff = now - start_time
-            last_activity_diff = now - last_activity_time
+    def process_new_session(self, request):
+        now = timezone.now()
+        session = request.session
+        logger.debug("New session %s started: %s" % (session.session_key, now))
+        session[self.START_TIME_KEY] = now
+        session[self.LAST_ACTIVITY_KEY] = now
 
-            session_too_old = (
-                (start_time_diff.days * seconds_per_day)
-                + start_time_diff.seconds > self.SESSION_COOKIE_AGE
-            )
-            session_inactive = (
-                (last_activity_diff.days * seconds_per_day)
-                + last_activity_diff.seconds > self.SESSION_INACTIVITY_TIMEOUT
-            )
+    def process_existing_session(self, request):
+        now = timezone.now()
+        session = request.session
+        start_time = session[self.START_TIME_KEY]
+        last_activity_time = session[self.LAST_ACTIVITY_KEY]
 
-            if session_too_old or session_inactive:
-                logger.debug("Session %s is inactive." % (
-                    request.session.session_key,
-                ))
-                logout(request)
-            else:
-                # The session is good, update the last activity value
-                logger.debug("Session %s is still active." % (
-                    request.session.session_key,
-                ))
-                request.session[
-                    SessionExpiryPolicyMiddleware.LAST_ACTIVITY_KEY
-                ] = now
+        logger.debug("Session %s started: %s" % (
+            session.session_key,
+            start_time,
+        ))
+        logger.debug("Session %s last active: %s" % (
+            session.session_key,
+            last_activity_time,
+        ))
 
+        session_age = self.get_diff_in_seconds(now, start_time)
+        session_too_old = session_age > self.SESSION_COOKIE_AGE
+
+        session_lastactive = self.get_diff_in_seconds(now, last_activity_time)
+        session_inactive = session_lastactive > self.SESSION_INACTIVITY_TIMEOUT
+
+        if session_too_old or session_inactive:
+            logger.debug("Session %s is inactive." % (session.session_key,))
+            logout(request)
+            return
+
+        logger.debug("Session %s is still active." % (session.session_key,))
+        session[self.LAST_ACTIVITY_KEY] = now
+
+    def get_diff_in_seconds(self, now, time):
+        diff = now - time
+        age = diff.days * self.SECONDS_PER_DAY + diff.seconds
+        return age
 
 # Modified a little bit by us.
 
