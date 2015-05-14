@@ -13,9 +13,8 @@ def min_length(n):
     """
     def validate(password):
         if len(password) < n:
-            raise ValidationError(
-                _("It must contain at least %d characters.") % n
-            )
+            message = _("It must contain at least %d characters.") % n
+            raise ValidationError(message)
     return validate
 
 # The error messages from the RegexValidators don't display properly unless we
