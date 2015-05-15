@@ -5,9 +5,8 @@ import sys
 import subprocess
 from distutils.core import setup, Command
 
-f = open(os.path.join(os.path.dirname(__file__), 'README.md'))
-readme = f.read()
-f.close()
+with open(os.path.join(os.path.dirname(__file__), 'README.md')) as f:
+    readme = f.read()
 
 class Test(Command):
     user_options = []
