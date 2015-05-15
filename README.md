@@ -72,12 +72,12 @@ or minimum configuration.
 
 <tr>
 <td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.LoginRequiredMiddleware">LoginRequiredMiddleware</a>
-<td>Requires a user to be authenticated to view any page on the site that hasn’t been white listed.
+<td>Requires a user to be authenticated to view any page on the site that hasn't been white listed.
 <td>Required.
 
 <tr>
 <td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.MandatoryPasswordChangeMiddleware">MandatoryPasswordChangeMiddleware</a>
-<td>Redirects any request from an authenticated user to the password change form if that user’s password has expired.
+<td>Redirects any request from an authenticated user to the password change form if that user's password has expired.
 <td>Required.
 
 <tr>
