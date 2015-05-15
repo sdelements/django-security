@@ -15,6 +15,6 @@ _build/
 # ignore tox files
 .tox/
 
-# ingnore coverage files
+# ignore coverage files
 .coverage
 htmlcov/
