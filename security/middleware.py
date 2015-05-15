@@ -662,20 +662,16 @@ class ContentSecurityPolicyMiddleware(object):
         csp_dict = getattr(django.conf.settings, 'CSP_DICT', None)
         err_msg = 'Middleware requires either CSP_STRING or CSP_DICT setting'
 
-        if not csp_mode:
+        if not csp_mode or csp_mode == 'enforce':
             self._enforce = True
+        elif csp_mode == 'report-only':
+            self._enforce = False
         else:
-            mode = csp_mode
-            if mode == 'enforce':
-                self._enforce = True
-            elif mode == 'report-only':
-                self._enforce = False
-            else:
-                logger.warn(
-                    'Invalid CSP_MODE {0}, "enforce" or "report-only" allowed'
-                    .format(mode),
-                )
-                raise django.core.exceptions.MiddlewareNotUsed
+            logger.warn(
+                'Invalid CSP_MODE {0}, "enforce" or "report-only" allowed'
+                .format(csp_mode),
+            )
+            raise django.core.exceptions.MiddlewareNotUsed
 
         if not (csp_dict or csp_string):
             logger.warning('{0}, none found'.format(err_msg))
