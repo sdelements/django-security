@@ -657,23 +657,15 @@ class ContentSecurityPolicyMiddleware(object):
 
     def __init__(self):
         # sanity checks
-        has_csp_string = (
-            hasattr(django.conf.settings, 'CSP_STRING') and
-            django.conf.settings.CSP_STRING
-        )
-        has_csp_dict = (
-            hasattr(django.conf.settings, 'CSP_DICT') and
-            django.conf.settings.CSP_DICT
-        )
+        csp_mode = getattr(django.conf.settings, 'CSP_MODE', None)
+        csp_string = getattr(django.conf.settings, 'CSP_STRING', None)
+        csp_dict = getattr(django.conf.settings, 'CSP_DICT', None)
         err_msg = 'Middleware requires either CSP_STRING or CSP_DICT setting'
 
-        if (
-            not hasattr(django.conf.settings, 'CSP_MODE') or
-            not django.conf.settings.CSP_MODE
-        ):
+        if not csp_mode:
             self._enforce = True
         else:
-            mode = django.conf.settings.CSP_MODE
+            mode = csp_mode
             if mode == 'enforce':
                 self._enforce = True
             elif mode == 'report-only':
@@ -685,20 +677,20 @@ class ContentSecurityPolicyMiddleware(object):
                 )
                 raise django.core.exceptions.MiddlewareNotUsed
 
-        if not (has_csp_string or has_csp_dict):
+        if not (csp_dict or csp_string):
             logger.warning('{0}, none found'.format(err_msg))
             raise django.core.exceptions.MiddlewareNotUsed
 
-        if has_csp_dict and has_csp_string:
+        if csp_dict and csp_string:
             logger.warning('{0}, not both'.format(err_msg))
             raise django.core.exceptions.MiddlewareNotUsed
 
         # build or copy CSP as string
-        if has_csp_string:
-            self._csp_string = django.conf.settings.CSP_STRING
+        if csp_string:
+            self._csp_string = csp_string
 
-        if has_csp_dict:
-            self._csp_string = self._csp_builder(django.conf.settings.CSP_DICT)
+        if csp_dict:
+            self._csp_string = self._csp_builder(csp_dict)
 
     def process_response(self, request, response):
         """
