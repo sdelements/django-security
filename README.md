@@ -1,5 +1,7 @@
 # Django-Security
 
+[![Build Status](https://travis-ci.org/sdelements/django-security.svg?branch=master)](https://travis-ci.org/sdelements/django-security)
+
 This package offers a number of models, views, middlewares and forms to facilitate security hardening of Django applications.
 
 # Full documentation
@@ -156,8 +158,3 @@ All `django-security` modules send important log messages to `security` facility
                 'formatter': 'verbose',
             },
         ...
-
-
-
-
-
