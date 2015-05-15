@@ -1,6 +1,6 @@
 # Copyright (c) 2011, SD Elements. See LICENSE.txt for details.
 
-from models import PasswordExpiry
+from .models import PasswordExpiry
 
 
 def password_is_expired(user):

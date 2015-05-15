@@ -17,11 +17,12 @@ from django.utils import timezone
 from security.auth import min_length
 from security.auth_throttling import (
     attempt_count, default_delay_function, delay_message, increment_counters,
-    reset_counters,
+    reset_counters, Middleware as AuthThrottlingMiddleware
 )
 from security.middleware import (
-    BaseMiddleware, ContentSecurityPolicyMiddleware,
-    SessionExpiryPolicyMiddleware
+    BaseMiddleware, ContentSecurityPolicyMiddleware, DoNotTrackMiddleware,
+    SessionExpiryPolicyMiddleware, MandatoryPasswordChangeMiddleware,
+    XssProtectMiddleware, XFrameOptionsMiddleware,
 )
 from security.models import PasswordExpiry
 from security.password_expiry import never_expire_password
@@ -118,6 +119,10 @@ class BaseMiddlewareTests(TestCase):
             response = self.client.get('/home/')
             self.assertEqual(123, response.loaded_settings['R1'])
 
+    def test_load_setting_abstract_method(self):
+        base = BaseMiddleware()
+        self.assertRaises(NotImplementedError, base.load_setting, None, None)
+
 
 class LoginRequiredMiddlewareTests(TestCase):
     def setUp(self):
@@ -137,11 +142,15 @@ class LoginRequiredMiddlewareTests(TestCase):
         self.assertRedirects(response, self.login_url + "?next=/home/")
 
     def test_redirects_unauthenticated_ajax_request(self):
-        response = self.client.get('/home/',
-                                   HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        response = self.client.get(
+            '/home/',
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
         self.assertEqual(response.status_code, 401)
-        self.assertEqual(json.loads(response.content),
-                         {"login_url": self.login_url})
+        self.assertEqual(
+            json.loads(response.content.decode('utf-8')),
+            {"login_url": self.login_url},
+        )
 
     def test_redirects_to_custom_login_url(self):
         middlware_classes = list(settings.MIDDLEWARE_CLASSES)
@@ -151,11 +160,30 @@ class LoginRequiredMiddlewareTests(TestCase):
         ):
             response = self.client.get('/home/')
             self.assertRedirects(response, '/custom-login/')
-            response = self.client.get('/home/',
-                                       HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+            response = self.client.get(
+                '/home/',
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+            )
             self.assertEqual(response.status_code, 401)
-            self.assertEqual(json.loads(response.content),
-                             {"login_url": '/custom-login/'})
+            self.assertEqual(
+                json.loads(response.content.decode('utf-8')),
+                {"login_url": '/custom-login/'},
+            )
+
+    def test_logs_out_inactive_users(self):
+        user = User.objects.create_user(
+            username="foo",
+            password="foo",
+            email="a@foo.org",
+        )
+        never_expire_password(user)
+        self.client.login(username="foo", password="foo")
+        resp = self.client.get('/home/')
+        self.assertEqual(resp.status_code, 200)  # check we are logged in
+        user.is_active = False
+        user.save()
+        resp = self.client.get('/home/')
+        self.assertRedirects(resp, self.login_url + "?next=/home/")
 
 
 class RequirePasswordChangeTests(TestCase):
@@ -234,6 +262,15 @@ class RequirePasswordChangeTests(TestCase):
         finally:
             self.client.logout()
             user.delete()
+
+    def test_raises_improperly_configured(self):
+        change = MandatoryPasswordChangeMiddleware()
+        self.assertRaises(
+            ImproperlyConfigured,
+            change.load_setting,
+            'MANDATORY_PASSWORD_CHANGE',
+            {'EXEMPT_URLS': []},
+        )
 
 
 class DecoratorTest(TestCase):
@@ -373,6 +410,39 @@ class XFrameOptionsDenyTests(TestCase):
         response = self.client.get('/test1/')
         self.assertNotIn('X-Frame-Options', response)
 
+    def test_improperly_configured(self):
+        xframe = XFrameOptionsMiddleware()
+        self.assertRaises(
+            ImproperlyConfigured,
+            xframe.load_setting,
+            'X_FRAME_OPTIONS',
+            'invalid',
+        )
+
+        self.assertRaises(
+            ImproperlyConfigured,
+            xframe.load_setting,
+            'X_FRAME_OPTIONS_EXCLUDE_URLS',
+            1,
+        )
+
+    def test_default_exclude_urls(self):
+        with self.settings(X_FRAME_OPTIONS_EXCLUDE_URLS=None):
+            # This URL is excluded in other tests, see settings.py
+            response = self.client.get('/test1/')
+            self.assertEqual(
+                response['X-Frame-Options'],
+                settings.X_FRAME_OPTIONS,
+            )
+
+    def test_default_xframe_option(self):
+        with self.settings(X_FRAME_OPTIONS=None):
+            response = self.client.get('/home/')
+            self.assertEqual(
+                response['X-Frame-Options'],
+                'deny',
+            )
+
 
 class XXssProtectTests(TestCase):
 
@@ -382,6 +452,25 @@ class XXssProtectTests(TestCase):
         """
         response = self.client.get('/accounts/login/')
         self.assertNotEqual(response['X-XSS-Protection'], None)
+
+    def test_default_setting(self):
+        with self.settings(XSS_PROTECT=None):
+            response = self.client.get('/accounts/login/')
+            self.assertEqual(response['X-XSS-Protection'], '1')  # sanitize
+
+    def test_option_off(self):
+        with self.settings(XSS_PROTECT='off'):
+            response = self.client.get('/accounts/login/')
+            self.assertEqual(response['X-XSS-Protection'], '0')  # off
+
+    def test_improper_configuration_raises(self):
+        xss = XssProtectMiddleware()
+        self.assertRaises(
+            ImproperlyConfigured,
+            xss.load_setting,
+            'XSS_PROTECT',
+            'invalid',
+        )
 
 
 class ContentNoSniffTests(TestCase):
@@ -451,7 +540,7 @@ class AuthenticationThrottlingTests(TestCase):
         self.assertEqual("0 seconds", delay_message(0))
         self.assertEqual("1 second", delay_message(0.1))
         self.assertEqual("1 second", delay_message(1))
-        self.assertEqual("1 minute", delay_message(30))
+        self.assertEqual("1 minute", delay_message(31))
         self.assertEqual("1 minute", delay_message(60))
         self.assertEqual("1 minute", delay_message(61))
         self.assertEqual("2 minutes", delay_message(90))
@@ -480,11 +569,11 @@ class AuthenticationThrottlingTests(TestCase):
         self.assertEqual(delay(0, 100), (0, 0))
 
         # first 3 incorrect attempts with a username will not be delayed.
-        for i in xrange(3):
+        for i in range(3):
             self.assertEqual(delay(i, 0), (0, 0))
 
         # forth, fifth, sixth attempts are throttled
-        for i in xrange(4, 7):
+        for i in range(4, 7):
             self.assertEqual(delay(i, 0), (5 * 2 ** (i - 3), 0))
 
         # we max out at 24 hours
@@ -565,6 +654,34 @@ class AuthenticationThrottlingTests(TestCase):
         self.client.logout()
         self._succeed()
 
+    @override_settings(AUTHENTICATION_THROTTLING={
+        "DELAY_FUNCTION": lambda x, y: (x, y),
+    })
+    def test_improperly_configured_middleware(self):
+        self.assertRaises(ImproperlyConfigured, AuthThrottlingMiddleware)
+
+    def test_throttle_reset_404_on_unauthorized(self):
+        resp = self.client.post(
+            reverse("reset_username_throttle", args=[self.user.id]),
+        )
+
+        self.assertEqual(resp.status_code, 404)
+
+    def test_throttle_reset_404_on_not_found(self):
+        admin = User.objects.create_user(
+            username="bar",
+            password="bar",
+            email="a@bar.org",
+        )
+        admin.is_superuser = True
+        admin.save()
+        self.client.login(username="bar", password="bar")
+        resp = self.client.post(
+            reverse("reset_username_throttle", args=[999]),
+        )
+
+        self.assertEqual(resp.status_code, 404)
+
 
 class P3PPolicyTests(TestCase):
 
@@ -644,9 +761,10 @@ class ContentSecurityPolicyTests(TestCase):
             'font-src': ['fonts.example.com', ],
             'object-src': ['self'],
             'media-src': ['media.example.com', ],
-            'frame-src': ['self', ],
+            'frame-src': ['*', ],
             'sandbox': ['', ],
             'reflected-xss': 'filter',
+            'referrer': 'origin',
             'report-uri': 'http://example.com/csp-report',
         }
 
@@ -658,10 +776,11 @@ class ContentSecurityPolicyTests(TestCase):
             "reflected-xss filter;"
             "style-src 'self' css.example.com;"
             "report-uri http://example.com/csp-report;"
-            "frame-src 'self';"
+            "frame-src *;"
             "sandbox ;"
             "object-src 'self';"
             "media-src media.example.com;"
+            "referrer origin;"
             "font-src fonts.example.com"
         )
 
@@ -719,3 +838,117 @@ class ContentSecurityPolicyTests(TestCase):
 
         csp = ContentSecurityPolicyMiddleware()
         self.assertRaises(MiddlewareNotUsed, csp._csp_builder, csp_dict)
+
+    def test_csp_gen_err3(self):
+        csp_dict = {'sandbox': 'none'}  # not a list or tuple, expect failure
+
+        csp = ContentSecurityPolicyMiddleware()
+        self.assertRaises(MiddlewareNotUsed, csp._csp_builder, csp_dict)
+
+    def test_csp_gen_err4(self):
+        # Not an allowed directive, expect failure
+        csp_dict = {'sandbox': ('invalid', )}
+
+        csp = ContentSecurityPolicyMiddleware()
+        self.assertRaises(MiddlewareNotUsed, csp._csp_builder, csp_dict)
+
+    def test_csp_gen_err5(self):
+        # Not an allowed directive, expect failure
+        csp_dict = {'referrer': 'invalid'}
+
+        csp = ContentSecurityPolicyMiddleware()
+        self.assertRaises(MiddlewareNotUsed, csp._csp_builder, csp_dict)
+
+    def test_csp_gen_err6(self):
+        # Not an allowed directive, expect failure
+        csp_dict = {'reflected-xss': 'invalid'}
+
+        csp = ContentSecurityPolicyMiddleware()
+        self.assertRaises(MiddlewareNotUsed, csp._csp_builder, csp_dict)
+
+    def test_enforced_by_default(self):
+        with self.settings(CSP_MODE=None):
+            response = self.client.get('/accounts/login/')
+            self.assertIn('Content-Security-Policy', response)
+            self.assertNotIn('Content-Security-Policy-Report-Only', response)
+
+    def test_enforced_when_on(self):
+        with self.settings(CSP_MODE='enforce'):
+            response = self.client.get('/accounts/login/')
+            self.assertIn('Content-Security-Policy', response)
+            self.assertNotIn('Content-Security-Policy-Report-Only', response)
+
+    def test_report_only_set(self):
+        with self.settings(CSP_MODE='report-only'):
+            response = self.client.get('/accounts/login/')
+            self.assertNotIn('Content-Security-Policy', response)
+            self.assertIn('Content-Security-Policy-Report-Only', response)
+
+    def test_invalid_csp_mode(self):
+        with self.settings(CSP_MODE='invalid'):
+            self.assertRaises(
+                MiddlewareNotUsed,
+                ContentSecurityPolicyMiddleware,
+            )
+
+    def test_no_csp_options_set(self):
+        with self.settings(CSP_DICT=None, CSP_STRING=None):
+            self.assertRaises(
+                MiddlewareNotUsed,
+                ContentSecurityPolicyMiddleware,
+            )
+
+    def test_both_csp_options_set(self):
+        with self.settings(CSP_DICT={'x': 'y'}, CSP_STRING='x y;'):
+            self.assertRaises(
+                MiddlewareNotUsed,
+                ContentSecurityPolicyMiddleware,
+            )
+
+    def test_sets_from_csp_dict(self):
+        with self.settings(
+            CSP_DICT={'default-src': ('self',)},
+            CSP_STRING=None,
+        ):
+            response = self.client.get('/accounts/login/')
+            self.assertEqual(
+                response['Content-Security-Policy'],
+                "default-src 'self'",
+            )
+
+
+class DoNotTrackTests(TestCase):
+
+    def setUp(self):
+        self.dnt = DoNotTrackMiddleware()
+        self.request = HttpRequest()
+        self.response = HttpResponse()
+
+    def test_set_DNT_on(self):
+        self.request.META['HTTP_DNT'] = '1'
+        self.dnt.process_request(self.request)
+        self.assertTrue(self.request.dnt)
+
+    def test_set_DNT_off(self):
+        self.request.META['HTTP_DNT'] = 'off'
+        self.dnt.process_request(self.request)
+        self.assertFalse(self.request.dnt)
+
+    def test_default_DNT(self):
+        self.dnt.process_request(self.request)
+        self.assertFalse(self.request.dnt)
+
+    def test_DNT_echo_on(self):
+        self.request.META['HTTP_DNT'] = '1'
+        self.dnt.process_response(self.request, self.response)
+        self.assertIn('DNT', self.response)
+        self.assertEqual(self.response['DNT'], '1')
+
+    def test_DNT_echo_off(self):
+        self.request.META['HTTP_DNT'] = 'off'
+        self.dnt.process_response(self.request, self.response)
+        self.assertEqual(self.response['DNT'], 'off')
+
+    def test_DNT_echo_default(self):
+        self.dnt.process_response(self.request, self.response)
+        self.assertNotIn('DNT', self.response)

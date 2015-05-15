@@ -28,6 +28,10 @@ class HttpResponseTooManyRequests(HttpResponse):
 def delay_message(remainder):
     """
     A natural-language description of a delay period.
+
+    Note: Python 3 uses unbiased rounding, so produces slightly different
+    numbers than Python 2, but this is for human readability only, so does not
+    need to be the same.
     """
     # TODO: There's probably a library for this.
     minutes = round(float(remainder) / 60)
@@ -52,7 +56,7 @@ def _key(counter_type, counter_name):
         counter_type,
         counter_name,
     )
-    return hashlib.sha1(key).hexdigest()
+    return hashlib.sha1(key.encode('ascii')).hexdigest()
 
 
 def reset_counters(**counters):

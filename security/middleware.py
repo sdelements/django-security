@@ -13,7 +13,7 @@ from django.test.signals import setting_changed
 from django.utils import timezone
 import django.views.static
 
-from password_expiry import password_is_expired
+from .password_expiry import password_is_expired
 
 logger = logging.getLogger(__name__)
 
@@ -127,7 +127,7 @@ class DoNotTrackMiddleware(object):
         track-00
         """
         if 'HTTP_DNT' in request.META:
-            response['DNT'] = '1'
+            response['DNT'] = request.META['HTTP_DNT']
         return response
 
 
@@ -657,11 +657,20 @@ class ContentSecurityPolicyMiddleware(object):
 
     def __init__(self):
         # sanity checks
-        has_csp_string = hasattr(django.conf.settings, 'CSP_STRING')
-        has_csp_dict = hasattr(django.conf.settings, 'CSP_DICT')
+        has_csp_string = (
+            hasattr(django.conf.settings, 'CSP_STRING')
+            and django.conf.settings.CSP_STRING
+        )
+        has_csp_dict = (
+            hasattr(django.conf.settings, 'CSP_DICT')
+            and django.conf.settings.CSP_DICT
+        )
         err_msg = 'Middleware requires either CSP_STRING or CSP_DICT setting'
 
-        if not hasattr(django.conf.settings, 'CSP_MODE'):
+        if (
+            not hasattr(django.conf.settings, 'CSP_MODE')
+            or not django.conf.settings.CSP_MODE
+        ):
             self._enforce = True
         else:
             mode = django.conf.settings.CSP_MODE
