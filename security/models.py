@@ -1,8 +1,15 @@
 # Copyright (c) 2011, SD Elements. See LICENSE.txt for details.
 
+from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
 from django.conf import settings
+
+
+# Finding proper User model that we can set Foreign key to.
+# In newer versions of Django default user model can be specified in settings
+# as `AUTH_USER_MODEL`
+USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', User)
 
 
 class PasswordExpiry(models.Model):
@@ -15,7 +22,7 @@ class PasswordExpiry(models.Model):
     """
 
     # Not one-to-one because some users may never receive an expiry date.
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, unique=True)
+    user = models.ForeignKey(USER_MODEL, unique=True)
 
     password_expiry_date = models.DateTimeField(
         auto_now_add=True,
