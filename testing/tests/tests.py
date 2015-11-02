@@ -210,10 +210,37 @@ class RequirePasswordChangeTests(TestCase):
             self.client.logout()
             user.delete()
 
+    def test_superuser_password_change(self):
+        """
+        A superuser can be forced to change their password via settings.
+        """
+        user = User.objects.create_superuser(username="foo",
+                                             password="foo",
+                                             email="foo@foo.com")
+        self.client.login(username="foo", password="foo")
+        with self.settings(MANDATORY_PASSWORD_CHANGE={
+                           "URL_NAME": "change_password"}):
+            self.assertEqual(self.client.get("/home/").status_code, 200)
+
+        try:
+            with self.settings(MANDATORY_PASSWORD_CHANGE={
+                "URL_NAME": "change_password",
+                "INCLUDE_SUPERUSERS": True
+            }):
+                self.assertRedirects(
+                    self.client.get("/home/"),
+                    reverse("change_password"),
+                )
+        finally:
+            self.client.logout()
+            user.delete()
+
     def test_dont_redirect_exempt_urls(self):
-        user = User.objects.create_user(username="foo",
-                                        password="foo",
-                                        email="foo@foo.com")
+        user = User.objects.create_user(
+            username="foo",
+            password="foo",
+            email="foo@foo.com"
+        )
         self.client.login(username="foo", password="foo")
 
         try:
