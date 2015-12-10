@@ -571,10 +571,7 @@ class ContentSecurityPolicyMiddleware(object):
 
     def _csp_loc_builder(self, key, value):
         if not isinstance(value, (list, tuple)):
-            logger.warn(
-                'Arguments to {0} must be given as list or tuple'
-                .format(key),
-            )
+            logger.warn('Arguments to %s must be given as list or tuple', key)
             raise django.core.exceptions.MiddlewareNotUsed
 
         csp_loc_string = "{0}".format(key)
@@ -591,10 +588,7 @@ class ContentSecurityPolicyMiddleware(object):
 
     def _csp_sandbox_builder(self, key, value):
         if not isinstance(value, (list, tuple)):
-            logger.warn(
-                'Arguments to {0} must be given as list or tuple'
-                .format(key),
-            )
+            logger.warn('Arguments to %s must be given as list or tuple', key)
             raise django.core.exceptions.MiddlewareNotUsed
 
         csp_sandbox_string = "{0}".format(key)
@@ -602,9 +596,7 @@ class ContentSecurityPolicyMiddleware(object):
             if opt in self._CSP_SANDBOX_ARGS:
                 csp_sandbox_string += " {0}".format(opt)
             else:
-                logger.warn(
-                    'Invalid CSP sandbox argument {0}'.format(opt),
-                )
+                logger.warn('Invalid CSP sandbox argument %s', opt)
                 raise django.core.exceptions.MiddlewareNotUsed
 
         return csp_sandbox_string
@@ -615,14 +607,14 @@ class ContentSecurityPolicyMiddleware(object):
 
     def _csp_referrer_builder(self, key, value):
         if value not in self._CSP_REF_ARGS:
-            logger.warning('Invalid CSP {0} value {1}'.format(key, value))
+            logger.warning('Invalid CSP %s value %s', key, value)
             raise django.core.exceptions.MiddlewareNotUsed
 
         return "{0} {1}".format(key, value)
 
     def _csp_reflected_xss_builder(self, key, value):
         if value not in self._CSP_XSS_ARGS:
-            logger.warning('Invalid CSP {0} value {1}'.format(key, value))
+            logger.warning('Invalid CSP %s value %s', key, value)
             raise django.core.exceptions.MiddlewareNotUsed
 
         return "{0} {1}".format(key, value)
@@ -650,7 +642,7 @@ class ContentSecurityPolicyMiddleware(object):
                 )
 
             else:
-                logger.warning('Invalid CSP type {0}'.format(key))
+                logger.warning('Invalid CSP type %s', key)
                 raise django.core.exceptions.MiddlewareNotUsed
 
         return '; '.join(csp_components)
@@ -668,17 +660,17 @@ class ContentSecurityPolicyMiddleware(object):
             self._enforce = False
         else:
             logger.warn(
-                'Invalid CSP_MODE {0}, "enforce" or "report-only" allowed'
-                .format(csp_mode),
+                'Invalid CSP_MODE %s, "enforce" or "report-only" allowed',
+                csp_mode
             )
             raise django.core.exceptions.MiddlewareNotUsed
 
         if not (csp_dict or csp_string):
-            logger.warning('{0}, none found'.format(err_msg))
+            logger.warning('%s, none found', err_msg)
             raise django.core.exceptions.MiddlewareNotUsed
 
         if csp_dict and csp_string:
-            logger.warning('{0}, not both'.format(err_msg))
+            logger.warning('%s, not both', err_msg)
             raise django.core.exceptions.MiddlewareNotUsed
 
         # build or copy CSP as string
@@ -821,15 +813,15 @@ class SessionExpiryPolicyMiddleware(BaseMiddleware):
     def load_setting(self, setting, value):
         if setting == 'SESSION_COOKIE_AGE':
             self.SESSION_COOKIE_AGE = value or self.SECONDS_PER_DAY
-            logger.debug("Max Session Cookie Age is %d seconds" % (
-                self.SESSION_COOKIE_AGE,
-            ))
+            logger.debug("Max Session Cookie Age is %d seconds",
+                         self.SESSION_COOKIE_AGE
+                         )
         elif setting == 'SESSION_INACTIVITY_TIMEOUT':
             # half an hour in seconds
             self.SESSION_INACTIVITY_TIMEOUT = value or self.SECONDS_PER_30MINS
-            logger.debug("Session Inactivity Timeout is %d seconds" % (
-                self.SESSION_INACTIVITY_TIMEOUT,
-            ))
+            logger.debug("Session Inactivity Timeout is %d seconds",
+                         self.SESSION_INACTIVITY_TIMEOUT
+                         )
 
     def process_request(self, request):
         """
@@ -851,7 +843,7 @@ class SessionExpiryPolicyMiddleware(BaseMiddleware):
     def process_new_session(self, request):
         now = timezone.now()
         session = request.session
-        logger.debug("New session %s started: %s" % (session.session_key, now))
+        logger.debug("New session %s started: %s", session.session_key, now)
         session[self.START_TIME_KEY] = now
         session[self.LAST_ACTIVITY_KEY] = now
 
@@ -861,14 +853,14 @@ class SessionExpiryPolicyMiddleware(BaseMiddleware):
         start_time = session[self.START_TIME_KEY]
         last_activity_time = session[self.LAST_ACTIVITY_KEY]
 
-        logger.debug("Session %s started: %s" % (
-            session.session_key,
-            start_time,
-        ))
-        logger.debug("Session %s last active: %s" % (
-            session.session_key,
-            last_activity_time,
-        ))
+        logger.debug("Session %s started: %s",
+                     session.session_key,
+                     start_time
+                     )
+        logger.debug("Session %s last active: %s",
+                     session.session_key,
+                     last_activity_time
+                     )
 
         session_age = self.get_diff_in_seconds(now, start_time)
         session_too_old = session_age > self.SESSION_COOKIE_AGE
@@ -877,11 +869,11 @@ class SessionExpiryPolicyMiddleware(BaseMiddleware):
         session_inactive = session_lastactive > self.SESSION_INACTIVITY_TIMEOUT
 
         if session_too_old or session_inactive:
-            logger.debug("Session %s is inactive." % (session.session_key,))
+            logger.debug("Session %s is inactive.", session.session_key)
             logout(request)
             return
 
-        logger.debug("Session %s is still active." % (session.session_key,))
+        logger.debug("Session %s is still active.", session.session_key)
         session[self.LAST_ACTIVITY_KEY] = now
 
     def get_diff_in_seconds(self, now, time):
