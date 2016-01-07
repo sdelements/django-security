@@ -224,6 +224,9 @@ class MandatoryPasswordChangeMiddleware(BaseMiddleware):
 
         ``EXEMPT_URL_NAMES``    list of URLs that do not trigger password
         change request
+
+        ``INCLUDE_SUPERUSERS``  also check superusers for password change,
+        default False
     """
 
     OPTIONAL_SETTINGS = ("MANDATORY_PASSWORD_CHANGE",)
