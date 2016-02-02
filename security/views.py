@@ -55,24 +55,24 @@ def csp_report(request, csp_save=False, csp_log=True):
 
     # http://www.w3.org/TR/CSP/#sample-violation-report
     if not request.method == 'POST':
-        log.debug('Unexpect CSP report method {0}'.format(request.method))
+        log.debug('Unexpect CSP report method %s', request.method)
         return HttpResponseForbidden()
 
     if (
         'CONTENT_TYPE' not in request.META
         or request.META['CONTENT_TYPE'] != 'application/json'
     ):
-        log.debug('Missing CSP report Content-Type {0}'.format(request.META))
+        log.debug('Missing CSP report Content-Type %s', request.META)
         return HttpResponseForbidden()
 
     try:
         csp_dict = json.loads(request.body)
     except ValueError:
-        log.debug('Cannot JSON decode CSP report {0}'.format(request.body))
+        log.debug('Cannot JSON decode CSP report %s', request.body)
         return HttpResponseForbidden()
 
     if 'csp-report' not in csp_dict:
-        log.debug('Invalid CSP report structure {0}'.format(csp_dict))
+        log.debug('Invalid CSP report structure %s', csp_dict)
         return HttpResponseForbidden()
 
     report = csp_dict['csp-report']
@@ -83,9 +83,8 @@ def csp_report(request, csp_save=False, csp_log=True):
     if csp_log:
         log.warn(
             'Content Security Policy violation: '
-            '{0}, reporting IP {1}, user agent {2}'.format(
-                report, reporting_ip, reporting_ua,
-            ),
+            '%s, reporting IP %s, user agent %s',
+            report, reporting_ip, reporting_ua
         )
 
     # save received CSP violation to database
