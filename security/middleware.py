@@ -546,9 +546,12 @@ class ContentSecurityPolicyMiddleware(object):
 
     # sandbox allowed arguments
     # http://www.w3.org/html/wg/drafts/html/master/single-page.html#sandboxing
+    # https://www.w3.org/TR/CSP2/
     _CSP_SANDBOX_ARGS = [
         '',
         'allow-forms',
+        'allow-pointer-lock',
+        'allow-popups',
         'allow-same-origin',
         'allow-scripts',
         'allow-top-navigation',
