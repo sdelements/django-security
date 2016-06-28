@@ -13,6 +13,8 @@ from django.test.signals import setting_changed
 from django.utils import timezone
 import django.views.static
 
+from ua_parser.user_agent_parser import ParseUserAgent
+
 from .password_expiry import password_is_expired
 
 logger = logging.getLogger(__name__)
@@ -692,8 +694,16 @@ class ContentSecurityPolicyMiddleware(object):
         enforcement or report-only headers in all currently used variants.
         """
         # choose headers based enforcement mode
+        is_ie = False
+        if 'HTTP_USER_AGENT' in request.META:
+            parsed_ua = ParseUserAgent(request.META['HTTP_USER_AGENT'])
+            is_ie = parsed_ua['family'] == 'IE'
+
         if self._enforce:
-            header = 'Content-Security-Policy'
+            if is_ie:
+                header = 'X-Content-Security-Policy'
+            else:
+                header = 'Content-Security-Policy'
         else:
             header = 'Content-Security-Policy-Report-Only'
 

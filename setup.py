@@ -38,6 +38,6 @@ setup(name="django-security",
           'Topic :: Software Development :: Libraries :: Python Modules',
 	  'Topic :: Security',
       ],
-      requires=['django (>=1.4)',],
+      requires=['django (>=1.4)', 'ua_parser (==0.7.1)'],
       cmdclass={'test': Test})
 
