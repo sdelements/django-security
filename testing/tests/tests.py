@@ -988,6 +988,12 @@ class ContentSecurityPolicyTests(TestCase):
             self.assertNotIn('Content-Security-Policy', response)
             self.assertIn('Content-Security-Policy-Report-Only', response)
 
+    def test_both_enforce_and_report_only(self):
+        with self.settings(CSP_MODE='enforce-and-report-only'):
+            response = self.client.get('/accounts/login/')
+            self.assertIn('Content-Security-Policy', response)
+            self.assertIn('Content-Security-Policy-Report-Only', response)
+
     def test_invalid_csp_mode(self):
         with self.settings(CSP_MODE='invalid'):
             self.assertRaises(

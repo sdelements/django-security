@@ -808,36 +808,84 @@ class ContentSecurityPolicyMiddleware(MiddlewareMixin):
         # sanity checks
         self.get_response = get_response
 
-        csp_mode = getattr(django.conf.settings, 'CSP_MODE', None)
+        conf_csp_mode = getattr(django.conf.settings, 'CSP_MODE', None)
+        self._csp_mode = conf_csp_mode or 'enforce'
         csp_string = getattr(django.conf.settings, 'CSP_STRING', None)
         csp_dict = getattr(django.conf.settings, 'CSP_DICT', None)
-        err_msg = 'Middleware requires either CSP_STRING or CSP_DICT setting'
+        csp_report_string = getattr(django.conf.settings, 'CSP_REPORT_STRING',
+                                    None)
+        csp_report_dict = getattr(django.conf.settings, 'CSP_REPORT_DICT',
+                                  None)
 
-        if not csp_mode or csp_mode == 'enforce':
-            self._enforce = True
-        elif csp_mode == 'report-only':
-            self._enforce = False
-        else:
-            logger.warn(
-                'Invalid CSP_MODE %s, "enforce" or "report-only" allowed',
-                csp_mode
+        set_csp_str = self._csp_mode in ['enforce', 'enforce-and-report-only']
+        set_csp_report_str = self._csp_mode in ['report-only',
+                                                'enforce-and-report-only']
+
+        if not (set_csp_str or set_csp_report_str):
+            logger.error(
+                'Invalid CSP_MODE %s, "enforce", "report-only" '
+                'or "enforce-and-report-only" allowed',
+                self._csp_mode
             )
             raise django.core.exceptions.MiddlewareNotUsed
 
+        if set_csp_str:
+            self._set_csp_str(csp_dict, csp_string)
+
+        if set_csp_report_str:
+            self._set_csp_report_str(csp_report_dict, csp_report_string)
+
+    def _set_csp_str(self, csp_dict, csp_string):
+        err_msg = 'Middleware requires either CSP_STRING or CSP_DICT setting'
         if not (csp_dict or csp_string):
-            logger.warning('%s, none found', err_msg)
+            logger.error('%s, none found', err_msg)
             raise django.core.exceptions.MiddlewareNotUsed
 
-        if csp_dict and csp_string:
-            logger.warning('%s, not both', err_msg)
-            raise django.core.exceptions.MiddlewareNotUsed
+        self._csp_string = self._choose_csp_str(csp_dict, csp_string,
+                                                err_msg + ', not both')
 
-        # build or copy CSP as string
-        if csp_string:
-            self._csp_string = csp_string
+    def _set_csp_report_str(self, csp_report_dict, csp_report_string):
+        report_err_msg = (
+            'Middleware requires either CSP_REPORT_STRING, '
+            'CSP_REPORT_DICT setting, or neither. If neither, '
+            'middleware requires CSP_STRING or CSP_DICT, '
+            'but not both.'
+        )
+
+        # Default to the regular CSP string if report string not configured
+        if not (csp_report_dict or csp_report_string):
+            self._csp_report_string = self._csp_string
+        else:
+            self._csp_report_string = self._choose_csp_str(
+                csp_report_dict,
+                csp_report_string,
+                report_err_msg
+            )
+
+    def _choose_csp_str(self, csp_dict, csp_str, err_msg):
+        """
+        Choose the Content-Security-Policy string to return.
+
+        Args:
+            csp_dict: a dictionary of values for building a CSP string
+            csp_str: the fallback CSP string if no dictionary is provided
+            err_msg: the message to log if both a dict and string are provided
+
+        Returns:
+        The Content-Security-Policy string by either building it from a
+        dictionary or using the provided string.
+        Log an error message if both are provided.
+        """
+        if csp_dict and csp_str:
+            logger.error('%s', err_msg)
+            raise django.core.exceptions.MiddlewareNotUsed
 
         if csp_dict:
-            self._csp_string = self._csp_builder(csp_dict)
+            return self._csp_builder(csp_dict)
+        elif csp_str:
+            return csp_str
+        else:
+            return ''
 
     def process_response(self, request, response):
         """
@@ -850,16 +898,19 @@ class ContentSecurityPolicyMiddleware(MiddlewareMixin):
             parsed_ua = ParseUserAgent(request.META['HTTP_USER_AGENT'])
             is_ie = parsed_ua['family'] == 'IE'
 
-        if self._enforce:
-            if is_ie:
-                header = 'X-Content-Security-Policy'
-            else:
-                header = 'Content-Security-Policy'
-        else:
-            header = 'Content-Security-Policy-Report-Only'
+        csp_header = 'Content-Security-Policy'
+        if is_ie:
+            csp_header = 'X-Content-Security-Policy'
+        report_only_header = 'Content-Security-Policy-Report-Only'
 
         # actually add appropriate headers
-        response[header] = self._csp_string
+        if self._csp_mode == 'enforce':
+            response[csp_header] = self._csp_string
+        elif self._csp_mode == 'report-only':
+            response[report_only_header] = self._csp_report_string
+        elif self._csp_mode == 'enforce-and-report-only':
+            response[csp_header] = self._csp_string
+            response[report_only_header] = self._csp_report_string
 
         return response
 
