@@ -18,8 +18,13 @@ from ua_parser.user_agent_parser import ParseUserAgent
 
 logger = logging.getLogger(__name__)
 
+try:
+    from django.utils.deprecation import MiddlewareMixin
+except ImportError:
+    MiddlewareMixin = object
 
-class BaseMiddleware(object):
+
+class BaseMiddleware(MiddlewareMixin):
     """
     Abstract class containing some functionality common to all middleware that
     require configuration.
@@ -65,7 +70,7 @@ class BaseMiddleware(object):
         setting_changed.connect(self._on_setting_changed)
 
 
-class DoNotTrackMiddleware(object):
+class DoNotTrackMiddleware(MiddlewareMixin):
     """
     When this middleware is installed Django views can access a new
     ``request.dnt`` parameter to check client's preference on user tracking as
@@ -193,7 +198,7 @@ class XssProtectMiddleware(BaseMiddleware):
         return response
 
 
-class ContentNoSniff(object):
+class ContentNoSniff(MiddlewareMixin):
     """
     Sends X-Content-Options HTTP header to disable autodetection of MIME type
     of files returned by the server in Microsoft Internet Explorer.
@@ -442,7 +447,7 @@ class XFrameOptionsMiddleware(BaseMiddleware):
 XFrameOptionsDenyMiddleware = XFrameOptionsMiddleware
 
 
-class ContentSecurityPolicyMiddleware(object):
+class ContentSecurityPolicyMiddleware(MiddlewareMixin):
     """
     .. _ContentSecurityPolicyMiddleware:
 
@@ -721,7 +726,7 @@ class ContentSecurityPolicyMiddleware(object):
         return response
 
 
-class StrictTransportSecurityMiddleware(object):
+class StrictTransportSecurityMiddleware(MiddlewareMixin):
     """
     Adds Strict-Transport-Security header to HTTP
     response that enforces SSL connections on compliant browsers. Two
