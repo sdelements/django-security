@@ -21,6 +21,9 @@ class PasswordExpiry(models.Model):
     security.RequirePasswordChangeMiddleware.
     """
 
+    class Meta(object):
+        verbose_name_plural = "PasswordExpiries"
+
     # Not one-to-one because some users may never receive an expiry date.
     user = models.ForeignKey(USER_MODEL, unique=True)
 
@@ -41,8 +44,8 @@ class PasswordExpiry(models.Model):
         self.password_expiry_date = None
         self.save()
 
-    class Meta(object):
-        verbose_name_plural = "PasswordExpiries"
+    def __unicode__(self):
+        return u'Password Expiry: {0}'.format(self.user)
 
 
 # http://www.w3.org/TR/CSP/#sample-violation-report
@@ -103,7 +106,7 @@ class CspReport(models.Model):
     )
 
     def __unicode__(self):
-        return 'CSP Report: {0} from {1}'.format(
+        return u'CSP Report: {0} from {1}'.format(
             self.blocked_uri,
             self.document_uri,
         )
