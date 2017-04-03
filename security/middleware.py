@@ -148,6 +148,10 @@ class XssProtectMiddleware(BaseMiddleware):
 
       ``off``        completely disable XSS filter
 
+    **Note:** As of 1.8, Django's `SECURE_BROWSER_XSS_FILTER
+    <https://docs.djangoproject.com/en/1.8/ref/settings/#secure-browser-xss-filter>`_
+    controls the X-XSS-Protection header.
+
     Reference:
 
     - `Controlling the XSS Filter
@@ -198,6 +202,10 @@ class ContentNoSniff(object):
     JavaScript files unless server correctly declares their MIME type. This
     mitigates attacks where web page would for example load a script that was
     disguised as an user- supplied image.
+
+    **Note:** As of 1.8, Django's `SECURE_CONTENT_TYPE_NOSNIFF
+    <https://docs.djangoproject.com/en/1.8/ref/settings/#secure-content-type-nosniff>`_
+    controls the X-Content-Type-Options header.
 
     Reference:
 
@@ -726,6 +734,10 @@ class StrictTransportSecurityMiddleware(object):
         the policy as well (default: True)
       - ``STS_PRELOAD``               add ``preload`` flag to the STS header
         so that your website can be added to preloaded websites list
+
+    **Note:** As of 1.8, Django's `SECURE_HSTS_SECONDS
+    <https://docs.djangoproject.com/en/1.8/ref/settings/#secure-hsts-seconds>`_
+    controls the HTTP Strict Transport Security header.
 
     Reference:
 
