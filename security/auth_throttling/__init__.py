@@ -7,7 +7,12 @@ import time  # Monkeypatched by the tests.
 
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.contrib.auth.forms import AuthenticationForm
-from django.contrib.sites.shortcuts import get_current_site
+import django
+from packaging import version
+if django.VERSION < version.parse("1.7"):
+    from django.contrib.sites.models import get_current_site
+else:
+    from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpResponse
