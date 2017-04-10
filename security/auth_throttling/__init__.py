@@ -8,7 +8,6 @@ import time  # Monkeypatched by the tests.
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.contrib.auth.forms import AuthenticationForm
 import django
-from packaging import version
 if django.VERSION < (1, 7):
     from django.contrib.sites.models import get_current_site
 else:
