@@ -7,7 +7,7 @@ import time  # Monkeypatched by the tests.
 
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.contrib.auth.forms import AuthenticationForm
-from django.contrib.sites.models import get_current_site
+from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpResponse
@@ -236,7 +236,7 @@ class Middleware(BaseMiddleware):
             # update the login form to indicate the throttling error, which
             # will be displayed to the user.
             form = _ThrottlingForm(delay, request)
-            redirect_url = request.REQUEST.get(self.redirect_field_name, "")
+            redirect_url = request.GET.get(self.redirect_field_name, "")
             current_site = get_current_site(request)
             # Template-compatible with 'django.contrib.auth.views.login'.
             return csrf_protect(
