@@ -15,7 +15,6 @@ import django.views.static
 
 from ua_parser.user_agent_parser import ParseUserAgent
 
-from .password_expiry import password_is_expired
 
 logger = logging.getLogger(__name__)
 
@@ -281,6 +280,7 @@ class MandatoryPasswordChangeMiddleware(BaseMiddleware):
         if request.path == password_change_url:
             return
 
+        from .password_expiry import password_is_expired
         if password_is_expired(request.user):
             return HttpResponseRedirect(password_change_url)
 
@@ -741,11 +741,9 @@ class StrictTransportSecurityMiddleware(object):
 
     Reference:
 
-    - `HTTP Strict Transport Security (HSTS)
-      <https://datatracker.ietf.org/doc/rfc6797/>`_
-    _ `Preloaded HSTS sites <http://www.chromium.org/sts>`_
+    - `HTTP Strict Transport Security (HSTS) <https://datatracker.ietf.org/doc/rfc6797/>`_
+    - `Preloaded HSTS sites <http://www.chromium.org/sts>`_
     """
-
     def __init__(self):
         try:
             self.max_age = django.conf.settings.STS_MAX_AGE
