@@ -741,7 +741,8 @@ class StrictTransportSecurityMiddleware(object):
 
     Reference:
 
-    - `HTTP Strict Transport Security (HSTS) <https://datatracker.ietf.org/doc/rfc6797/>`_
+    - `HTTP Strict Transport Security (HSTS) 
+    <https://datatracker.ietf.org/doc/rfc6797/>`_
     - `Preloaded HSTS sites <http://www.chromium.org/sts>`_
     """
     def __init__(self):
