@@ -35,7 +35,7 @@ matrix:
       env: DJANGO=1.11 TOXENV=docs
 
 install:
-  - pip install tox
+  - pip install tox-travis
   - pip install coveralls
 script:
   - tox
