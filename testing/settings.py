@@ -9,7 +9,6 @@ def is_version(version):
 _PROJECT_PATH = _os.path.abspath(_os.path.dirname(__file__))
 
 DEBUG = True
-TEMPLATE_DEBUG = DEBUG
 ADMINS = ()
 MANAGERS = ADMINS
 DATABASES = {
@@ -38,10 +37,6 @@ STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 )
 SECRET_KEY = 'p_2zsf+@4uw$kcdl$!tkf0lrh%w^!#@2@iwo4plef2n$(@uj4_'
-TEMPLATE_LOADERS = (
-    'django.template.loaders.filesystem.Loader',
-    'django.template.loaders.app_directories.Loader',
-)
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -61,7 +56,26 @@ MIDDLEWARE_CLASSES = (
     'security.auth_throttling.Middleware',
 )
 ROOT_URLCONF = 'testing.urls'
-TEMPLATE_DIRS = (_os.path.join(_PROJECT_PATH, "templates"),)
+if django.VERSION >= (1, 8):
+    TEMPLATES = [
+        {
+            'BACKEND': 'django.template.backends.django.DjangoTemplates',
+            'DIRS': [_os.path.join(_PROJECT_PATH, "templates")],
+            'OPTIONS': {
+                'context_processors': [
+                    'django.contrib.auth.context_processors.auth',
+                ]
+            }
+        }
+    ]
+else:
+    TEMPLATE_DEBUG = DEBUG
+    TEMPLATE_LOADERS = (
+        'django.template.loaders.filesystem.Loader',
+        'django.template.loaders.app_directories.Loader',
+    )
+    TEMPLATE_DIRS = (_os.path.join(_PROJECT_PATH, "templates"),)
+
 INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',

@@ -15,7 +15,7 @@ else:
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpResponse
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.template import RequestContext
 from django.utils.translation import ugettext as _
 from django.views.decorators.csrf import csrf_protect
@@ -244,15 +244,15 @@ class Middleware(BaseMiddleware):
             current_site = get_current_site(request)
             # Template-compatible with 'django.contrib.auth.views.login'.
             return csrf_protect(
-                lambda request: render_to_response(
+                lambda request: render(
+                    request,
                     template_name,
                     {
                         "form": form,
                         self.redirect_field_name: redirect_url,
                         "site": current_site,
                         "site_name": current_site.name
-                    },
-                    context_instance=RequestContext(request)
+                    }
                 ),
             )(request)
 
