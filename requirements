@@ -1,2 +1,2 @@
-django==1.9
+django>=1.4,<=1.11
 ua_parser==0.7.1
