@@ -127,7 +127,7 @@ class BaseMiddlewareTests(TestCase):
 
 class LoginRequiredMiddlewareTests(TestCase):
     def setUp(self):
-        if django.VERSION >= (1, 10):
+        if django.VERSION >= (1, 8):
             self.login_url = reverse(django.contrib.auth.views.login)
         else:
             self.login_url = reverse("django.contrib.auth.views.login")

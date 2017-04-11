@@ -11,7 +11,7 @@ if django.VERSION >= (1, 10):
     urlpatterns = [
         url("^accounts/login/$", login),
         url("^change_password/$", password_change,
-        {"post_change_redirect": "/home/"}, "change_password"),
+            {"post_change_redirect": "/home/"}, "change_password"),
         url(r"^admin/reset-account-throttling/(?P<user_id>-?[0-9]+)/",
             reset_username_throttle,
             {"redirect_url": "/admin"}, "reset_username_throttle"),
