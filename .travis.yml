@@ -1,6 +1,8 @@
 language: python
 matrix:
   include:
+    - python: 2.7 
+      env: DJANGO=1.11 TOXENV=pep8
     - python: 2.6
       env: DJANGO=1.4 TOXENV=py26-django14
     - python: 2.6
@@ -31,8 +33,6 @@ matrix:
       env: DJANGO=1.11 TOXENV=py34-django111
     - python: 2.7 
       env: DJANGO=1.11 TOXENV=docs
-    - python: 2.7 
-      env: DJANGO=1.11 TOXENV=pep8
 
 install:
   - pip install tox-travis
