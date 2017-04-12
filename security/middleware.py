@@ -829,7 +829,7 @@ class SessionExpiryPolicyMiddleware(BaseMiddleware):
     how long to keep a session alive.
 
     We will purge a session that has expired. This middleware should be run
-    before the LoginRequired middelware if you want to redirect the expired
+    before the LoginRequired middleware if you want to redirect the expired
     session to the login page (if required).
     """
 
