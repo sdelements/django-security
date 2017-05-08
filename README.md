@@ -37,6 +37,7 @@ Middleware modules can be added to `MIDDLEWARE_CLASSES` list in settings file:
     ...
     'security.middleware.ContentNoSniff',
     'security.middleware.DoNotTrackMiddleware',
+    'security.middleware.ReferrerPolicyMiddleware',
     'security.middleware.XFrameOptionsMiddleware',
     'security.middleware.XssProtectMiddleware',
     )
@@ -91,6 +92,11 @@ or minimum configuration.
 <td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.P3PPolicyMiddleware">P3PPolicyMiddleware</a>
 <td>Adds the HTTP header attribute specifying compact P3P policy.
 <td>Required.
+
+<tr>
+<td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.ReferrerPolicyMiddleware">ReferrerPolicyMiddleware</a>
+<td>Specify when the browser will set a `Referer` header.
+<td>Optional.
 
 <tr>
 <td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.SessionExpiryPolicyMiddleware">SessionExpiryPolicyMiddleware</a>
