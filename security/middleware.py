@@ -17,7 +17,7 @@ from django.utils import timezone
 from django.utils.deprecation import MiddlewareMixin
 import django.views.static
 
-from ua_parser.user_agent_parser import ParseUserAgent
+from ua_parser import user_agent_parser
 
 
 logger = logging.getLogger(__name__)
@@ -901,7 +901,7 @@ class ContentSecurityPolicyMiddleware(MiddlewareMixin):
         # choose headers based enforcement mode
         is_ie = False
         if 'HTTP_USER_AGENT' in request.META:
-            parsed_ua = ParseUserAgent(request.META['HTTP_USER_AGENT'])
+            parsed_ua = user_agent_parser.ParseUserAgent(request.META['HTTP_USER_AGENT'])
             is_ie = parsed_ua['family'] == 'IE'
 
         csp_header = 'Content-Security-Policy'
@@ -1315,3 +1315,56 @@ class LoginRequiredMiddleware(BaseMiddleware, CustomLogoutMixin):
             login_url = login_url + '?next=' + next_url
 
         return HttpResponseRedirect(login_url)
+
+class ReferrerPolicyMiddleware(BaseMiddleware):
+    """
+    Sends Referrer-Policy HTTP header that controls when the browser will set
+    the `Referer` header. Use REFERRER_POLICY option in settings file
+    with the following values:
+
+      - ``no-referrer``
+      - ``no-referrer-when-downgrade``
+      - ``origin``
+      - ``origin-when-cross-origin``
+      - ``same-origin`` (*default*)
+      - ``strict-origin``
+      - ``strict-origin-when-cross-origin``
+      - ``unsafe-url``
+      - ``off``
+
+    Reference:
+    - `Referrer-Policy from Mozilla Developer Network
+      <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy>`
+    """
+
+    OPTIONAL_SETTINGS = ("REFERRER_POLICY",)
+
+    OPTIONS = [ 'no-referrer', 'no-referrer-when-downgrade', 'origin',
+    'origin-when-cross-origin', 'same-origin', 'strict-origin',
+    'strict-origin-when-cross-origin', 'unsafe-url', 'off' ]
+
+    DEFAULT = 'same-origin'
+
+    def load_setting(self, setting, value):
+        if not value:
+            self.option = self.DEFAULT
+            return
+
+        value = value.lower()
+
+        if value in self.OPTIONS:
+            self.option = value
+            return
+
+        raise ImproperlyConfigured(
+            self.__class__.__name__ + " invalid option for REFERRER_POLICY."
+        )
+
+    def process_response(self, request, response):
+        """
+        Add Referrer-Policy to the reponse header.
+        """
+        if self.option != 'off':
+            header = self.option
+            response['Referrer-Policy'] = header
+        return response
