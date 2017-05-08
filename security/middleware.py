@@ -997,3 +997,64 @@ class LoginRequiredMiddleware(BaseMiddleware):
             login_url = login_url + '?next=' + next_url
 
         return HttpResponseRedirect(login_url)
+
+class ReferrerPolicyMiddleware(BaseMiddleware):
+    """
+    Sends Referrer-Policy HTTP header that controls when the browser will set
+    the `Referer` header. Use REFERRER_POLICY option in settings file
+    with the following values:
+
+      ``no-referrer``   never set the `Referer` header (*default*)
+
+      ``no-referrer-when-downgrade``
+
+      ``origin``
+
+      ``origin-when-cross-origin``
+
+      ``same-origin``
+
+      ``strict-origin``
+
+      ``strict-origin-when-cross-origin``
+
+      ``unsafe-url``
+
+      ``off``        completely disable Referrer-Policy header
+
+    Reference:
+
+    - `Referrer-Policy from Mozilla Developer Network
+      <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy>`_
+    """
+
+    OPTIONAL_SETTINGS = ("REFERRER_POLICY",)
+
+    OPTIONS = [ 'no-referrer', 'no-referrer-when-downgrade', 'origin',
+    'origin-when-cross-origin', 'same-origin', 'strict-origin',
+    'strict-origin-when-cross-origin', 'unsafe-url']
+
+    DEFAULT = 'no-referrer'
+
+    def load_setting(self, setting, value):
+        if not value:
+            self.option = self.DEFAULT
+            return
+
+        value = value.lower()
+
+        if value in self.OPTIONS:
+            self.option = value
+            return
+
+        raise ImproperlyConfigured(
+            self.__class__.__name__ + " invalid option for REFERRER_POLICY."
+        )
+
+    def process_response(self, request, response):
+        """
+        Add Referrer-Policy to the reponse header.
+        """
+        header = self.OPTIONS[self.option]
+        response['Referrer-Policy'] = header
+        return response
