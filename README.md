@@ -35,10 +35,10 @@ Middleware modules can be added to `MIDDLEWARE_CLASSES` list in settings file:
 
     MIDDLEWARE_CLASSES = (
     ...
-    'security.middleware.DoNotTrackMiddleware',
     'security.middleware.ContentNoSniff',
-    'security.middleware.XssProtectMiddleware',
+    'security.middleware.DoNotTrackMiddleware',
     'security.middleware.XFrameOptionsMiddleware',
+    'security.middleware.XssProtectMiddleware',
     )
 
 Unlike the modules listed above, some other modules **require**  configuration settings,
