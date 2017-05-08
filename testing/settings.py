@@ -59,6 +59,7 @@ MIDDLEWARE_CLASSES = (
     'security.middleware.MandatoryPasswordChangeMiddleware',
     'security.middleware.NoConfidentialCachingMiddleware',
     'security.auth_throttling.Middleware',
+    'security.middleware.ReferrerPolicyMiddleware',
 )
 ROOT_URLCONF = 'testing.urls'
 TEMPLATE_DIRS = (_os.path.join(_PROJECT_PATH, "templates"),)
