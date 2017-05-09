@@ -3,7 +3,11 @@
 import os
 import sys
 import subprocess
-from distutils.core import setup, Command
+try:
+    from setuptools import setup
+except ImportError:
+    from distutils.core import setup
+from distutils.core import Command
 
 with open(os.path.join(os.path.dirname(__file__), 'README.md')) as f:
     readme = f.read()
@@ -39,5 +43,5 @@ setup(name="django-security",
 	  'Topic :: Security',
       ],
       requires=['django (>=1.4)', 'ua_parser (==0.7.1)'],
+      install_requires=['django>=1.4', 'ua_parser==0.7.1'],
       cmdclass={'test': Test})
-
