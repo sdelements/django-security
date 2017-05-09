@@ -13,7 +13,7 @@ from django.test.signals import setting_changed
 from django.utils import timezone
 import django.views.static
 
-from ua_parser.user_agent_parser import ParseUserAgent
+from ua_parser import user_agent_parser
 
 from .password_expiry import password_is_expired
 
@@ -704,7 +704,7 @@ class ContentSecurityPolicyMiddleware(object):
         # choose headers based enforcement mode
         is_ie = False
         if 'HTTP_USER_AGENT' in request.META:
-            parsed_ua = ParseUserAgent(request.META['HTTP_USER_AGENT'])
+            parsed_ua = user_agent_parser.ParseUserAgent(request.META['HTTP_USER_AGENT'])
             is_ie = parsed_ua['family'] == 'IE'
 
         if self._enforce:
