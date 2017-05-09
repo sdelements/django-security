@@ -992,7 +992,7 @@ class ReferrerPolicyTests(TestCase):
     def test_default_setting(self):
         with self.settings(REFERRER_POLICY=None):
             response = self.client.get('/accounts/login/')
-            self.assertEqual(response['Referrer-Policy'], 'no-referrer')
+            self.assertEqual(response['Referrer-Policy'], 'same-origin')
 
     def test_no_referrer_setting(self):
         with self.settings(REFERRER_POLICY='no-referrer'):
@@ -1033,6 +1033,11 @@ class ReferrerPolicyTests(TestCase):
         with self.settings(REFERRER_POLICY='unsafe-url'):
             response = self.client.get('/accounts/login/')
             self.assertEqual(response['Referrer-Policy'], 'unsafe-url')
+
+    def test_off_setting(self):
+        with self.settings(REFERRER_POLICY='off'):
+            response = self.client.get('/accounts/login/')
+            self.assertEqual(response['Referrer-Policy'], None)
 
     def test_improper_configuration_raises(self):
         referer_policy_middleware = ReferrerPolicyMiddleware()

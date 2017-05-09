@@ -1004,7 +1004,7 @@ class ReferrerPolicyMiddleware(BaseMiddleware):
     the `Referer` header. Use REFERRER_POLICY option in settings file
     with the following values:
 
-      ``no-referrer``   never set the `Referer` header (*default*)
+      ``no-referrer``
 
       ``no-referrer-when-downgrade``
 
@@ -1012,7 +1012,7 @@ class ReferrerPolicyMiddleware(BaseMiddleware):
 
       ``origin-when-cross-origin``
 
-      ``same-origin``
+      ``same-origin`` (*default*)
 
       ``strict-origin``
 
@@ -1032,9 +1032,9 @@ class ReferrerPolicyMiddleware(BaseMiddleware):
 
     OPTIONS = [ 'no-referrer', 'no-referrer-when-downgrade', 'origin',
     'origin-when-cross-origin', 'same-origin', 'strict-origin',
-    'strict-origin-when-cross-origin', 'unsafe-url' ]
+    'strict-origin-when-cross-origin', 'unsafe-url', 'off' ]
 
-    DEFAULT = 'no-referrer'
+    DEFAULT = 'same-origin'
 
     def load_setting(self, setting, value):
         if not value:
@@ -1055,6 +1055,7 @@ class ReferrerPolicyMiddleware(BaseMiddleware):
         """
         Add Referrer-Policy to the reponse header.
         """
-        header = self.OPTIONS[self.option]
-        response['Referrer-Policy'] = header
+        if self.option != 'off':
+            header = self.OPTIONS[self.option]
+            response['Referrer-Policy'] = header
         return response
