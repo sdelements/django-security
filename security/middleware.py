@@ -1056,6 +1056,6 @@ class ReferrerPolicyMiddleware(BaseMiddleware):
         Add Referrer-Policy to the reponse header.
         """
         if self.option != 'off':
-            header = self.OPTIONS[self.option]
+            header = self.option
             response['Referrer-Policy'] = header
         return response

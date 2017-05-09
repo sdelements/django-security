@@ -22,7 +22,7 @@ from security.auth_throttling import (
 from security.middleware import (
     BaseMiddleware, ContentSecurityPolicyMiddleware, DoNotTrackMiddleware,
     SessionExpiryPolicyMiddleware, MandatoryPasswordChangeMiddleware,
-    XssProtectMiddleware, XFrameOptionsMiddleware,
+    XssProtectMiddleware, XFrameOptionsMiddleware, ReferrerPolicyMiddleware
 )
 from security.models import PasswordExpiry
 from security.password_expiry import never_expire_password
@@ -1037,7 +1037,7 @@ class ReferrerPolicyTests(TestCase):
     def test_off_setting(self):
         with self.settings(REFERRER_POLICY='off'):
             response = self.client.get('/accounts/login/')
-            self.assertEqual(response['Referrer-Policy'], None)
+            self.assertEqual('Referrer-Policy' in response, False)
 
     def test_improper_configuration_raises(self):
         referer_policy_middleware = ReferrerPolicyMiddleware()
