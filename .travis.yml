@@ -3,18 +3,6 @@ matrix:
   include:
     - python: 2.7 
       env: DJANGO=1.11 TOXENV=pep8
-    - python: 2.6
-      env: DJANGO=1.4 TOXENV=py26-django14
-    - python: 2.6
-      env: DJANGO=1.6 TOXENV=py26-django16
-    - python: 2.7
-      env: DJANGO=1.4 TOXENV=py27-django14
-    - python: 2.7
-      env: DJANGO=1.6 TOXENV=py27-django16
-    - python: 2.7
-      env: DJANGO=1.7 TOXENV=py27-django17
-    - python: 3.4
-      env: DJANGO=1.7 TOXENV=py34-django17
     - python: 2.7
       env: DJANGO=1.8 TOXENV=py27-django18
     - python: 3.4

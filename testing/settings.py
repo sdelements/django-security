@@ -56,25 +56,19 @@ MIDDLEWARE_CLASSES = (
     'security.auth_throttling.Middleware',
 )
 ROOT_URLCONF = 'testing.urls'
-if django.VERSION >= (1, 8):
-    TEMPLATES = [
-        {
-            'BACKEND': 'django.template.backends.django.DjangoTemplates',
-            'DIRS': [_os.path.join(_PROJECT_PATH, "templates")],
-            'OPTIONS': {
-                'context_processors': [
-                    'django.contrib.auth.context_processors.auth',
-                ]
-            }
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [_os.path.join(_PROJECT_PATH, "templates")],
+        'OPTIONS': {
+            'context_processors': [
+                'django.contrib.auth.context_processors.auth',
+            ]
         }
-    ]
-else:
-    TEMPLATE_DEBUG = DEBUG
-    TEMPLATE_LOADERS = (
-        'django.template.loaders.filesystem.Loader',
-        'django.template.loaders.app_directories.Loader',
-    )
-    TEMPLATE_DIRS = (_os.path.join(_PROJECT_PATH, "templates"),)
+    }
+]
+
 
 INSTALLED_APPS = (
     'django.contrib.auth',

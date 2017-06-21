@@ -10,6 +10,11 @@ Automatically generated documentation of `django-security` is available on Read 
 
 * [Django-security documentation](http://django-security.readthedocs.org/en/latest/)
 
+# Requirements
+
+* Python >= 2.7
+* Django >= 1.8
+
 # Installation
 
 Install from Python packages repository:

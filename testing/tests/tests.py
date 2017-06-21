@@ -4,8 +4,8 @@ import datetime
 import json
 import time  # We monkeypatch this.
 
-import django
 from django.contrib.auth.models import User
+from django.contrib.auth.views import login
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, MiddlewareNotUsed
 from django.core.urlresolvers import reverse
@@ -127,10 +127,7 @@ class BaseMiddlewareTests(TestCase):
 
 class LoginRequiredMiddlewareTests(TestCase):
     def setUp(self):
-        if django.VERSION >= (1, 8):
-            self.login_url = reverse(django.contrib.auth.views.login)
-        else:
-            self.login_url = reverse("django.contrib.auth.views.login")
+        self.login_url = reverse(login)
 
     def test_aborts_if_auth_middleware_missing(self):
         middleware_classes = settings.MIDDLEWARE_CLASSES
