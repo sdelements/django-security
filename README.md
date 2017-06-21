@@ -15,6 +15,8 @@ Automatically generated documentation of `django-security` is available on Read 
 * Python >= 2.7
 * Django >= 1.8
 
+For Django < 1.8 use django-security==0.9.4.
+
 # Installation
 
 Install from Python packages repository:
