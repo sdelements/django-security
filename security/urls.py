@@ -1,9 +1,8 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 
 from security import views
 
 
-urlpatterns = patterns(
-    '',
+urlpatterns = [
     url('^/csp-report/$', views.csp_report),
-)
+]

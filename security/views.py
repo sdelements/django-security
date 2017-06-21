@@ -4,7 +4,6 @@ import json
 
 from django.http import HttpResponseForbidden, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
-from security.models import CspReport
 
 import logging
 log = logging.getLogger(__name__)
@@ -59,8 +58,8 @@ def csp_report(request, csp_save=False, csp_log=True):
         return HttpResponseForbidden()
 
     if (
-        'CONTENT_TYPE' not in request.META
-        or request.META['CONTENT_TYPE'] != 'application/json'
+        'CONTENT_TYPE' not in request.META or
+        request.META['CONTENT_TYPE'] != 'application/json'
     ):
         log.debug('Missing CSP report Content-Type %s', request.META)
         return HttpResponseForbidden()
@@ -89,6 +88,7 @@ def csp_report(request, csp_save=False, csp_log=True):
 
     # save received CSP violation to database
     if csp_save:
+        from security.models import CspReport
         csp_report = CspReport(
             document_uri=report.get('document-uri'),
             referrer=report.get('referrer'),
