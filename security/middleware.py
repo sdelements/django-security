@@ -219,7 +219,7 @@ class ContentNoSniff(MiddlewareMixin):
 
     def process_response(self, request, response):
         """
-        And ``X-Content-Options: nosniff`` to the response header.
+        Add ``X-Content-Options: nosniff`` to the response header.
         """
         response['X-Content-Options'] = 'nosniff'
         return response
@@ -432,7 +432,7 @@ class XFrameOptionsMiddleware(BaseMiddleware):
 
     def process_response(self, request, response):
         """
-        And X-Frame-Options and Frame-Options to the response header.
+        Add X-Frame-Options and Frame-Options to the response header.
         """
         for url in self.exclude_urls:
             if url.match(request.path):
@@ -703,7 +703,7 @@ class ContentSecurityPolicyMiddleware(MiddlewareMixin):
 
     def process_response(self, request, response):
         """
-        And Content Security Policy policy to the response header. Use either
+        Add Content Security Policy policy to the response header. Use either
         enforcement or report-only headers in all currently used variants.
         """
         # choose headers based enforcement mode
@@ -810,7 +810,7 @@ class P3PPolicyMiddleware(BaseMiddleware):
 
     def process_response(self, request, response):
         """
-        And P3P policy to the response header.
+        Add P3P policy to the response header.
         """
         response['P3P'] = 'policyref="{0}" CP="{1}"'.format(
             self.policy_url,
