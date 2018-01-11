@@ -4,7 +4,9 @@ import datetime
 import json
 import time  # We monkeypatch this.
 
+from django.conf import settings
 from django.contrib.auth.models import User
+from django.contrib.auth import logout
 from django.contrib.auth.views import login
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, MiddlewareNotUsed
@@ -29,7 +31,14 @@ from security.models import PasswordExpiry
 from security.password_expiry import never_expire_password
 from security.views import require_ajax, csp_report
 
-from django.conf import settings
+try:
+    # Python 3
+    from unittest.mock import MagicMock
+except ImportError:
+    # Python 2 requires mock library
+    from mock import MagicMock
+
+mocked_custom_logout = MagicMock(side_effect=logout)
 
 
 def login_user(func):
@@ -374,6 +383,34 @@ class SessionExpiryTests(TestCase):
             SessionExpiryPolicyMiddleware().LAST_ACTIVITY_KEY,
             expired,
         )
+
+    @login_user
+    def test_exempted_session_expiry_urls(self):
+        delta = SessionExpiryPolicyMiddleware().SESSION_INACTIVITY_TIMEOUT + 1
+        expired = timezone.now() - datetime.timedelta(seconds=delta)
+
+        self.assertTrue(self.client.get('/home/').status_code, 200)
+
+        session = self.client.session
+        session[SessionExpiryPolicyMiddleware().LAST_ACTIVITY_KEY] = expired
+        session.save()
+
+        exempted_response = self.client.get('/accounts/login/')
+        not_exempted_response = self.client.get('/home/')
+
+        self.assertTrue(exempted_response.status_code, 200)
+        self.assertRedirects(not_exempted_response,
+                             'http://testserver/accounts/login/?next=/home/')
+
+    @login_user
+    def test_custom_logout(self):
+        delta = SessionExpiryPolicyMiddleware().SESSION_INACTIVITY_TIMEOUT + 1
+        expired = timezone.now() - datetime.timedelta(seconds=delta)
+        self.session_expiry_test(
+            SessionExpiryPolicyMiddleware().LAST_ACTIVITY_KEY,
+            expired,
+        )
+        assert mocked_custom_logout.called
 
 
 class ConfidentialCachingTests(TestCase):
