@@ -1,5 +1,6 @@
 # Copyright (c) 2011, SD Elements. See LICENSE.txt for details.
 
+import importlib
 import json
 import logging
 from re import compile
@@ -22,6 +23,51 @@ try:
     from django.utils.deprecation import MiddlewareMixin
 except ImportError:
     MiddlewareMixin = object
+
+
+class CustomLogoutMixin(object):
+    """
+    If the CUSTOM_LOGOUT_MODULE is set in Django config, import
+    and use that when performing a logout.
+    """
+
+    class Messages(object):
+        NOT_A_MODULE_PATH = (u"Invalid CUSTOM_LOGOUT_MODULE setting '{0}'. "
+                             u"Expected module path to a function")
+        FAILED_TO_LOAD = (u"Invalid CUSTOM_LOGOUT_MODULE setting. "
+                          u"Failed to load module '{0}': {1}")
+        MISSING_FUNCTION = (u"Invalid CUSTOM_LOGOUT_MODULE setting. "
+                            u"Could not find function '{0}' in module '{1}'")
+
+    def perform_logout(self, request):
+        if not getattr(self, 'CUSTOM_LOGOUT_MODULE', None):
+            logout(request)
+            return
+
+        try:
+            module = self.CUSTOM_LOGOUT_MODULE
+            module_path, function_name = module.rsplit('.', 1)
+        except ValueError:
+            err = self.Messages.NOT_A_MODULE_PATH
+            raise Exception(err.format(self.CUSTOM_LOGOUT_MODULE))
+
+        if not module_path or not function_name:
+            err = self.Messages.NOT_A_MODULE_PATH
+            raise Exception(err.format(self.CUSTOM_LOGOUT_MODULE))
+
+        try:
+            module = importlib.import_module(module_path)
+        except Exception as e:
+            err = self.Messages.FAILED_TO_LOAD
+            raise Exception(err.format(module_path, e))
+
+        try:
+            func = getattr(module, function_name)
+        except AttributeError:
+            err = self.Messages.MISSING_FUNCTION
+            raise Exception(err.format(function_name, module_path))
+
+        return func(request)
 
 
 class BaseMiddleware(MiddlewareMixin):
@@ -50,7 +96,9 @@ class BaseMiddleware(MiddlewareMixin):
         ):
             self.load_setting(setting, value)
 
-    def __init__(self):
+    def __init__(self, get_response=None):
+        self.get_response = get_response
+
         if not self.REQUIRED_SETTINGS and not self.OPTIONAL_SETTINGS:
             return
 
@@ -668,8 +716,10 @@ class ContentSecurityPolicyMiddleware(MiddlewareMixin):
 
         return '; '.join(csp_components)
 
-    def __init__(self):
+    def __init__(self, get_response=None):
         # sanity checks
+        self.get_response = get_response
+
         csp_mode = getattr(django.conf.settings, 'CSP_MODE', None)
         csp_string = getattr(django.conf.settings, 'CSP_STRING', None)
         csp_dict = getattr(django.conf.settings, 'CSP_DICT', None)
@@ -750,7 +800,9 @@ class StrictTransportSecurityMiddleware(MiddlewareMixin):
      <https://datatracker.ietf.org/doc/rfc6797/>`_
     - `Preloaded HSTS sites <http://www.chromium.org/sts>`_
     """
-    def __init__(self):
+    def __init__(self, get_response=None):
+        self.get_response = get_response
+
         try:
             self.max_age = django.conf.settings.STS_MAX_AGE
         except AttributeError:
@@ -819,7 +871,7 @@ class P3PPolicyMiddleware(BaseMiddleware):
         return response
 
 
-class SessionExpiryPolicyMiddleware(BaseMiddleware):
+class SessionExpiryPolicyMiddleware(CustomLogoutMixin, BaseMiddleware):
     """
     The session expiry middleware will let you expire sessions on
     browser close, and on expiry times stored in the cookie itself.
@@ -831,9 +883,20 @@ class SessionExpiryPolicyMiddleware(BaseMiddleware):
     We will purge a session that has expired. This middleware should be run
     before the LoginRequired middleware if you want to redirect the expired
     session to the login page (if required).
+
+    Exemptions to this requirement can optionally be specified in settings via
+    a list of regular expressions in SESSION_EXPIRY_EXEMPT_URLS (which you can
+    copy from your urls.py).
+
+    By default this middleware will call the builtin Django logout function to
+    perform the logout. You can customize which logout function will be called
+    by specifying it in your django settings using the CUSTOM_LOGOUT_MODULE
+    variable. The value should be the module path to the function,
+    e.g. 'django.contrib.auth.logout'.
     """
 
-    OPTIONAL_SETTINGS = ('SESSION_COOKIE_AGE', 'SESSION_INACTIVITY_TIMEOUT')
+    OPTIONAL_SETTINGS = ('SESSION_COOKIE_AGE', 'SESSION_INACTIVITY_TIMEOUT',
+                         'SESSION_EXPIRY_EXEMPT_URLS', 'CUSTOM_LOGOUT_MODULE')
 
     SECONDS_PER_DAY = 86400
     SECONDS_PER_30MINS = 1800
@@ -854,6 +917,10 @@ class SessionExpiryPolicyMiddleware(BaseMiddleware):
             logger.debug("Session Inactivity Timeout is %d seconds",
                          self.SESSION_INACTIVITY_TIMEOUT
                          )
+        elif setting == 'SESSION_EXPIRY_EXEMPT_URLS':
+            self.exempt_urls = [compile(expr) for expr in (value or ())]
+        else:
+            setattr(self, setting, value)
 
     def process_request(self, request):
         """
@@ -862,19 +929,34 @@ class SessionExpiryPolicyMiddleware(BaseMiddleware):
         is the case. We set the last activity time to now() if the session
         is still active.
         """
+        if not hasattr(request, 'user'):
+            raise ImproperlyConfigured(
+                "The Login Required middleware "
+                "requires authentication middleware to be installed."
+            )
+
+        path = request.path_info.lstrip('/')
+
+        if any(m.match(path) for m in self.exempt_urls):
+            return
+
         if (
             self.START_TIME_KEY not in request.session or
             self.LAST_ACTIVITY_KEY not in request.session or
             timezone.is_naive(request.session[self.START_TIME_KEY]) or
             timezone.is_naive(request.session[self.LAST_ACTIVITY_KEY])
         ):
-            self.process_new_session(request)
+            response = self.process_new_session(request)
         else:
-            self.process_existing_session(request)
+            response = self.process_existing_session(request)
+
+        if response:
+            return response
 
     def process_new_session(self, request):
         now = timezone.now()
         session = request.session
+
         logger.debug("New session %s started: %s", session.session_key, now)
         session[self.START_TIME_KEY] = now
         session[self.LAST_ACTIVITY_KEY] = now
@@ -902,8 +984,16 @@ class SessionExpiryPolicyMiddleware(BaseMiddleware):
 
         if session_too_old or session_inactive:
             logger.debug("Session %s is inactive.", session.session_key)
-            logout(request)
-            return
+            response = None
+
+            if request.user.is_authenticated():
+                # Store the current path in the session
+                # so we can redirect the user after the logout
+                response = self.perform_logout(request)
+            else:
+                request.session.flush()
+
+            return response
 
         logger.debug("Session %s is still active.", session.session_key)
         session[self.LAST_ACTIVITY_KEY] = now
@@ -941,11 +1031,12 @@ class SessionExpiryPolicyMiddleware(BaseMiddleware):
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-class LoginRequiredMiddleware(BaseMiddleware):
+class LoginRequiredMiddleware(BaseMiddleware, CustomLogoutMixin):
     """
     Middleware that requires a user to be authenticated to view any page on
     the site that hasn't been white listed. (The middleware also ensures the
-    user is 'active'. Disabled users are also redirected to the login page.
+    user is 'active'. Disabled users will be logged out and redirected to
+    the login page.
 
     Exemptions to this requirement can optionally be specified in settings via
     a list of regular expressions in LOGIN_EXEMPT_URLS (which you can copy from
@@ -953,26 +1044,40 @@ class LoginRequiredMiddleware(BaseMiddleware):
 
     Requires authentication middleware and template context processors to be
     loaded. You'll get an error if they aren't.
+
+    By default this middleware will call the builtin Django logout function to
+    perform the logout. You can customize which logout function will be called
+    by specifying it in your django settings using the CUSTOM_LOGOUT_MODULE
+    variable. The value should be the module path to the function,
+    e.g. 'django.contrib.auth.logout'.
     """
 
     REQUIRED_SETTINGS = ('LOGIN_URL',)
-    OPTIONAL_SETTINGS = ('LOGIN_EXEMPT_URLS',)
+    OPTIONAL_SETTINGS = ('LOGIN_EXEMPT_URLS', 'CUSTOM_LOGOUT_MODULE')
 
     def load_setting(self, setting, value):
         if setting == 'LOGIN_URL':
             self.login_url = value
         elif setting == 'LOGIN_EXEMPT_URLS':
             self.exempt_urls = [compile(expr) for expr in (value or ())]
+        else:
+            setattr(self, setting, value)
 
-    def process_request(self, request):
+    def assert_authentication_middleware_installed(self, request):
         if not hasattr(request, 'user'):
             raise ImproperlyConfigured(
                 "The Login Required middleware "
                 "requires authentication middleware to be installed."
             )
 
+    def process_request(self, request):
+        self.assert_authentication_middleware_installed(request)
+
         if request.user.is_authenticated() and not request.user.is_active:
-            logout(request)
+            response = self.perform_logout(request)
+
+            if response:
+                return response
 
         if request.user.is_authenticated():
             return
@@ -990,9 +1095,8 @@ class LoginRequiredMiddleware(BaseMiddleware):
             next_url = request.path
 
         if request.is_ajax():
-            response = {"login_url": login_url}
             return HttpResponse(
-                json.dumps(response),
+                json.dumps({"login_url": login_url}),
                 status=401,
                 content_type="application/json",
             )

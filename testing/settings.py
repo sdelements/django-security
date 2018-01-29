@@ -37,24 +37,45 @@ STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 )
 SECRET_KEY = 'p_2zsf+@4uw$kcdl$!tkf0lrh%w^!#@2@iwo4plef2n$(@uj4_'
-MIDDLEWARE_CLASSES = (
-    'django.middleware.common.CommonMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'security.middleware.SessionExpiryPolicyMiddleware',
-    'security.middleware.LoginRequiredMiddleware',
-    'security.middleware.XFrameOptionsMiddleware',
-    'security.middleware.ContentNoSniff',
-    'security.middleware.ContentSecurityPolicyMiddleware',
-    'security.middleware.StrictTransportSecurityMiddleware',
-    'security.middleware.P3PPolicyMiddleware',
-    'security.middleware.XssProtectMiddleware',
-    'security.middleware.MandatoryPasswordChangeMiddleware',
-    'security.middleware.NoConfidentialCachingMiddleware',
-    'security.auth_throttling.Middleware',
-)
+
+if is_version((1, 8)) or is_version((1, 9)):
+    MIDDLEWARE_CLASSES = (
+        'django.middleware.common.CommonMiddleware',
+        'django.contrib.sessions.middleware.SessionMiddleware',
+        'django.contrib.auth.middleware.AuthenticationMiddleware',
+        'django.middleware.csrf.CsrfViewMiddleware',
+        'django.contrib.messages.middleware.MessageMiddleware',
+        'security.middleware.SessionExpiryPolicyMiddleware',
+        'security.middleware.LoginRequiredMiddleware',
+        'security.middleware.XFrameOptionsMiddleware',
+        'security.middleware.ContentNoSniff',
+        'security.middleware.ContentSecurityPolicyMiddleware',
+        'security.middleware.StrictTransportSecurityMiddleware',
+        'security.middleware.P3PPolicyMiddleware',
+        'security.middleware.XssProtectMiddleware',
+        'security.middleware.MandatoryPasswordChangeMiddleware',
+        'security.middleware.NoConfidentialCachingMiddleware',
+        'security.auth_throttling.Middleware',
+    )
+else:
+    MIDDLEWARE = (
+        'django.middleware.common.CommonMiddleware',
+        'django.contrib.sessions.middleware.SessionMiddleware',
+        'django.contrib.auth.middleware.AuthenticationMiddleware',
+        'django.middleware.csrf.CsrfViewMiddleware',
+        'django.contrib.messages.middleware.MessageMiddleware',
+        'security.middleware.SessionExpiryPolicyMiddleware',
+        'security.middleware.LoginRequiredMiddleware',
+        'security.middleware.XFrameOptionsMiddleware',
+        'security.middleware.ContentNoSniff',
+        'security.middleware.ContentSecurityPolicyMiddleware',
+        'security.middleware.StrictTransportSecurityMiddleware',
+        'security.middleware.P3PPolicyMiddleware',
+        'security.middleware.XssProtectMiddleware',
+        'security.middleware.MandatoryPasswordChangeMiddleware',
+        'security.middleware.NoConfidentialCachingMiddleware',
+        'security.auth_throttling.Middleware',
+    )
 ROOT_URLCONF = 'testing.urls'
 
 TEMPLATES = [
@@ -105,6 +126,10 @@ LOGIN_EXEMPT_URLS = [
     "custom-login",
     "admin/reset-account-throttling",
 ] + _DJANGO_TESTING_URLS
+
+SESSION_EXPIRY_EXEMPT_URLS = LOGIN_EXEMPT_URLS
+
+CUSTOM_LOGOUT_MODULE = 'tests.tests.mocked_custom_logout'
 
 MANDATORY_PASSWORD_CHANGE = {
     "URL_NAME": "change_password",
