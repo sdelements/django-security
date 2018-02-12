@@ -4,6 +4,7 @@ import importlib
 import json
 import logging
 from re import compile
+import urlparse
 
 import django.conf
 from django.contrib.auth import logout
@@ -1102,6 +1103,11 @@ class LoginRequiredMiddleware(BaseMiddleware, CustomLogoutMixin):
             )
 
         if next_url:
-            login_url = login_url + '?next=' + next_url
+            query_params = urlparse.urlparse(login_url).query
+
+            if query_params:
+                login_url += '&next={0}'.format(next_url)
+            else:
+                login_url += '?next={0}'.format(next_url)
 
         return HttpResponseRedirect(login_url)
