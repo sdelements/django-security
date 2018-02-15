@@ -1071,6 +1071,18 @@ class LoginRequiredMiddleware(BaseMiddleware, CustomLogoutMixin):
                 "requires authentication middleware to be installed."
             )
 
+    def _construct_redirect_url(self, login_url, request):
+        """Return the login URL with a next param if applicable."""
+        next_url = request.path
+
+        if next_url:
+            query_params = urlparse.urlparse(login_url).query
+
+            if query_params:
+                login_url += '&next={0}'.format(next_url)
+            else:
+                login_url += '?next={0}'.format(next_url)
+
     def process_request(self, request):
         self.assert_authentication_middleware_installed(request)
 
@@ -1093,8 +1105,6 @@ class LoginRequiredMiddleware(BaseMiddleware, CustomLogoutMixin):
         else:
             login_url = self.login_url
 
-        next_url = request.path
-
         if request.is_ajax():
             return HttpResponse(
                 json.dumps({"login_url": login_url}),
@@ -1102,12 +1112,6 @@ class LoginRequiredMiddleware(BaseMiddleware, CustomLogoutMixin):
                 content_type="application/json",
             )
 
-        if next_url:
-            query_params = urlparse.urlparse(login_url).query
+        redirect_url = self._construct_redirect_url(login_url, request)
 
-            if query_params:
-                login_url += '&next={0}'.format(next_url)
-            else:
-                login_url += '?next={0}'.format(next_url)
-
-        return HttpResponseRedirect(login_url)
+        return HttpResponseRedirect(redirect_url)
