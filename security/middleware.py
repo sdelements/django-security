@@ -1089,10 +1089,10 @@ class LoginRequiredMiddleware(BaseMiddleware, CustomLogoutMixin):
 
         if hasattr(request, 'login_url'):
             login_url = request.login_url
+            next_url = None
         else:
             login_url = self.login_url
-
-        next_url = request.path
+            next_url = request.path
 
         if request.is_ajax():
             return HttpResponse(
