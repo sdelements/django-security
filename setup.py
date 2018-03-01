@@ -41,5 +41,8 @@ setup(name="django-security",
           'Topic :: Software Development :: Libraries :: Python Modules',
           'Topic :: Security',
       ],
-      requires=['django (>=1.8)', 'ua_parser (==0.7.1)'],
+      install_requires=[
+          'django>=1.8',
+          'ua_parser==0.7.1',
+      ],
       cmdclass={'test': Test})
