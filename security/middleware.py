@@ -602,6 +602,7 @@ class ContentSecurityPolicyMiddleware(MiddlewareMixin):
         'script-src',
         'style-src',
         'plugin-types',
+        'worker-src'
     ]
 
     # arguments to location types
