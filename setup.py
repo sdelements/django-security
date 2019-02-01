@@ -51,6 +51,6 @@ setup(name="django-security",
       ],
       install_requires=[
           'django>=1.8',
-          'ua_parser==0.7.1',
+          'ua_parser>=0.7.1',
       ],
       cmdclass={'test': Test})
