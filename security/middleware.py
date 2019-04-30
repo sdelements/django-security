@@ -1,5 +1,6 @@
 # Copyright (c) 2011, SD Elements. See LICENSE.txt for details.
 
+import dateutil.parser
 import importlib
 import json
 import logging
@@ -906,6 +907,44 @@ class SessionExpiryPolicyMiddleware(CustomLogoutMixin, BaseMiddleware):
     START_TIME_KEY = 'starttime'
     LAST_ACTIVITY_KEY = 'lastactivity'
 
+    @classmethod
+    def _get_datetime_in_session(cls, key, session):
+        return dateutil.parser.parse(session[key])
+
+    @classmethod
+    def _set_datetime_in_session(cls, key, value, session):
+        session[key] = str(value)
+
+    @classmethod
+    def get_start_time(cls, request):
+        return cls._get_datetime_in_session(
+            cls.START_TIME_KEY,
+            request.session
+        )
+
+    @classmethod
+    def set_start_time(cls, request, date):
+        cls._set_datetime_in_session(
+            cls.START_TIME_KEY,
+            date,
+            request.session
+        )
+
+    @classmethod
+    def get_last_activity(cls, request):
+        return cls._get_datetime_in_session(
+            cls.LAST_ACTIVITY_KEY,
+            request.session
+        )
+
+    @classmethod
+    def set_last_activity(cls, request, date):
+        cls._set_datetime_in_session(
+            cls.LAST_ACTIVITY_KEY,
+            date,
+            request.session
+        )
+
     def load_setting(self, setting, value):
         if setting == 'SESSION_COOKIE_AGE':
             self.SESSION_COOKIE_AGE = value or self.SECONDS_PER_DAY
@@ -944,8 +983,8 @@ class SessionExpiryPolicyMiddleware(CustomLogoutMixin, BaseMiddleware):
         if (
             self.START_TIME_KEY not in request.session or
             self.LAST_ACTIVITY_KEY not in request.session or
-            timezone.is_naive(request.session[self.START_TIME_KEY]) or
-            timezone.is_naive(request.session[self.LAST_ACTIVITY_KEY])
+            timezone.is_naive(self.get_start_time(request)) or
+            timezone.is_naive(self.get_last_activity(request))
         ):
             response = self.process_new_session(request)
         else:
@@ -959,14 +998,14 @@ class SessionExpiryPolicyMiddleware(CustomLogoutMixin, BaseMiddleware):
         session = request.session
 
         logger.debug("New session %s started: %s", session.session_key, now)
-        session[self.START_TIME_KEY] = now
-        session[self.LAST_ACTIVITY_KEY] = now
+        self.set_start_time(request, now)
+        self.set_last_activity(request, now)
 
     def process_existing_session(self, request):
         now = timezone.now()
         session = request.session
-        start_time = session[self.START_TIME_KEY]
-        last_activity_time = session[self.LAST_ACTIVITY_KEY]
+        start_time = self.get_start_time(request)
+        last_activity_time = self.get_last_activity(request)
 
         logger.debug("Session %s started: %s",
                      session.session_key,
@@ -997,7 +1036,7 @@ class SessionExpiryPolicyMiddleware(CustomLogoutMixin, BaseMiddleware):
             return response
 
         logger.debug("Session %s is still active.", session.session_key)
-        session[self.LAST_ACTIVITY_KEY] = now
+        self.set_last_activity(request, now)
 
     def get_diff_in_seconds(self, now, time):
         diff = now - time
