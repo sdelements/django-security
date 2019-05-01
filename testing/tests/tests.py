@@ -337,12 +337,14 @@ class SessionExpiryTests(TestCase):
         self.client.get('/home/')
         now = timezone.now()
 
-        start_time = self.client.session[
-            SessionExpiryPolicyMiddleware.START_TIME_KEY
-        ]
-        last_activity = self.client.session[
-            SessionExpiryPolicyMiddleware.LAST_ACTIVITY_KEY
-        ]
+        start_time = SessionExpiryPolicyMiddleware._get_datetime_in_session(
+            SessionExpiryPolicyMiddleware.START_TIME_KEY,
+            self.client.session
+        )
+        last_activity = SessionExpiryPolicyMiddleware._get_datetime_in_session(
+            SessionExpiryPolicyMiddleware.LAST_ACTIVITY_KEY,
+            self.client.session
+        )
 
         self.assertTrue(now - start_time < datetime.timedelta(seconds=10))
         self.assertTrue(now - last_activity < datetime.timedelta(seconds=10))
@@ -354,7 +356,11 @@ class SessionExpiryTests(TestCase):
         """
         self.assertTrue(self.client.get('/home/').status_code, 200)
         session = self.client.session
-        session[key] = expired
+        SessionExpiryPolicyMiddleware._set_datetime_in_session(
+            key,
+            expired,
+            session
+        )
         session.save()
         response = self.client.get('/home/')
         self.assertRedirects(response,
@@ -392,7 +398,11 @@ class SessionExpiryTests(TestCase):
         self.assertTrue(self.client.get('/home/').status_code, 200)
 
         session = self.client.session
-        session[SessionExpiryPolicyMiddleware().LAST_ACTIVITY_KEY] = expired
+        SessionExpiryPolicyMiddleware._set_datetime_in_session(
+            SessionExpiryPolicyMiddleware.LAST_ACTIVITY_KEY,
+            expired,
+            session
+        )
         session.save()
 
         exempted_response = self.client.get('/accounts/login/')

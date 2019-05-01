@@ -159,9 +159,6 @@ CSP_MODE = 'enforce'
 P3P_POLICY_URL = '/w3c/p3p.xml'
 P3P_COMPACT_POLICY = 'PRIVATE'
 
-# Django 1.6 uses JSONSerializer which can't handle datetime
-SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
-
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
