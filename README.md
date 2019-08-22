@@ -80,6 +80,11 @@ or minimum configuration.
 </tr>
 
 <tr>
+<td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.ClearSiteDataMiddleware">ClearSiteDataMiddleware</a>
+<td>Send Clear-Site-Data header in HTTP response for any page that has been whitelisted. <em>Recommended,</em>.
+<td>Required.
+
+<tr>
 <td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.ContentNoSniff">ContentNoSniff</a>
 <td>Disable possibly insecure autodetection of MIME types in browsers. <em>Recommended.</em>
 <td>None.
