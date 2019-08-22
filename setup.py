@@ -3,7 +3,8 @@
 import os
 import sys
 import subprocess
-from distutils.core import setup, Command
+from distutils.core import Command
+from setuptools import setup
 
 with open(os.path.join(os.path.dirname(__file__), 'README.md')) as f:
     readme = f.read()
@@ -25,6 +26,7 @@ class Test(Command):
 setup(name="django-security",
       description='A collection of tools to help secure a Django project.',
       long_description=readme,
+      long_description_content_type='text/markdown',
       maintainer="SD Elements",
       maintainer_email="django-security@sdelements.com",
       version="0.11.0",
