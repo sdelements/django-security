@@ -247,6 +247,62 @@ class XssProtectMiddleware(BaseMiddleware):
         return response
 
 
+class ClearSiteDataMiddleware(BaseMiddleware):
+    """
+    Sends Clear-Site-Data HTTP response header on requests that match
+    CLEAR_SITE_DATA_URL_WHITELIST.
+
+    Clears browsing data (cookies, storage, cache) associated with the
+    requesting website. Allows web developers to have more control over the
+    data stored locally by a browser for their origins.
+
+    Reference:
+
+    - Clear-Site-Data: "cache", "cookies", "storage", "executionContexts", "*"
+      <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Clear-Site-Data>`_
+    """
+
+    REQUIRED_SETTINGS = ('CLEAR_SITE_DATA_URL_WHITELIST',)
+    OPTIONAL_SETTINGS = ('CLEAR_SITE_DATA_DIRECTIVES')
+
+    DEFAULT_DIRECTIVES = ['*']
+    ALLOWED_DIRECTIVES = (
+        'cache', 'cookies', 'storage', 'executionContexts', '*'
+    )
+
+    def load_setting(self, setting, value):
+        if setting == 'CLEAR_SITE_DATA_URL_WHITELIST':
+            self.clear_site_urls = value
+
+        directives = getattr(
+            django.conf.settings,
+            'CLEAR_SITE_DATA_DIRECTIVES',
+            self.DEFAULT_DIRECTIVES
+        )
+
+        directives = [
+            directive.strip()
+            for directive in directives
+            if directive.strip() in self.ALLOWED_DIRECTIVES
+        ]
+
+        self.clear_site_directives = ', '.join(
+            '"{0}"'.format(directive)
+            for directive in directives
+        )
+
+    def process_response(self, request, response):
+        """
+        Add ``Clear-Site-Data`` response header if request in
+        CLEAR_SITE_DATA_URLS.
+        """
+
+        if request.path in self.clear_site_urls:
+            response['Clear-Site-Data'] = self.clear_site_directives
+
+        return response
+
+
 class ContentNoSniff(MiddlewareMixin):
     """
     Sends X-Content-Options HTTP header to disable autodetection of MIME type
