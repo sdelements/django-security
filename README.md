@@ -81,7 +81,7 @@ or minimum configuration.
 
 <tr>
 <td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.ClearSiteDataMiddleware">ClearSiteDataMiddleware</a>
-<td>Send Clear-Site-Data header in HTTP response for any page that has been whitelisted. <em>Recommended,</em>.
+<td>Send Clear-Site-Data header in HTTP response for any page that has been whitelisted. <em>Recommended</em>.
 <td>Required.
 
 <tr>
