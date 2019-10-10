@@ -23,8 +23,7 @@ class PasswordExpiry(models.Model):
     class Meta(object):
         verbose_name_plural = "PasswordExpiries"
 
-    # Not one-to-one because some users may never receive an expiry date.
-    user = models.ForeignKey(USER_MODEL, unique=True)
+    user = models.OneToOneField(USER_MODEL)
 
     password_expiry_date = models.DateTimeField(
         auto_now_add=True,
