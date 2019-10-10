@@ -23,7 +23,10 @@ class PasswordExpiry(models.Model):
     class Meta(object):
         verbose_name_plural = "PasswordExpiries"
 
-    user = models.OneToOneField(USER_MODEL)
+    user = models.OneToOneField(
+        USER_MODEL,
+        on_delete=models.deletion.CASCADE
+    )
 
     password_expiry_date = models.DateTimeField(
         auto_now_add=True,
