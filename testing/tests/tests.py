@@ -10,7 +10,7 @@ from django.contrib.auth import logout
 from django.contrib.auth.views import login
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, MiddlewareNotUsed
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.forms import ValidationError
 from django.http import HttpResponseForbidden, HttpRequest, HttpResponse
 from django.test import TestCase
