@@ -265,7 +265,7 @@ class ClearSiteDataMiddleware(BaseMiddleware):
     REQUIRED_SETTINGS = ('CLEAR_SITE_DATA_URL_WHITELIST',)
     OPTIONAL_SETTINGS = ('CLEAR_SITE_DATA_DIRECTIVES')
 
-    DEFAULT_DIRECTIVES = ['*']
+    DEFAULT_DIRECTIVES = ['cookies', 'storage']
     ALLOWED_DIRECTIVES = (
         'cache', 'cookies', 'storage', 'executionContexts', '*'
     )
