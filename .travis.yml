@@ -6,12 +6,6 @@ matrix:
     - python: 2.7
       env: DJANGO=1.11 TOXENV=pep8
     - python: 2.7
-      env: DJANGO=1.8 TOXENV=py27-django18
-    - python: 2.7
-      env: DJANGO=1.9 TOXENV=py27-django19
-    - python: 2.7
-      env: DJANGO=1.10 TOXENV=py27-django110
-    - python: 2.7
       env: DJANGO=1.11 TOXENV=py27-django111
     - python: 3.6
       env: DJANGO=1.11 TOXENV=py36-django111
