@@ -6,8 +6,7 @@ import time  # We monkeypatch this.
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.contrib.auth import logout
-from django.contrib.auth.views import login
+from django.contrib.auth.views import LogoutView
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, MiddlewareNotUsed
 from django.forms import ValidationError
@@ -16,6 +15,10 @@ from django.test import TestCase
 from django.test.utils import override_settings
 from django.urls import reverse
 from django.utils import timezone
+try:
+    from django.utils.deprecation import MiddlewareMixin
+except ImportError:
+    MiddlewareMixin = object
 
 from security.auth import min_length
 from security.auth_throttling import (
@@ -38,7 +41,7 @@ except ImportError:
     # Python 2 requires mock library
     from mock import MagicMock
 
-mocked_custom_logout = MagicMock(side_effect=logout)
+mocked_custom_logout = MagicMock(side_effect=LogoutView.as_view())
 
 
 def login_user(func):
@@ -66,7 +69,7 @@ def login_user(func):
     return wrapper
 
 
-class CustomLoginURLMiddleware(object):
+class CustomLoginURLMiddleware(MiddlewareMixin):
     """Used to test the custom url support in the login required middleware."""
     def process_request(self, request):
         request.login_url = '/custom-login/'
@@ -98,18 +101,18 @@ class BaseMiddlewareTests(TestCase):
     def test_settings_initially_loaded(self):
         expected_settings = {'R1': 1, 'R2': 2, 'O1': 3, 'O2': 4}
         with self.settings(
-            MIDDLEWARE_CLASSES=(self.MIDDLEWARE_NAME,), **expected_settings
+            MIDDLEWARE=(self.MIDDLEWARE_NAME,), **expected_settings
         ):
             response = self.client.get('/home/')
             self.assertEqual(expected_settings, response.loaded_settings)
 
     def test_required_settings(self):
-        with self.settings(MIDDLEWARE_CLASSES=(self.MIDDLEWARE_NAME,)):
+        with self.settings(MIDDLEWARE=(self.MIDDLEWARE_NAME,)):
             self.assertRaises(ImproperlyConfigured, self.client.get, '/home/')
 
     def test_optional_settings(self):
         with self.settings(
-            MIDDLEWARE_CLASSES=(self.MIDDLEWARE_NAME,), R1=True, R2=True
+            MIDDLEWARE=(self.MIDDLEWARE_NAME,), R1=True, R2=True
         ):
             response = self.client.get('/home/')
             self.assertEqual(None, response.loaded_settings['O1'])
@@ -117,7 +120,7 @@ class BaseMiddlewareTests(TestCase):
 
     def test_setting_change(self):
         with self.settings(
-            MIDDLEWARE_CLASSES=(self.MIDDLEWARE_NAME,), R1=123, R2=True
+            MIDDLEWARE=(self.MIDDLEWARE_NAME,), R1=123, R2=True
         ):
             response = self.client.get('/home/')
             self.assertEqual(123, response.loaded_settings['R1'])
@@ -139,12 +142,12 @@ class LoginRequiredMiddlewareTests(TestCase):
         self.login_url = reverse('login')
 
     def test_aborts_if_auth_middleware_missing(self):
-        middleware_classes = settings.MIDDLEWARE_CLASSES
+        middleware_classes = settings.MIDDLEWARE
         auth_mw = 'django.contrib.auth.middleware.AuthenticationMiddleware'
         middleware_classes = [
             m for m in middleware_classes if m != auth_mw
         ]
-        with self.settings(MIDDLEWARE_CLASSES=middleware_classes):
+        with self.settings(MIDDLEWARE=middleware_classes):
             self.assertRaises(ImproperlyConfigured, self.client.get, '/home/')
 
     def test_redirects_unauthenticated_request(self):
@@ -163,10 +166,10 @@ class LoginRequiredMiddlewareTests(TestCase):
         )
 
     def test_redirects_to_custom_login_url(self):
-        middlware_classes = list(settings.MIDDLEWARE_CLASSES)
+        middlware_classes = list(settings.MIDDLEWARE)
         custom_login_middleware = 'tests.tests.CustomLoginURLMiddleware'
         with self.settings(
-            MIDDLEWARE_CLASSES=[custom_login_middleware] + middlware_classes,
+            MIDDLEWARE=[custom_login_middleware] + middlware_classes,
         ):
             response = self.client.get('/home/')
             self.assertRedirects(response, '/custom-login/')

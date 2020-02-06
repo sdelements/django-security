@@ -8,7 +8,7 @@ from security.auth_throttling.views import reset_username_throttle
 from security.views import csp_report
 
 urlpatterns = [
-    url("^accounts/login/$", LoginView.as_view(), name='login'),
+    url("^accounts/login/$", lambda request: LoginView.as_view()(request), name='login'),
     url("^change_password/$", password_change,
         {"post_change_redirect": "/home/"}, "change_password"),
     url(r"^admin/reset-account-throttling/(?P<user_id>-?[0-9]+)/",

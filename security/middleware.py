@@ -7,7 +7,7 @@ import logging
 from re import compile
 
 import django.conf
-from django.contrib.auth import logout
+from django.contrib.auth.views import LogoutView
 from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpResponseRedirect, HttpResponse
 from django.test.signals import setting_changed
@@ -43,7 +43,7 @@ class CustomLogoutMixin(object):
 
     def perform_logout(self, request):
         if not getattr(self, 'CUSTOM_LOGOUT_MODULE', None):
-            logout(request)
+            LogoutView.as_view()(request)
             return
 
         try:
