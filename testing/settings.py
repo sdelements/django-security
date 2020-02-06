@@ -103,11 +103,6 @@ INSTALLED_APPS = (
     'tests'
 )
 
-if is_version((1, 6)):
-    TEST_RUNNER = 'django.test.runner.DiscoverRunner'
-else:
-    TEST_RUNNER = 'discover_runner.DiscoverRunner'
-
 LOGIN_REDIRECT_URL = "/home/"
 
 # The tests for django.contrib.auth use certain URLs, and they'll fail if we
