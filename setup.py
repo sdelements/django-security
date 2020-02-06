@@ -20,8 +20,9 @@ class Test(Command):
         pass
 
     def run(self):
-        errno = subprocess.call([sys.executable, 'testing/manage.py', 'test'])
+        errno = subprocess.call(['PYTHONWARNINGS=all', sys.executable, 'testing/manage.py', 'test'])
         raise SystemExit(errno)
+
 
 setup(name="django-security",
       description='A collection of tools to help secure a Django project.',
