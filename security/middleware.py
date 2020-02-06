@@ -9,11 +9,16 @@ from re import compile
 import django.conf
 from django.contrib.auth import logout
 from django.core.exceptions import ImproperlyConfigured
-from django.core.urlresolvers import reverse, resolve
+try:
+    from django.core.urlresolvers import reverse, resolve
+except ImportError:
+    # Moved in Django 2.x
+    from django.urls import reverse, resolve
 from django.http import HttpResponseRedirect, HttpResponse
 from django.test.signals import setting_changed
 from django.utils import timezone
 import django.views.static
+
 
 from ua_parser.user_agent_parser import ParseUserAgent
 
