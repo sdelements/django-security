@@ -20,7 +20,7 @@ class Test(Command):
         pass
 
     def run(self):
-        errno = subprocess.call(['PYTHONWARNINGS=all', sys.executable, 'testing/manage.py', 'test'])
+        errno = subprocess.call([sys.executable, 'testing/manage.py', 'test'])
         raise SystemExit(errno)
 
 

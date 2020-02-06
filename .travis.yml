@@ -2,11 +2,11 @@ language: python
 matrix:
   include:
     - python: 2.7
-      env: DJANGO=1.11 TOXENV=docs
-    - python: 2.7
-      env: DJANGO=1.11 TOXENV=pep8
-    - python: 2.7
       env: DJANGO=1.11 TOXENV=py27-django111
+    - python: 3.6
+      env: DJANGO=1.11 TOXENV=docs
+    - python: 3.6
+      env: DJANGO=1.11 TOXENV=pep8
     - python: 3.6
       env: DJANGO=1.11 TOXENV=py36-django111
     - python: 3.6
