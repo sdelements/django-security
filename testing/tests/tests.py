@@ -332,42 +332,51 @@ class DecoratorTest(TestCase):
 
 
 class SessionExpiryTests(TestCase):
+    def setUp(self):
+        super(SessionExpiryTests, self).setUp()
+
+        self.middlewares = ('django.contrib.sessions.middleware.SessionMiddleware',
+                            'django.contrib.auth.middleware.AuthenticationMiddleware',
+                            'django.contrib.sessions.middleware.SessionMiddleware',
+                            'security.middleware.SessionExpiryPolicyMiddleware')
 
     def test_session_variables_are_set(self):
         """
         Verify the session cookie stores the start time and last active time.
         """
-        self.client.get('/home/')
-        now = timezone.now()
+        with self.settings(MIDDLEWARE=self.middlewares):
+            self.client.get('/home/')
+            now = timezone.now()
 
-        start_time = SessionExpiryPolicyMiddleware._get_datetime_in_session(
-            SessionExpiryPolicyMiddleware.START_TIME_KEY,
-            self.client.session
-        )
-        last_activity = SessionExpiryPolicyMiddleware._get_datetime_in_session(
-            SessionExpiryPolicyMiddleware.LAST_ACTIVITY_KEY,
-            self.client.session
-        )
+            start_time = SessionExpiryPolicyMiddleware._get_datetime_in_session(
+                SessionExpiryPolicyMiddleware.START_TIME_KEY,
+                self.client.session
+            )
+            last_activity = SessionExpiryPolicyMiddleware._get_datetime_in_session(
+                SessionExpiryPolicyMiddleware.LAST_ACTIVITY_KEY,
+                self.client.session
+            )
 
-        self.assertTrue(now - start_time < datetime.timedelta(seconds=10))
-        self.assertTrue(now - last_activity < datetime.timedelta(seconds=10))
+            self.assertTrue(now - start_time < datetime.timedelta(seconds=10))
+            self.assertTrue(now - last_activity < datetime.timedelta(seconds=10))
 
     def session_expiry_test(self, key, expired):
         """
         Verify that expired sessions are cleared from the system. (And that we
         redirect to the login page.)
         """
-        self.assertTrue(self.client.get('/home/').status_code, 200)
-        session = self.client.session
-        SessionExpiryPolicyMiddleware._set_datetime_in_session(
-            key,
-            expired,
-            session
-        )
-        session.save()
-        response = self.client.get('/home/')
-        self.assertRedirects(response,
-                             'http://testserver/accounts/login/?next=/home/')
+        with self.settings(MIDDLEWARE=self.middlewares):
+            self.assertTrue(self.client.get('/home/').status_code, 200)
+            session = self.client.session
+            SessionExpiryPolicyMiddleware._set_datetime_in_session(
+                key,
+                expired,
+                session
+            )
+            session.save()
+            response = self.client.get('/home/')
+            self.assertRedirects(response,
+                                 'http://testserver/accounts/login/?next=/home/')
 
     @login_user
     def test_session_too_old(self):
@@ -398,7 +407,8 @@ class SessionExpiryTests(TestCase):
         delta = SessionExpiryPolicyMiddleware().SESSION_INACTIVITY_TIMEOUT + 1
         expired = timezone.now() - datetime.timedelta(seconds=delta)
 
-        self.assertTrue(self.client.get('/home/').status_code, 200)
+        with self.settings(MIDDLEWARE=self.middlewares):
+            self.assertTrue(self.client.get('/home/').status_code, 200)
 
         session = self.client.session
         SessionExpiryPolicyMiddleware._set_datetime_in_session(
@@ -408,8 +418,9 @@ class SessionExpiryTests(TestCase):
         )
         session.save()
 
-        exempted_response = self.client.get('/accounts/login/')
-        not_exempted_response = self.client.get('/home/')
+        with self.settings(MIDDLEWARE=self.middlewares):
+            exempted_response = self.client.get('/accounts/login/')
+            not_exempted_response = self.client.get('/home/')
 
         self.assertTrue(exempted_response.status_code, 200)
         self.assertRedirects(not_exempted_response,
@@ -440,6 +451,7 @@ class ConfidentialCachingTests(TestCase):
             "Pragma": "no-cache",
             "Expires": '-1'
         }
+        self.middleware_name = 'security.middleware.NoConfidentialCachingMiddleware'
 
     def tearDown(self):
         if self.old_config:
@@ -448,29 +460,34 @@ class ConfidentialCachingTests(TestCase):
             del(settings.NO_CONFIDENTIAL_CACHING)
 
     def test_whitelisting(self):
-        settings.NO_CONFIDENTIAL_CACHING["WHITELIST_ON"] = True
-        # Get Non Confidential Page
-        response = self.client.get('/accounts/login/')
-        for header, value in self.header_values.items():
-            self.assertNotEqual(response.get(header, None), value)
-        # Get Confidential Page
-        response = self.client.get("/accounts/logout")
-        for header, value in self.header_values.items():
-            self.assertEqual(response.get(header, None), value)
+        with self.settings(MIDDLEWARE=(self.middleware_name,)):
+            settings.NO_CONFIDENTIAL_CACHING["WHITELIST_ON"] = True
+            # Get Non Confidential Page
+            response = self.client.get('/accounts/login/')
+            for header, value in self.header_values.items():
+                self.assertNotEqual(response.get(header, None), value)
+            # Get Confidential Page
+            response = self.client.get("/accounts/logout")
+            for header, value in self.header_values.items():
+                self.assertEqual(response.get(header, None), value)
 
     def test_blacklisting(self):
-        settings.NO_CONFIDENTIAL_CACHING["BLACKLIST_ON"] = True
-        # Get Non Confidential Page
-        response = self.client.get('/accounts/login/')
-        for header, value in self.header_values.items():
-            self.assertNotEqual(response.get(header, None), value)
-        # Get Confidential Page
-        response = self.client.get("/accounts/logout/")
-        for header, value in self.header_values.items():
-            self.assertEqual(response.get(header, None), value)
+        with self.settings(MIDDLEWARE=(self.middleware_name,)):
+            settings.NO_CONFIDENTIAL_CACHING["BLACKLIST_ON"] = True
+            # Get Non Confidential Page
+            response = self.client.get('/accounts/login/')
+            for header, value in self.header_values.items():
+                self.assertNotEqual(response.get(header, None), value)
+            # Get Confidential Page
+            response = self.client.get("/accounts/logout/")
+            for header, value in self.header_values.items():
+                self.assertEqual(response.get(header, None), value)
 
 
 class XFrameOptionsDenyTests(TestCase):
+    def setUp(self):
+        super(XFrameOptionsDenyTests, self).setUp()
+        self.middleware_name = 'security.middleware.XFrameOptionsMiddleware'
 
     def test_option_set(self):
         """
@@ -483,10 +500,11 @@ class XFrameOptionsDenyTests(TestCase):
         """
         Verify that pages can be excluded from the X-Frame-Options header.
         """
-        response = self.client.get('/home/')
-        self.assertEqual(response['X-Frame-Options'], settings.X_FRAME_OPTIONS)
-        response = self.client.get('/test1/')
-        self.assertNotIn('X-Frame-Options', response)
+        with self.settings(MIDDLEWARE=(self.middleware_name,)):
+            response = self.client.get('/home/')
+            self.assertEqual(response['X-Frame-Options'], settings.X_FRAME_OPTIONS)
+            response = self.client.get('/test1/')
+            self.assertNotIn('X-Frame-Options', response)
 
     def test_improperly_configured(self):
         xframe = XFrameOptionsMiddleware()
@@ -505,7 +523,7 @@ class XFrameOptionsDenyTests(TestCase):
         )
 
     def test_default_exclude_urls(self):
-        with self.settings(X_FRAME_OPTIONS_EXCLUDE_URLS=None):
+        with self.settings(MIDDLEWARE=(self.middleware_name,), X_FRAME_OPTIONS_EXCLUDE_URLS=None):
             # This URL is excluded in other tests, see settings.py
             response = self.client.get('/test1/')
             self.assertEqual(
@@ -514,8 +532,9 @@ class XFrameOptionsDenyTests(TestCase):
             )
 
     def test_default_xframe_option(self):
-        with self.settings(X_FRAME_OPTIONS=None):
+        with self.settings(MIDDLEWARE=(self.middleware_name,), X_FRAME_OPTIONS=None):
             response = self.client.get('/home/')
+            print(response)
             self.assertEqual(
                 response['X-Frame-Options'],
                 'deny',

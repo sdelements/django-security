@@ -43,8 +43,7 @@ class CustomLogoutMixin(object):
 
     def perform_logout(self, request):
         if not getattr(self, 'CUSTOM_LOGOUT_MODULE', None):
-            LogoutView.as_view()(request)
-            return
+            return LogoutView.as_view()(request)
 
         try:
             module = self.CUSTOM_LOGOUT_MODULE
@@ -464,6 +463,7 @@ class NoConfidentialCachingMiddleware(BaseMiddleware):
         if self.blacklist:
             if match(request.path, self.blacklist_url_regexes):
                 remove_response_caching(response)
+
         return response
 
 
@@ -1028,7 +1028,7 @@ class SessionExpiryPolicyMiddleware(CustomLogoutMixin, BaseMiddleware):
         """
         if not hasattr(request, 'user'):
             raise ImproperlyConfigured(
-                "The Login Required middleware "
+                "The Session expiry middleware "
                 "requires authentication middleware to be installed."
             )
 
