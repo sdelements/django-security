@@ -10,15 +10,11 @@ from django.contrib.auth import logout
 from django.contrib.auth.views import login
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, MiddlewareNotUsed
-try:
-    from django.core.urlresolvers import reverse
-except ImportError:
-    # Moved in Django 2.x
-    from django.urls import reverse
 from django.forms import ValidationError
 from django.http import HttpResponseForbidden, HttpRequest, HttpResponse
 from django.test import TestCase
 from django.test.utils import override_settings
+from django.urls import reverse
 from django.utils import timezone
 
 from security.auth import min_length
