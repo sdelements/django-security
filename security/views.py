@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 
 def require_ajax(view):
     """
-    A view decorator which ensures that the request being proccessed
+    A view decorator which ensures that the request being processed
     by view is an AJAX request. We return a 403 error if the request
     is not an AJAX request.
     """
