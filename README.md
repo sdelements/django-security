@@ -154,7 +154,7 @@ See [documentation](http://django-security.readthedocs.org/en/latest/#security.v
 
 `require_ajax`
 
-A view decorator which ensures that the request being proccessed by view is an AJAX request. Example usage:
+A view decorator which ensures that the request being processed by view is an AJAX request. Example usage:
 
     @require_ajax
     def myview(request):
