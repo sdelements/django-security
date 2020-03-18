@@ -423,29 +423,22 @@ class SessionExpiryTests(TestCase):
         assert mocked_custom_logout.called
 
 
+@override_settings(MIDDLEWARE=('security.middleware.NoConfidentialCachingMiddleware',))
 class ConfidentialCachingTests(TestCase):
     def setUp(self):
-        self.old_config = getattr(settings, "NO_CONFIDENTIAL_CACHING", None)
-        settings.NO_CONFIDENTIAL_CACHING = {
-            "WHITELIST_ON": False,
-            "BLACKLIST_ON": False,
-            "WHITELIST_REGEXES": ["accounts/login/$"],
-            "BLACKLIST_REGEXES": ["accounts/logout/$"]
-        }
         self.header_values = {
             "Cache-Control": 'no-cache, no-store, max-age=0, must-revalidate',
             "Pragma": "no-cache",
             "Expires": '-1'
         }
 
-    def tearDown(self):
-        if self.old_config:
-            settings.NO_CONFIDENTIAL_CACHING = self.old_config
-        else:
-            del(settings.NO_CONFIDENTIAL_CACHING)
-
+    @override_settings(NO_CONFIDENTIAL_CACHING={
+        "WHITELIST_ON": True,
+        "BLACKLIST_ON": False,
+        "WHITELIST_REGEXES": ["accounts/login/$"],
+        "BLACKLIST_REGEXES": ["accounts/logout/$"]
+    })
     def test_whitelisting(self):
-        settings.NO_CONFIDENTIAL_CACHING["WHITELIST_ON"] = True
         # Get Non Confidential Page
         response = self.client.get('/accounts/login/')
         for header, value in self.header_values.items():
@@ -455,8 +448,13 @@ class ConfidentialCachingTests(TestCase):
         for header, value in self.header_values.items():
             self.assertEqual(response.get(header, None), value)
 
+    @override_settings(NO_CONFIDENTIAL_CACHING={
+        "WHITELIST_ON": False,
+        "BLACKLIST_ON": True,
+        "WHITELIST_REGEXES": ["accounts/login/$"],
+        "BLACKLIST_REGEXES": ["accounts/logout/$"]
+    })
     def test_blacklisting(self):
-        settings.NO_CONFIDENTIAL_CACHING["BLACKLIST_ON"] = True
         # Get Non Confidential Page
         response = self.client.get('/accounts/login/')
         for header, value in self.header_values.items():
@@ -466,7 +464,7 @@ class ConfidentialCachingTests(TestCase):
         for header, value in self.header_values.items():
             self.assertEqual(response.get(header, None), value)
 
-
+@override_settings(MIDDLEWARE=('security.middleware.XFrameOptionsMiddleware',))
 class XFrameOptionsDenyTests(TestCase):
 
     def test_option_set(self):
@@ -501,22 +499,22 @@ class XFrameOptionsDenyTests(TestCase):
             1,
         )
 
+    @override_settings(X_FRAME_OPTIONS_EXCLUDE_URLS=None)
     def test_default_exclude_urls(self):
-        with self.settings(X_FRAME_OPTIONS_EXCLUDE_URLS=None):
-            # This URL is excluded in other tests, see settings.py
-            response = self.client.get('/test1/')
-            self.assertEqual(
-                response['X-Frame-Options'],
-                settings.X_FRAME_OPTIONS,
-            )
+        # This URL is excluded in other tests, see settings.py
+        response = self.client.get('/test1/')
+        self.assertEqual(
+            response['X-Frame-Options'],
+            settings.X_FRAME_OPTIONS,
+        )
 
+    @override_settings(X_FRAME_OPTIONS=None)
     def test_default_xframe_option(self):
-        with self.settings(X_FRAME_OPTIONS=None):
-            response = self.client.get('/home/')
-            self.assertEqual(
-                response['X-Frame-Options'],
-                'deny',
-            )
+        response = self.client.get('/home/')
+        self.assertEqual(
+            response['X-Frame-Options'],
+            'deny',
+        )
 
 
 class XXssProtectTests(TestCase):
