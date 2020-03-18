@@ -33,7 +33,7 @@ class Migration(SchemaMigration):
         'auth.permission': {
             'Meta': {'ordering': "('content_type__app_label', 'content_type__model', 'codename')", 'unique_together': "(('content_type', 'codename'),)", 'object_name': 'Permission'},
             'codename': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            'content_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['contenttypes.ContentType']"}),
+            'content_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['contenttypes.ContentType']", 'on_delete': 'django.db.models.CASCADE'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '50'})
         },
@@ -64,7 +64,7 @@ class Migration(SchemaMigration):
             'Meta': {'object_name': 'PasswordExpiry'},
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'password_expiry_date': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(1, 1, 2, 0, 0)'}),
-            'user': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['auth.User']", 'unique': 'True'})
+            'user': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['auth.User']", 'unique': 'True', 'on_delete': 'django.db.models.CASCADE'})
         }
     }
 
