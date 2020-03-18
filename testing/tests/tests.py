@@ -136,7 +136,7 @@ class BaseMiddlewareTests(TestCase):
 
 class LoginRequiredMiddlewareTests(TestCase):
     def setUp(self):
-        self.login_url = reverse(LoginView.as_view())
+        self.login_url = reverse("login")
 
     def test_aborts_if_auth_middleware_missing(self):
         middleware_classes = settings.MIDDLEWARE_CLASSES

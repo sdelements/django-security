@@ -103,7 +103,7 @@ INSTALLED_APPS = (
     'tests'
 )
 
-if is_version((1, 6)):
+if is_version((1, 6)) or is_version((2, 2)):
     TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 else:
     TEST_RUNNER = 'discover_runner.DiscoverRunner'
