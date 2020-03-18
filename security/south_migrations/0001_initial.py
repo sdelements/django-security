@@ -11,7 +11,7 @@ class Migration(SchemaMigration):
         # Adding model 'PasswordExpiry'
         db.create_table('security_passwordexpiry', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('user', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['auth.User'], unique=True)),
+            ('user', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['auth.User'], unique=True, on_delete=models.CASCADE)),
             ('password_expiry_date', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime(1, 1, 1, 0, 0))),
         ))
         db.send_create_signal('security', ['PasswordExpiry'])
