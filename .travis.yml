@@ -4,7 +4,7 @@ matrix:
     - python: 3.6
       env: DJANGO=1.11 TOXENV=py36-django111
     - python: 3.6
-      env: DJANGO=2.22 TOXENV=py36-django222
+      env: DJANGO=2.2 TOXENV=py36-django22
 
 install:
   - pip install tox
