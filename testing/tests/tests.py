@@ -7,10 +7,10 @@ import time  # We monkeypatch this.
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.auth import logout
-from django.contrib.auth.views import login
+from django.contrib.auth.views import LoginView
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, MiddlewareNotUsed
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.forms import ValidationError
 from django.http import HttpResponseForbidden, HttpRequest, HttpResponse
 from django.test import TestCase
@@ -136,7 +136,7 @@ class BaseMiddlewareTests(TestCase):
 
 class LoginRequiredMiddlewareTests(TestCase):
     def setUp(self):
-        self.login_url = reverse(login)
+        self.login_url = reverse(LoginView.as_view())
 
     def test_aborts_if_auth_middleware_missing(self):
         middleware_classes = settings.MIDDLEWARE_CLASSES

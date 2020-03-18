@@ -9,7 +9,7 @@ from re import compile
 import django.conf
 from django.contrib.auth import logout
 from django.core.exceptions import ImproperlyConfigured
-from django.core.urlresolvers import reverse, resolve
+from django.urls import reverse, resolve
 from django.http import HttpResponseRedirect, HttpResponse
 from django.test.signals import setting_changed
 from django.utils import timezone
@@ -365,7 +365,7 @@ class MandatoryPasswordChangeMiddleware(BaseMiddleware):
         if not self.settings:
             return
 
-        if not request.user.is_authenticated():
+        if not request.user.is_authenticated:
             return
 
         if view == django.views.static.serve:
@@ -1082,7 +1082,7 @@ class SessionExpiryPolicyMiddleware(CustomLogoutMixin, BaseMiddleware):
             logger.debug("Session %s is inactive.", session.session_key)
             response = None
 
-            if request.user.is_authenticated():
+            if request.user.is_authenticated:
                 # Store the current path in the session
                 # so we can redirect the user after the logout
                 response = self.perform_logout(request)
@@ -1169,13 +1169,13 @@ class LoginRequiredMiddleware(BaseMiddleware, CustomLogoutMixin):
     def process_request(self, request):
         self.assert_authentication_middleware_installed(request)
 
-        if request.user.is_authenticated() and not request.user.is_active:
+        if request.user.is_authenticated and not request.user.is_active:
             response = self.perform_logout(request)
 
             if response:
                 return response
 
-        if request.user.is_authenticated():
+        if request.user.is_authenticated:
             return
 
         path = request.path_info.lstrip('/')
