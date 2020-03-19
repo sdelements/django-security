@@ -7,7 +7,6 @@ import time  # We monkeypatch this.
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.auth import logout
-from django.contrib.auth.views import LoginView
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, MiddlewareNotUsed
 from django.urls import reverse
@@ -380,7 +379,7 @@ class SessionExpiryTests(TestCase):
         session.save()
         response = self.client.get('/home/')
         self.assertRedirects(response,
-                             f'{reverse("login")}?next=/home/')
+                             reverse("login") + '?next=/home/')
 
     @login_user
     def test_session_too_old(self):
@@ -426,7 +425,7 @@ class SessionExpiryTests(TestCase):
 
         self.assertTrue(exempted_response.status_code, 200)
         self.assertRedirects(not_exempted_response,
-                             f'{reverse("login")}?next=/home/')
+                             reverse("login") + '?next=/home/')
 
     @login_user
     def test_custom_logout(self):
@@ -439,7 +438,9 @@ class SessionExpiryTests(TestCase):
         assert mocked_custom_logout.called
 
 
-@override_settings(MIDDLEWARE=('security.middleware.NoConfidentialCachingMiddleware',))
+@override_settings(MIDDLEWARE=(
+    'security.middleware.NoConfidentialCachingMiddleware',
+))
 class ConfidentialCachingTests(TestCase):
     def setUp(self):
         self.header_values = {
@@ -575,7 +576,9 @@ class ContentNoSniffTests(TestCase):
         self.assertEqual(response['X-Content-Options'], 'nosniff')
 
 
-@override_settings(MIDDLEWARE=('security.middleware.StrictTransportSecurityMiddleware',))
+@override_settings(MIDDLEWARE=(
+    'security.middleware.StrictTransportSecurityMiddleware',
+))
 class StrictTransportSecurityTests(TestCase):
 
     def test_option_set(self):
@@ -801,7 +804,9 @@ class AuthTests(TestCase):
         min_length(6)("abcdef")
 
 
-@override_settings(MIDDLEWARE=('security.middleware.ContentSecurityPolicyMiddleware',))
+@override_settings(MIDDLEWARE=(
+    'security.middleware.ContentSecurityPolicyMiddleware',
+))
 class ContentSecurityPolicyTests(TestCase):
     class FakeHttpRequest(object):
         method = 'POST'
