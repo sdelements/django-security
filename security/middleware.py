@@ -446,24 +446,24 @@ class NoConfidentialCachingMiddleware(BaseMiddleware):
         whitelist non-confidential pages and treat all others as non-
         confidential, or specifically blacklist pages as confidential
         """
-
-        def match(path, match_list):
-            path = path.lstrip('/')
-            return any(re.match(path) for re in match_list)
-
-        def remove_response_caching(response):
-            response['Cache-control'] = \
-                'no-cache, no-store, max-age=0, must-revalidate'
-            response['Pragma'] = "no-cache"
-            response['Expires'] = -1
-
+        path = request.path.lstrip('/')
         if self.whitelist:
-            if not match(request.path, self.whitelist_url_regexes):
-                remove_response_caching(response)
+            if not any(re.match(path) for re in self.whitelist_url_regexes):
+                self._remove_response_caching(response)
+                return response
         if self.blacklist:
-            if match(request.path, self.blacklist_url_regexes):
-                remove_response_caching(response)
+            if any(re.match(path) for re in self.blacklist_url_regexes):
+                self._remove_response_caching(response)
         return response
+
+    def _remove_response_caching(self, response):
+        """
+        Overwrites specific headers to make the HTTP response confidential.
+        """
+        response['Cache-control'] = \
+            'no-cache, no-store, max-age=0, must-revalidate'
+        response['Pragma'] = "no-cache"
+        response['Expires'] = -1
 
 
 # http://tools.ietf.org/html/draft-ietf-websec-x-frame-options-01
