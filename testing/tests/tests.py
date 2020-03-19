@@ -364,7 +364,7 @@ class SessionExpiryTests(TestCase):
         session.save()
         response = self.client.get('/home/')
         self.assertRedirects(response,
-                             f'{reverse("login")}?next=%2Fhome%2f')
+                             f'{reverse("login")}?next=/home/')
 
     @login_user
     def test_session_too_old(self):
@@ -410,7 +410,7 @@ class SessionExpiryTests(TestCase):
 
         self.assertTrue(exempted_response.status_code, 200)
         self.assertRedirects(not_exempted_response,
-                             f'{reverse("login")}?next=%2Fhome%2f')
+                             f'{reverse("login")}?next=/home/')
 
     @login_user
     def test_custom_logout(self):
