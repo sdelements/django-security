@@ -1057,3 +1057,25 @@ class DoNotTrackTests(TestCase):
     def test_DNT_echo_default(self):
         self.dnt.process_response(self.request, self.response)
         self.assertNotIn('DNT', self.response)
+
+
+@override_settings(MIDDLEWARE=(
+    'security.middleware.ClearSiteDataMiddleware',
+))
+class ClearSiteDataMiddlewareTests(TestCase):
+    def test_request_that_matches_the_whitelist_with_default_directives(self):
+        response = self.client.get('/home/')
+        self.assertEqual(response['Clear-Site-Data'], '"cookies", "storage"')
+
+    def test_request_that_misses_the_whitelist(self):
+        response = self.client.get('/test1/')
+        self.assertNotIn("Clear-Site-Data", response)
+
+    @override_settings(CLEAR_SITE_DATA_DIRECTIVES=(
+        'cache', 'cookies', 'executionContexts', '*'
+    ))
+    def test_request_that_matches_the_whitelist_with_custom_directives(self):
+        response = self.client.get('/home/')
+        self.assertEqual(
+            response['Clear-Site-Data'],
+            '"cache", "cookies", "executionContexts", "*"')

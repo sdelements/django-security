@@ -13,17 +13,13 @@ from django.urls import reverse, resolve
 from django.http import HttpResponseRedirect, HttpResponse
 from django.test.signals import setting_changed
 from django.utils import timezone
+from django.utils.deprecation import MiddlewareMixin
 import django.views.static
 
 from ua_parser.user_agent_parser import ParseUserAgent
 
 
 logger = logging.getLogger(__name__)
-
-try:
-    from django.utils.deprecation import MiddlewareMixin
-except ImportError:
-    MiddlewareMixin = object
 
 
 class CustomLogoutMixin(object):
@@ -46,8 +42,7 @@ class CustomLogoutMixin(object):
             return
 
         try:
-            module = self.CUSTOM_LOGOUT_MODULE
-            module_path, function_name = module.rsplit('.', 1)
+            module_path, function_name = self.CUSTOM_LOGOUT_MODULE.rsplit('.', 1)
         except ValueError:
             err = self.Messages.NOT_A_MODULE_PATH
             raise Exception(err.format(self.CUSTOM_LOGOUT_MODULE))
@@ -167,13 +162,9 @@ class DoNotTrackMiddleware(MiddlewareMixin):
         """
         Read DNT header from browser request and create request attribute
         """
+        request.dnt = None
         if 'HTTP_DNT' in request.META:
-            if request.META['HTTP_DNT'] == '1':
-                request.dnt = True
-            else:
-                request.dnt = False
-        else:
-            request.dnt = None
+            request.dnt = request.META['HTTP_DNT'] == '1'
             # returns None in normal conditions
 
     def process_response(self, request, response):

@@ -1,5 +1,4 @@
 import os as _os
-import django
 
 
 _PROJECT_PATH = _os.path.abspath(_os.path.dirname(__file__))
@@ -146,3 +145,5 @@ LOGGING = {
         },
     },
 }
+
+CLEAR_SITE_DATA_URL_WHITELIST = ('/home/')
