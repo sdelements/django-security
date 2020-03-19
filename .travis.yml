@@ -5,6 +5,8 @@ matrix:
       env: DJANGO=1.11 TOXENV=py36-django111
     - python: 3.6
       env: DJANGO=2.2 TOXENV=py36-django22
+    - python: 3.6
+      env: DJANGO=3.0 TOXENV=py36-django30
 
 install:
   - pip install tox
