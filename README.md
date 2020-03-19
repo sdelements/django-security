@@ -15,7 +15,7 @@ Automatically generated documentation of `django-security` is available on Read 
 * Python >= 3.6
 * Django >= 1.11
 
-For Django < 1.11 use django-security==0.11.3. For Django < 1.8 use django-security==0.9.4.
+For Django < 1.8 use django-security==0.9.4. For Django < 1.11 use django-security==0.11.3.
 
 Note: For versions prior to 0.10.0, `datetime` objects were being added to the session and required Django's PickleSerializer for (de)serializing. This has now been changed so that the strings of these `datetime`s are being stored instead. If you are still using PickleSerializer for this reason, we suggest switching to Django's default JSONSerializer (default since Django 1.6) for better security.
 
