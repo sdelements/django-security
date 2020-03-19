@@ -36,7 +36,7 @@ setup(name="django-security",
       classifiers=[
           'Framework :: Django',
           'Framework :: Django :: 1.11',
-          'Framework :: Django :: 2.22',
+          'Framework :: Django :: 2.2',
           'Environment :: Web Environment',
           'Programming Language :: Python',
           'Programming Language :: Python :: 3',
