@@ -2,10 +2,6 @@ import os as _os
 import django
 
 
-def is_version(version):
-    return all(x >= y for x, y in zip(django.VERSION, version))
-
-
 _PROJECT_PATH = _os.path.abspath(_os.path.dirname(__file__))
 
 DEBUG = True
@@ -85,10 +81,7 @@ INSTALLED_APPS = (
     'tests'
 )
 
-if is_version((1, 6)) or is_version((2, 2)):
-    TEST_RUNNER = 'django.test.runner.DiscoverRunner'
-else:
-    TEST_RUNNER = 'discover_runner.DiscoverRunner'
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
 LOGIN_REDIRECT_URL = "/home/"
 
