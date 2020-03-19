@@ -134,6 +134,11 @@ class BaseMiddlewareTests(TestCase):
         self.assertRaises(NotImplementedError, base.load_setting, None, None)
 
 
+@override_settings(MIDDLEWARE=(
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'security.middleware.LoginRequiredMiddleware',
+))
 class LoginRequiredMiddlewareTests(TestCase):
     def setUp(self):
         self.login_url = reverse("login")
@@ -196,6 +201,11 @@ class LoginRequiredMiddlewareTests(TestCase):
         self.assertRedirects(resp, self.login_url + "?next=/home/")
 
 
+@override_settings(MIDDLEWARE=(
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'security.middleware.MandatoryPasswordChangeMiddleware',
+))
 class RequirePasswordChangeTests(TestCase):
     def test_require_password_change(self):
         """
@@ -328,6 +338,12 @@ class DecoratorTest(TestCase):
         self.assertFalse(isinstance(response, HttpResponseForbidden))
 
 
+@override_settings(MIDDLEWARE=(
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'security.middleware.SessionExpiryPolicyMiddleware',
+    'security.middleware.LoginRequiredMiddleware',
+))
 class SessionExpiryTests(TestCase):
 
     def test_session_variables_are_set(self):
@@ -464,6 +480,7 @@ class ConfidentialCachingTests(TestCase):
         for header, value in self.header_values.items():
             self.assertEqual(response.get(header, None), value)
 
+
 @override_settings(MIDDLEWARE=('security.middleware.XFrameOptionsMiddleware',))
 class XFrameOptionsDenyTests(TestCase):
 
@@ -517,6 +534,7 @@ class XFrameOptionsDenyTests(TestCase):
         )
 
 
+@override_settings(MIDDLEWARE=('security.middleware.XssProtectMiddleware',))
 class XXssProtectTests(TestCase):
 
     def test_option_set(self):
@@ -546,6 +564,7 @@ class XXssProtectTests(TestCase):
         )
 
 
+@override_settings(MIDDLEWARE=('security.middleware.ContentNoSniff',))
 class ContentNoSniffTests(TestCase):
 
     def test_option_set(self):
@@ -556,6 +575,7 @@ class ContentNoSniffTests(TestCase):
         self.assertEqual(response['X-Content-Options'], 'nosniff')
 
 
+@override_settings(MIDDLEWARE=('security.middleware.StrictTransportSecurityMiddleware',))
 class StrictTransportSecurityTests(TestCase):
 
     def test_option_set(self):
@@ -566,12 +586,18 @@ class StrictTransportSecurityTests(TestCase):
         self.assertNotEqual(response['Strict-Transport-Security'], None)
 
 
-@override_settings(AUTHENTICATION_THROTTLING={
-    "DELAY_FUNCTION": lambda x, _: (2 ** (x - 1) if x else 0, 0),
-    "LOGIN_URLS_WITH_TEMPLATES": [
-        ("accounts/login/", "registration/login.html")
-    ]
-})
+@override_settings(
+    AUTHENTICATION_THROTTLING={
+        "DELAY_FUNCTION": lambda x, _: (2 ** (x - 1) if x else 0, 0),
+        "LOGIN_URLS_WITH_TEMPLATES": [
+            ("accounts/login/", "registration/login.html")
+        ]
+    },
+    MIDDLEWARE=(
+        'django.contrib.sessions.middleware.SessionMiddleware',
+        'django.contrib.auth.middleware.AuthenticationMiddleware',
+        'security.auth_throttling.Middleware',)
+)
 class AuthenticationThrottlingTests(TestCase):
     def setUp(self):
         # monkey patch time
@@ -756,6 +782,7 @@ class AuthenticationThrottlingTests(TestCase):
         self.assertEqual(resp.status_code, 404)
 
 
+@override_settings(MIDDLEWARE=('security.middleware.P3PPolicyMiddleware',))
 class P3PPolicyTests(TestCase):
 
     def setUp(self):
@@ -769,14 +796,13 @@ class P3PPolicyTests(TestCase):
 
 
 class AuthTests(TestCase):
-
     def test_min_length(self):
         self.assertRaises(ValidationError, min_length(6), "abcde")
         min_length(6)("abcdef")
 
 
+@override_settings(MIDDLEWARE=('security.middleware.ContentSecurityPolicyMiddleware',))
 class ContentSecurityPolicyTests(TestCase):
-
     class FakeHttpRequest(object):
         method = 'POST'
         body = """{
@@ -990,6 +1016,7 @@ class ContentSecurityPolicyTests(TestCase):
             )
 
 
+@override_settings(MIDDLEWARE=('security.middleware.DoNotTrackMiddleware',))
 class DoNotTrackTests(TestCase):
 
     def setUp(self):
