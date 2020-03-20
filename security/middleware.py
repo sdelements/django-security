@@ -4,6 +4,7 @@ import dateutil.parser
 import importlib
 import json
 import logging
+import warnings
 from re import compile
 
 import django.conf
@@ -20,6 +21,10 @@ from ua_parser.user_agent_parser import ParseUserAgent
 
 
 logger = logging.getLogger(__name__)
+DJANGO_SECURITY_MIDDLEWARE_URL = ("https://docs.djangoproject.com/en/1.11/ref"
+    "/middleware/#django.middleware.security.SecurityMiddleware")
+DJANGO_CLICKJACKING_MIDDLEWARE_URL = ("https://docs.djangoproject.com/en/1.11/"
+    "ref/clickjacking/")
 
 
 class CustomLogoutMixin(object):
@@ -214,6 +219,14 @@ class XssProtectMiddleware(BaseMiddleware):
 
     DEFAULT = 'sanitize'
 
+    def __init__(self, get_response=None):
+        super().__init__(get_response)
+        warnings.warn('The middleware "{name}" will no longer be supported in '
+        'future releases of this library. Refer to {url} for an '
+        'alternative approach.'.format(
+            name=self.__class__.__name__,
+            url=DJANGO_SECURITY_MIDDLEWARE_URL))
+
     def load_setting(self, setting, value):
         if not value:
             self.option = self.DEFAULT
@@ -312,6 +325,15 @@ class ContentNoSniff(MiddlewareMixin):
     - `MIME-Handling Change: X-Content-Type-Options: nosniff
       <http://msdn.microsoft.com/en-us/library/ie/gg622941(v=vs.85).aspx>`_
     """
+
+    def __init__(self, get_response=None):
+        super().__init__(get_response)
+        warnings.warn('The middleware "{name}" will no longer be supported in '
+        'future releases of this library. Refer to {url} for an '
+        'alternative approach.'.format(
+            name=self.__class__.__name__,
+            url=DJANGO_SECURITY_MIDDLEWARE_URL))
+
 
     def process_response(self, request, response):
         """
@@ -495,6 +517,14 @@ class XFrameOptionsMiddleware(BaseMiddleware):
     OPTIONAL_SETTINGS = ('X_FRAME_OPTIONS', 'X_FRAME_OPTIONS_EXCLUDE_URLS')
 
     DEFAULT = 'deny'
+
+    def __init__(self, get_response=None):
+        super().__init__(get_response)
+        warnings.warn('The middleware "{name}" will no longer be supported in '
+        'future releases of this library. Refer to {url} for an '
+        'alternative approach.'.format(
+            name=self.__class__.__name__,
+            url=DJANGO_CLICKJACKING_MIDDLEWARE_URL))
 
     def load_setting(self, setting, value):
         if setting == 'X_FRAME_OPTIONS':
@@ -850,6 +880,12 @@ class StrictTransportSecurityMiddleware(MiddlewareMixin):
     - `Preloaded HSTS sites <http://www.chromium.org/sts>`_
     """
     def __init__(self, get_response=None):
+        warnings.warn('The middleware "{name}" will no longer be supported in '
+        'future releases of this library. Refer to {url} for an '
+        'alternative approach.'.format(
+            name=self.__class__.__name__,
+            url=DJANGO_SECURITY_MIDDLEWARE_URL))
+
         self.get_response = get_response
 
         try:
@@ -902,6 +938,11 @@ class P3PPolicyMiddleware(BaseMiddleware):
 
     REQUIRED_SETTINGS = ("P3P_COMPACT_POLICY",)
     OPTIONAL_SETTINGS = ("P3P_POLICY_URL",)
+
+    def __init__(self, get_response=None):
+        super().__init__(get_response)
+        warnings.warn('The middleware "{name}" will no longer be supported in '
+        'future releases of this library.'.format(name=self.__class__.__name__))
 
     def load_setting(self, setting, value):
         if setting == 'P3P_COMPACT_POLICY':
