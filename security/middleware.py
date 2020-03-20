@@ -223,9 +223,10 @@ class XssProtectMiddleware(BaseMiddleware):
         super().__init__(get_response)
         warnings.warn('The middleware "{name}" will no longer be supported in '
         'future releases of this library. Refer to {url} for an '
-        'alternative approach.'.format(
+        'alternative approach with regards to the settings: {settings}'.format(
             name=self.__class__.__name__,
-            url=DJANGO_SECURITY_MIDDLEWARE_URL))
+            url=DJANGO_SECURITY_MIDDLEWARE_URL,
+            settings="SECURE_BROWSER_XSS_FILTER"))
 
     def load_setting(self, setting, value):
         if not value:
@@ -330,9 +331,10 @@ class ContentNoSniff(MiddlewareMixin):
         super().__init__(get_response)
         warnings.warn('The middleware "{name}" will no longer be supported in '
         'future releases of this library. Refer to {url} for an '
-        'alternative approach.'.format(
+        'alternative approach with regards to the settings: {settings}'.format(
             name=self.__class__.__name__,
-            url=DJANGO_SECURITY_MIDDLEWARE_URL))
+            url=DJANGO_SECURITY_MIDDLEWARE_URL,
+            settings="SECURE_CONTENT_TYPE_NOSNIFF"))
 
 
     def process_response(self, request, response):
@@ -520,10 +522,9 @@ class XFrameOptionsMiddleware(BaseMiddleware):
 
     def __init__(self, get_response=None):
         super().__init__(get_response)
-        warnings.warn('The middleware "{name}" will no longer be supported in '
-        'future releases of this library. Refer to {url} for an '
-        'alternative approach.'.format(
-            name=self.__class__.__name__,
+        warnings.warn('An official middleware "{name}" is supported by Django.'
+        ' Refer to {url} to see if its approach fits the use case.'.format(
+            name="XFrameOptionsMiddleware",
             url=DJANGO_CLICKJACKING_MIDDLEWARE_URL))
 
     def load_setting(self, setting, value):
@@ -882,9 +883,14 @@ class StrictTransportSecurityMiddleware(MiddlewareMixin):
     def __init__(self, get_response=None):
         warnings.warn('The middleware "{name}" will no longer be supported in '
         'future releases of this library. Refer to {url} for an '
-        'alternative approach.'.format(
+        'alternative approach with regards to the settings: {settings}'.format(
             name=self.__class__.__name__,
-            url=DJANGO_SECURITY_MIDDLEWARE_URL))
+            url=DJANGO_SECURITY_MIDDLEWARE_URL,
+            settings=", ".join([
+                "SECURE_HSTS_SECONDS",
+                "SECURE_HSTS_INCLUDE_SUBDOMAINS",
+                "SECURE_HSTS_PRELOAD",
+            ])))
 
         self.get_response = get_response
 
