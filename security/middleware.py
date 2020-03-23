@@ -184,6 +184,10 @@ class DoNotTrackMiddleware(MiddlewareMixin):
 
 class XssProtectMiddleware(BaseMiddleware):
     """
+    DEPRECATED: Will be removed in future releases. Consider
+    django.middleware.security.SecurityMiddleware as a replacement for this via
+    SECURE_BROWSER_XSS_FILTER setting.
+
     Sends X-XSS-Protection HTTP header that controls Cross-Site Scripting
     filter on MSIE. Use XSS_PROTECT option in settings file with the following
     values:
@@ -221,8 +225,8 @@ class XssProtectMiddleware(BaseMiddleware):
 
     def __init__(self, get_response=None):
         super().__init__(get_response)
-        warnings.warn('The middleware "{name}" will no longer be supported in '
-        'future releases of this library. Refer to {url} for an '
+        warnings.warn('DEPRECATED: The middleware "{name}" will no longer be '
+        'supported in future releases of this library. Refer to {url} for an '
         'alternative approach with regards to the settings: {settings}'.format(
             name=self.__class__.__name__,
             url=DJANGO_SECURITY_MIDDLEWARE_URL,
@@ -310,6 +314,10 @@ class ClearSiteDataMiddleware(BaseMiddleware):
 
 class ContentNoSniff(MiddlewareMixin):
     """
+    DEPRECATED: Will be removed in future releases. Consider
+    django.middleware.security.SecurityMiddleware as a replacement for this via
+    SECURE_CONTENT_TYPE_NOSNIFF setting.
+
     Sends X-Content-Options HTTP header to disable autodetection of MIME type
     of files returned by the server in Microsoft Internet Explorer.
     Specifically if this flag is enabled, MSIE will not load external CSS and
@@ -329,8 +337,8 @@ class ContentNoSniff(MiddlewareMixin):
 
     def __init__(self, get_response=None):
         super().__init__(get_response)
-        warnings.warn('The middleware "{name}" will no longer be supported in '
-        'future releases of this library. Refer to {url} for an '
+        warnings.warn('DEPRECATED: The middleware "{name}" will no longer be '
+        'supported in future releases of this library. Refer to {url} for an '
         'alternative approach with regards to the settings: {settings}'.format(
             name=self.__class__.__name__,
             url=DJANGO_SECURITY_MIDDLEWARE_URL,
@@ -858,6 +866,11 @@ class ContentSecurityPolicyMiddleware(MiddlewareMixin):
 
 class StrictTransportSecurityMiddleware(MiddlewareMixin):
     """
+    DEPRECATED: Will be removed in future releases. Consider
+    django.middleware.security.SecurityMiddleware as a replacement for this via
+    SECURE_HSTS_SECONDS, SECURE_HSTS_INCLUDE_SUBDOMAINS and
+    SECURE_HSTS_PRELOAD settings.
+
     Adds Strict-Transport-Security header to HTTP
     response that enforces SSL connections on compliant browsers. Two
     parameters can be set in settings file, otherwise reasonable
@@ -881,8 +894,8 @@ class StrictTransportSecurityMiddleware(MiddlewareMixin):
     - `Preloaded HSTS sites <http://www.chromium.org/sts>`_
     """
     def __init__(self, get_response=None):
-        warnings.warn('The middleware "{name}" will no longer be supported in '
-        'future releases of this library. Refer to {url} for an '
+        warnings.warn('DEPRECATED: The middleware "{name}" will no longer be '
+        'supported in future releases of this library. Refer to {url} for an '
         'alternative approach with regards to the settings: {settings}'.format(
             name=self.__class__.__name__,
             url=DJANGO_SECURITY_MIDDLEWARE_URL,
@@ -927,6 +940,8 @@ class StrictTransportSecurityMiddleware(MiddlewareMixin):
 
 class P3PPolicyMiddleware(BaseMiddleware):
     """
+    DEPRECATED: Will be removed in future releases.
+
     Adds the HTTP header attribute specifying compact P3P policy
     defined in P3P_COMPACT_POLICY setting and location of full
     policy defined in P3P_POLICY_URL. If the latter is not defined,
@@ -947,8 +962,10 @@ class P3PPolicyMiddleware(BaseMiddleware):
 
     def __init__(self, get_response=None):
         super().__init__(get_response)
-        warnings.warn('The middleware "{name}" will no longer be supported in '
-        'future releases of this library.'.format(name=self.__class__.__name__))
+        warnings.warn('DEPRECATED: The middleware "{name}" will no longer be '
+        'supported in future releases of this library.'.format(
+            name=self.__class__.__name__
+        ))
 
     def load_setting(self, setting, value):
         if setting == 'P3P_COMPACT_POLICY':
