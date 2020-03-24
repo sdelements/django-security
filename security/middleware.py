@@ -4,26 +4,27 @@ import dateutil.parser
 import importlib
 import json
 import logging
+import warnings
 from re import compile
 
 import django.conf
 from django.contrib.auth import logout
 from django.core.exceptions import ImproperlyConfigured
-from django.core.urlresolvers import reverse, resolve
+from django.urls import reverse, resolve
 from django.http import HttpResponseRedirect, HttpResponse
 from django.test.signals import setting_changed
 from django.utils import timezone
+from django.utils.deprecation import MiddlewareMixin
 import django.views.static
 
 from ua_parser.user_agent_parser import ParseUserAgent
 
 
 logger = logging.getLogger(__name__)
-
-try:
-    from django.utils.deprecation import MiddlewareMixin
-except ImportError:
-    MiddlewareMixin = object
+DJANGO_SECURITY_MIDDLEWARE_URL = ("https://docs.djangoproject.com/en/1.11/ref"
+    "/middleware/#django.middleware.security.SecurityMiddleware")
+DJANGO_CLICKJACKING_MIDDLEWARE_URL = ("https://docs.djangoproject.com/en/1.11/"
+    "ref/clickjacking/")
 
 
 class CustomLogoutMixin(object):
@@ -46,8 +47,7 @@ class CustomLogoutMixin(object):
             return
 
         try:
-            module = self.CUSTOM_LOGOUT_MODULE
-            module_path, function_name = module.rsplit('.', 1)
+            module_path, function_name = self.CUSTOM_LOGOUT_MODULE.rsplit('.', 1)
         except ValueError:
             err = self.Messages.NOT_A_MODULE_PATH
             raise Exception(err.format(self.CUSTOM_LOGOUT_MODULE))
@@ -167,13 +167,9 @@ class DoNotTrackMiddleware(MiddlewareMixin):
         """
         Read DNT header from browser request and create request attribute
         """
+        request.dnt = None
         if 'HTTP_DNT' in request.META:
-            if request.META['HTTP_DNT'] == '1':
-                request.dnt = True
-            else:
-                request.dnt = False
-        else:
-            request.dnt = None
+            request.dnt = request.META['HTTP_DNT'] == '1'
             # returns None in normal conditions
 
     def process_response(self, request, response):
@@ -188,6 +184,10 @@ class DoNotTrackMiddleware(MiddlewareMixin):
 
 class XssProtectMiddleware(BaseMiddleware):
     """
+    DEPRECATED: Will be removed in future releases. Consider
+    django.middleware.security.SecurityMiddleware as a replacement for this via
+    SECURE_BROWSER_XSS_FILTER setting.
+
     Sends X-XSS-Protection HTTP header that controls Cross-Site Scripting
     filter on MSIE. Use XSS_PROTECT option in settings file with the following
     values:
@@ -222,6 +222,15 @@ class XssProtectMiddleware(BaseMiddleware):
     }
 
     DEFAULT = 'sanitize'
+
+    def __init__(self, get_response=None):
+        super().__init__(get_response)
+        warnings.warn('DEPRECATED: The middleware "{name}" will no longer be '
+        'supported in future releases of this library. Refer to {url} for an '
+        'alternative approach with regards to the settings: {settings}'.format(
+            name=self.__class__.__name__,
+            url=DJANGO_SECURITY_MIDDLEWARE_URL,
+            settings="SECURE_BROWSER_XSS_FILTER"))
 
     def load_setting(self, setting, value):
         if not value:
@@ -305,6 +314,10 @@ class ClearSiteDataMiddleware(BaseMiddleware):
 
 class ContentNoSniff(MiddlewareMixin):
     """
+    DEPRECATED: Will be removed in future releases. Consider
+    django.middleware.security.SecurityMiddleware as a replacement for this via
+    SECURE_CONTENT_TYPE_NOSNIFF setting.
+
     Sends X-Content-Options HTTP header to disable autodetection of MIME type
     of files returned by the server in Microsoft Internet Explorer.
     Specifically if this flag is enabled, MSIE will not load external CSS and
@@ -321,6 +334,16 @@ class ContentNoSniff(MiddlewareMixin):
     - `MIME-Handling Change: X-Content-Type-Options: nosniff
       <http://msdn.microsoft.com/en-us/library/ie/gg622941(v=vs.85).aspx>`_
     """
+
+    def __init__(self, get_response=None):
+        super().__init__(get_response)
+        warnings.warn('DEPRECATED: The middleware "{name}" will no longer be '
+        'supported in future releases of this library. Refer to {url} for an '
+        'alternative approach with regards to the settings: {settings}'.format(
+            name=self.__class__.__name__,
+            url=DJANGO_SECURITY_MIDDLEWARE_URL,
+            settings="SECURE_CONTENT_TYPE_NOSNIFF"))
+
 
     def process_response(self, request, response):
         """
@@ -365,7 +388,7 @@ class MandatoryPasswordChangeMiddleware(BaseMiddleware):
         if not self.settings:
             return
 
-        if not request.user.is_authenticated():
+        if not request.user.is_authenticated:
             return
 
         if view == django.views.static.serve:
@@ -446,24 +469,24 @@ class NoConfidentialCachingMiddleware(BaseMiddleware):
         whitelist non-confidential pages and treat all others as non-
         confidential, or specifically blacklist pages as confidential
         """
-
-        def match(path, match_list):
-            path = path.lstrip('/')
-            return any(re.match(path) for re in match_list)
-
-        def remove_response_caching(response):
-            response['Cache-control'] = \
-                'no-cache, no-store, max-age=0, must-revalidate'
-            response['Pragma'] = "no-cache"
-            response['Expires'] = -1
-
+        path = request.path.lstrip('/')
         if self.whitelist:
-            if not match(request.path, self.whitelist_url_regexes):
-                remove_response_caching(response)
+            if not any(re.match(path) for re in self.whitelist_url_regexes):
+                self._remove_response_caching(response)
+                return response
         if self.blacklist:
-            if match(request.path, self.blacklist_url_regexes):
-                remove_response_caching(response)
+            if any(re.match(path) for re in self.blacklist_url_regexes):
+                self._remove_response_caching(response)
         return response
+
+    def _remove_response_caching(self, response):
+        """
+        Overwrites specific headers to make the HTTP response confidential.
+        """
+        response['Cache-control'] = \
+            'no-cache, no-store, max-age=0, must-revalidate'
+        response['Pragma'] = "no-cache"
+        response['Expires'] = -1
 
 
 # http://tools.ietf.org/html/draft-ietf-websec-x-frame-options-01
@@ -504,6 +527,13 @@ class XFrameOptionsMiddleware(BaseMiddleware):
     OPTIONAL_SETTINGS = ('X_FRAME_OPTIONS', 'X_FRAME_OPTIONS_EXCLUDE_URLS')
 
     DEFAULT = 'deny'
+
+    def __init__(self, get_response=None):
+        super().__init__(get_response)
+        warnings.warn('An official middleware "{name}" is supported by Django.'
+        ' Refer to {url} to see if its approach fits the use case.'.format(
+            name="XFrameOptionsMiddleware",
+            url=DJANGO_CLICKJACKING_MIDDLEWARE_URL))
 
     def load_setting(self, setting, value):
         if setting == 'X_FRAME_OPTIONS':
@@ -836,6 +866,11 @@ class ContentSecurityPolicyMiddleware(MiddlewareMixin):
 
 class StrictTransportSecurityMiddleware(MiddlewareMixin):
     """
+    DEPRECATED: Will be removed in future releases. Consider
+    django.middleware.security.SecurityMiddleware as a replacement for this via
+    SECURE_HSTS_SECONDS, SECURE_HSTS_INCLUDE_SUBDOMAINS and
+    SECURE_HSTS_PRELOAD settings.
+
     Adds Strict-Transport-Security header to HTTP
     response that enforces SSL connections on compliant browsers. Two
     parameters can be set in settings file, otherwise reasonable
@@ -859,6 +894,17 @@ class StrictTransportSecurityMiddleware(MiddlewareMixin):
     - `Preloaded HSTS sites <http://www.chromium.org/sts>`_
     """
     def __init__(self, get_response=None):
+        warnings.warn('DEPRECATED: The middleware "{name}" will no longer be '
+        'supported in future releases of this library. Refer to {url} for an '
+        'alternative approach with regards to the settings: {settings}'.format(
+            name=self.__class__.__name__,
+            url=DJANGO_SECURITY_MIDDLEWARE_URL,
+            settings=", ".join([
+                "SECURE_HSTS_SECONDS",
+                "SECURE_HSTS_INCLUDE_SUBDOMAINS",
+                "SECURE_HSTS_PRELOAD",
+            ])))
+
         self.get_response = get_response
 
         try:
@@ -894,6 +940,8 @@ class StrictTransportSecurityMiddleware(MiddlewareMixin):
 
 class P3PPolicyMiddleware(BaseMiddleware):
     """
+    DEPRECATED: Will be removed in future releases.
+
     Adds the HTTP header attribute specifying compact P3P policy
     defined in P3P_COMPACT_POLICY setting and location of full
     policy defined in P3P_POLICY_URL. If the latter is not defined,
@@ -911,6 +959,13 @@ class P3PPolicyMiddleware(BaseMiddleware):
 
     REQUIRED_SETTINGS = ("P3P_COMPACT_POLICY",)
     OPTIONAL_SETTINGS = ("P3P_POLICY_URL",)
+
+    def __init__(self, get_response=None):
+        super().__init__(get_response)
+        warnings.warn('DEPRECATED: The middleware "{name}" will no longer be '
+        'supported in future releases of this library.'.format(
+            name=self.__class__.__name__
+        ))
 
     def load_setting(self, setting, value):
         if setting == 'P3P_COMPACT_POLICY':
@@ -1082,7 +1137,7 @@ class SessionExpiryPolicyMiddleware(CustomLogoutMixin, BaseMiddleware):
             logger.debug("Session %s is inactive.", session.session_key)
             response = None
 
-            if request.user.is_authenticated():
+            if request.user.is_authenticated:
                 # Store the current path in the session
                 # so we can redirect the user after the logout
                 response = self.perform_logout(request)
@@ -1169,13 +1224,13 @@ class LoginRequiredMiddleware(BaseMiddleware, CustomLogoutMixin):
     def process_request(self, request):
         self.assert_authentication_middleware_installed(request)
 
-        if request.user.is_authenticated() and not request.user.is_active:
+        if request.user.is_authenticated and not request.user.is_active:
             response = self.perform_logout(request)
 
             if response:
                 return response
 
-        if request.user.is_authenticated():
+        if request.user.is_authenticated:
             return
 
         path = request.path_info.lstrip('/')

@@ -7,10 +7,9 @@ import time  # We monkeypatch this.
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.auth import logout
-from django.contrib.auth.views import login
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, MiddlewareNotUsed
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.forms import ValidationError
 from django.http import HttpResponseForbidden, HttpRequest, HttpResponse
 from django.test import TestCase
@@ -66,7 +65,7 @@ def login_user(func):
     return wrapper
 
 
-class CustomLoginURLMiddleware(object):
+class CustomLoginURLMiddleware(BaseMiddleware):
     """Used to test the custom url support in the login required middleware."""
     def process_request(self, request):
         request.login_url = '/custom-login/'
@@ -98,18 +97,18 @@ class BaseMiddlewareTests(TestCase):
     def test_settings_initially_loaded(self):
         expected_settings = {'R1': 1, 'R2': 2, 'O1': 3, 'O2': 4}
         with self.settings(
-            MIDDLEWARE_CLASSES=(self.MIDDLEWARE_NAME,), **expected_settings
+            MIDDLEWARE=(self.MIDDLEWARE_NAME,), **expected_settings
         ):
             response = self.client.get('/home/')
             self.assertEqual(expected_settings, response.loaded_settings)
 
     def test_required_settings(self):
-        with self.settings(MIDDLEWARE_CLASSES=(self.MIDDLEWARE_NAME,)):
+        with self.settings(MIDDLEWARE=(self.MIDDLEWARE_NAME,)):
             self.assertRaises(ImproperlyConfigured, self.client.get, '/home/')
 
     def test_optional_settings(self):
         with self.settings(
-            MIDDLEWARE_CLASSES=(self.MIDDLEWARE_NAME,), R1=True, R2=True
+            MIDDLEWARE=(self.MIDDLEWARE_NAME,), R1=True, R2=True
         ):
             response = self.client.get('/home/')
             self.assertEqual(None, response.loaded_settings['O1'])
@@ -117,7 +116,7 @@ class BaseMiddlewareTests(TestCase):
 
     def test_setting_change(self):
         with self.settings(
-            MIDDLEWARE_CLASSES=(self.MIDDLEWARE_NAME,), R1=123, R2=True
+            MIDDLEWARE=(self.MIDDLEWARE_NAME,), R1=123, R2=True
         ):
             response = self.client.get('/home/')
             self.assertEqual(123, response.loaded_settings['R1'])
@@ -134,17 +133,22 @@ class BaseMiddlewareTests(TestCase):
         self.assertRaises(NotImplementedError, base.load_setting, None, None)
 
 
+@override_settings(MIDDLEWARE=(
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'security.middleware.LoginRequiredMiddleware',
+))
 class LoginRequiredMiddlewareTests(TestCase):
     def setUp(self):
-        self.login_url = reverse(login)
+        self.login_url = reverse("login")
 
     def test_aborts_if_auth_middleware_missing(self):
-        middleware_classes = settings.MIDDLEWARE_CLASSES
+        middleware_classes = settings.MIDDLEWARE
         auth_mw = 'django.contrib.auth.middleware.AuthenticationMiddleware'
         middleware_classes = [
             m for m in middleware_classes if m != auth_mw
         ]
-        with self.settings(MIDDLEWARE_CLASSES=middleware_classes):
+        with self.settings(MIDDLEWARE=middleware_classes):
             self.assertRaises(ImproperlyConfigured, self.client.get, '/home/')
 
     def test_redirects_unauthenticated_request(self):
@@ -163,10 +167,10 @@ class LoginRequiredMiddlewareTests(TestCase):
         )
 
     def test_redirects_to_custom_login_url(self):
-        middlware_classes = list(settings.MIDDLEWARE_CLASSES)
+        middlware_classes = list(settings.MIDDLEWARE)
         custom_login_middleware = 'tests.tests.CustomLoginURLMiddleware'
         with self.settings(
-            MIDDLEWARE_CLASSES=[custom_login_middleware] + middlware_classes,
+            MIDDLEWARE=[custom_login_middleware] + middlware_classes,
         ):
             response = self.client.get('/home/')
             self.assertRedirects(response, '/custom-login/')
@@ -196,6 +200,11 @@ class LoginRequiredMiddlewareTests(TestCase):
         self.assertRedirects(resp, self.login_url + "?next=/home/")
 
 
+@override_settings(MIDDLEWARE=(
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'security.middleware.MandatoryPasswordChangeMiddleware',
+))
 class RequirePasswordChangeTests(TestCase):
     def test_require_password_change(self):
         """
@@ -328,6 +337,12 @@ class DecoratorTest(TestCase):
         self.assertFalse(isinstance(response, HttpResponseForbidden))
 
 
+@override_settings(MIDDLEWARE=(
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'security.middleware.SessionExpiryPolicyMiddleware',
+    'security.middleware.LoginRequiredMiddleware',
+))
 class SessionExpiryTests(TestCase):
 
     def test_session_variables_are_set(self):
@@ -364,7 +379,7 @@ class SessionExpiryTests(TestCase):
         session.save()
         response = self.client.get('/home/')
         self.assertRedirects(response,
-                             'http://testserver/accounts/login/?next=/home/')
+                             reverse("login") + '?next=/home/')
 
     @login_user
     def test_session_too_old(self):
@@ -410,7 +425,7 @@ class SessionExpiryTests(TestCase):
 
         self.assertTrue(exempted_response.status_code, 200)
         self.assertRedirects(not_exempted_response,
-                             'http://testserver/accounts/login/?next=/home/')
+                             reverse("login") + '?next=/home/')
 
     @login_user
     def test_custom_logout(self):
@@ -423,29 +438,24 @@ class SessionExpiryTests(TestCase):
         assert mocked_custom_logout.called
 
 
+@override_settings(MIDDLEWARE=(
+    'security.middleware.NoConfidentialCachingMiddleware',
+))
 class ConfidentialCachingTests(TestCase):
     def setUp(self):
-        self.old_config = getattr(settings, "NO_CONFIDENTIAL_CACHING", None)
-        settings.NO_CONFIDENTIAL_CACHING = {
-            "WHITELIST_ON": False,
-            "BLACKLIST_ON": False,
-            "WHITELIST_REGEXES": ["accounts/login/$"],
-            "BLACKLIST_REGEXES": ["accounts/logout/$"]
-        }
         self.header_values = {
             "Cache-Control": 'no-cache, no-store, max-age=0, must-revalidate',
             "Pragma": "no-cache",
             "Expires": '-1'
         }
 
-    def tearDown(self):
-        if self.old_config:
-            settings.NO_CONFIDENTIAL_CACHING = self.old_config
-        else:
-            del(settings.NO_CONFIDENTIAL_CACHING)
-
+    @override_settings(NO_CONFIDENTIAL_CACHING={
+        "WHITELIST_ON": True,
+        "BLACKLIST_ON": False,
+        "WHITELIST_REGEXES": ["accounts/login/$"],
+        "BLACKLIST_REGEXES": ["accounts/logout/$"]
+    })
     def test_whitelisting(self):
-        settings.NO_CONFIDENTIAL_CACHING["WHITELIST_ON"] = True
         # Get Non Confidential Page
         response = self.client.get('/accounts/login/')
         for header, value in self.header_values.items():
@@ -455,8 +465,13 @@ class ConfidentialCachingTests(TestCase):
         for header, value in self.header_values.items():
             self.assertEqual(response.get(header, None), value)
 
+    @override_settings(NO_CONFIDENTIAL_CACHING={
+        "WHITELIST_ON": False,
+        "BLACKLIST_ON": True,
+        "WHITELIST_REGEXES": ["accounts/login/$"],
+        "BLACKLIST_REGEXES": ["accounts/logout/$"]
+    })
     def test_blacklisting(self):
-        settings.NO_CONFIDENTIAL_CACHING["BLACKLIST_ON"] = True
         # Get Non Confidential Page
         response = self.client.get('/accounts/login/')
         for header, value in self.header_values.items():
@@ -467,6 +482,7 @@ class ConfidentialCachingTests(TestCase):
             self.assertEqual(response.get(header, None), value)
 
 
+@override_settings(MIDDLEWARE=('security.middleware.XFrameOptionsMiddleware',))
 class XFrameOptionsDenyTests(TestCase):
 
     def test_option_set(self):
@@ -501,24 +517,25 @@ class XFrameOptionsDenyTests(TestCase):
             1,
         )
 
+    @override_settings(X_FRAME_OPTIONS_EXCLUDE_URLS=None)
     def test_default_exclude_urls(self):
-        with self.settings(X_FRAME_OPTIONS_EXCLUDE_URLS=None):
-            # This URL is excluded in other tests, see settings.py
-            response = self.client.get('/test1/')
-            self.assertEqual(
-                response['X-Frame-Options'],
-                settings.X_FRAME_OPTIONS,
-            )
+        # This URL is excluded in other tests, see settings.py
+        response = self.client.get('/test1/')
+        self.assertEqual(
+            response['X-Frame-Options'],
+            settings.X_FRAME_OPTIONS,
+        )
 
+    @override_settings(X_FRAME_OPTIONS=None)
     def test_default_xframe_option(self):
-        with self.settings(X_FRAME_OPTIONS=None):
-            response = self.client.get('/home/')
-            self.assertEqual(
-                response['X-Frame-Options'],
-                'deny',
-            )
+        response = self.client.get('/home/')
+        self.assertEqual(
+            response['X-Frame-Options'],
+            'deny',
+        )
 
 
+@override_settings(MIDDLEWARE=('security.middleware.XssProtectMiddleware',))
 class XXssProtectTests(TestCase):
 
     def test_option_set(self):
@@ -548,6 +565,7 @@ class XXssProtectTests(TestCase):
         )
 
 
+@override_settings(MIDDLEWARE=('security.middleware.ContentNoSniff',))
 class ContentNoSniffTests(TestCase):
 
     def test_option_set(self):
@@ -558,6 +576,9 @@ class ContentNoSniffTests(TestCase):
         self.assertEqual(response['X-Content-Options'], 'nosniff')
 
 
+@override_settings(MIDDLEWARE=(
+    'security.middleware.StrictTransportSecurityMiddleware',
+))
 class StrictTransportSecurityTests(TestCase):
 
     def test_option_set(self):
@@ -568,12 +589,18 @@ class StrictTransportSecurityTests(TestCase):
         self.assertNotEqual(response['Strict-Transport-Security'], None)
 
 
-@override_settings(AUTHENTICATION_THROTTLING={
-    "DELAY_FUNCTION": lambda x, _: (2 ** (x - 1) if x else 0, 0),
-    "LOGIN_URLS_WITH_TEMPLATES": [
-        ("accounts/login/", "registration/login.html")
-    ]
-})
+@override_settings(
+    AUTHENTICATION_THROTTLING={
+        "DELAY_FUNCTION": lambda x, _: (2 ** (x - 1) if x else 0, 0),
+        "LOGIN_URLS_WITH_TEMPLATES": [
+            ("accounts/login/", "registration/login.html")
+        ]
+    },
+    MIDDLEWARE=(
+        'django.contrib.sessions.middleware.SessionMiddleware',
+        'django.contrib.auth.middleware.AuthenticationMiddleware',
+        'security.auth_throttling.Middleware',)
+)
 class AuthenticationThrottlingTests(TestCase):
     def setUp(self):
         # monkey patch time
@@ -758,6 +785,7 @@ class AuthenticationThrottlingTests(TestCase):
         self.assertEqual(resp.status_code, 404)
 
 
+@override_settings(MIDDLEWARE=('security.middleware.P3PPolicyMiddleware',))
 class P3PPolicyTests(TestCase):
 
     def setUp(self):
@@ -771,14 +799,15 @@ class P3PPolicyTests(TestCase):
 
 
 class AuthTests(TestCase):
-
     def test_min_length(self):
         self.assertRaises(ValidationError, min_length(6), "abcde")
         min_length(6)("abcdef")
 
 
+@override_settings(MIDDLEWARE=(
+    'security.middleware.ContentSecurityPolicyMiddleware',
+))
 class ContentSecurityPolicyTests(TestCase):
-
     class FakeHttpRequest(object):
         method = 'POST'
         body = """{
@@ -992,6 +1021,7 @@ class ContentSecurityPolicyTests(TestCase):
             )
 
 
+@override_settings(MIDDLEWARE=('security.middleware.DoNotTrackMiddleware',))
 class DoNotTrackTests(TestCase):
 
     def setUp(self):
@@ -1027,3 +1057,25 @@ class DoNotTrackTests(TestCase):
     def test_DNT_echo_default(self):
         self.dnt.process_response(self.request, self.response)
         self.assertNotIn('DNT', self.response)
+
+
+@override_settings(MIDDLEWARE=(
+    'security.middleware.ClearSiteDataMiddleware',
+))
+class ClearSiteDataMiddlewareTests(TestCase):
+    def test_request_that_matches_the_whitelist_with_default_directives(self):
+        response = self.client.get('/home/')
+        self.assertEqual(response['Clear-Site-Data'], '"cookies", "storage"')
+
+    def test_request_that_misses_the_whitelist(self):
+        response = self.client.get('/test1/')
+        self.assertNotIn("Clear-Site-Data", response)
+
+    @override_settings(CLEAR_SITE_DATA_DIRECTIVES=(
+        'cache', 'cookies', 'executionContexts', '*'
+    ))
+    def test_request_that_matches_the_whitelist_with_custom_directives(self):
+        response = self.client.get('/home/')
+        self.assertEqual(
+            response['Clear-Site-Data'],
+            '"cache", "cookies", "executionContexts", "*"')

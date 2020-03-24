@@ -1,9 +1,4 @@
 import os as _os
-import django
-
-
-def is_version(version):
-    return all(x >= y for x, y in zip(django.VERSION, version))
 
 
 _PROJECT_PATH = _os.path.abspath(_os.path.dirname(__file__))
@@ -38,44 +33,25 @@ STATICFILES_FINDERS = (
 )
 SECRET_KEY = 'p_2zsf+@4uw$kcdl$!tkf0lrh%w^!#@2@iwo4plef2n$(@uj4_'
 
-if is_version((1, 8)) or is_version((1, 9)):
-    MIDDLEWARE_CLASSES = (
-        'django.middleware.common.CommonMiddleware',
-        'django.contrib.sessions.middleware.SessionMiddleware',
-        'django.contrib.auth.middleware.AuthenticationMiddleware',
-        'django.middleware.csrf.CsrfViewMiddleware',
-        'django.contrib.messages.middleware.MessageMiddleware',
-        'security.middleware.SessionExpiryPolicyMiddleware',
-        'security.middleware.LoginRequiredMiddleware',
-        'security.middleware.XFrameOptionsMiddleware',
-        'security.middleware.ContentNoSniff',
-        'security.middleware.ContentSecurityPolicyMiddleware',
-        'security.middleware.StrictTransportSecurityMiddleware',
-        'security.middleware.P3PPolicyMiddleware',
-        'security.middleware.XssProtectMiddleware',
-        'security.middleware.MandatoryPasswordChangeMiddleware',
-        'security.middleware.NoConfidentialCachingMiddleware',
-        'security.auth_throttling.Middleware',
-    )
-else:
-    MIDDLEWARE = (
-        'django.middleware.common.CommonMiddleware',
-        'django.contrib.sessions.middleware.SessionMiddleware',
-        'django.contrib.auth.middleware.AuthenticationMiddleware',
-        'django.middleware.csrf.CsrfViewMiddleware',
-        'django.contrib.messages.middleware.MessageMiddleware',
-        'security.middleware.SessionExpiryPolicyMiddleware',
-        'security.middleware.LoginRequiredMiddleware',
-        'security.middleware.XFrameOptionsMiddleware',
-        'security.middleware.ContentNoSniff',
-        'security.middleware.ContentSecurityPolicyMiddleware',
-        'security.middleware.StrictTransportSecurityMiddleware',
-        'security.middleware.P3PPolicyMiddleware',
-        'security.middleware.XssProtectMiddleware',
-        'security.middleware.MandatoryPasswordChangeMiddleware',
-        'security.middleware.NoConfidentialCachingMiddleware',
-        'security.auth_throttling.Middleware',
-    )
+MIDDLEWARE = (
+    'django.middleware.common.CommonMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'security.middleware.SessionExpiryPolicyMiddleware',
+    'security.middleware.LoginRequiredMiddleware',
+    'security.middleware.XFrameOptionsMiddleware',
+    'security.middleware.ContentNoSniff',
+    'security.middleware.ContentSecurityPolicyMiddleware',
+    'security.middleware.StrictTransportSecurityMiddleware',
+    'security.middleware.P3PPolicyMiddleware',
+    'security.middleware.XssProtectMiddleware',
+    'security.middleware.MandatoryPasswordChangeMiddleware',
+    'security.middleware.NoConfidentialCachingMiddleware',
+    'security.auth_throttling.Middleware',
+)
+
 ROOT_URLCONF = 'testing.urls'
 
 TEMPLATES = [
@@ -85,6 +61,7 @@ TEMPLATES = [
         'OPTIONS': {
             'context_processors': [
                 'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
             ]
         }
     }
@@ -103,10 +80,7 @@ INSTALLED_APPS = (
     'tests'
 )
 
-if is_version((1, 6)):
-    TEST_RUNNER = 'django.test.runner.DiscoverRunner'
-else:
-    TEST_RUNNER = 'discover_runner.DiscoverRunner'
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
 LOGIN_REDIRECT_URL = "/home/"
 
@@ -135,11 +109,6 @@ MANDATORY_PASSWORD_CHANGE = {
     "URL_NAME": "change_password",
     "EXEMPT_URL_NAMES": (),
     "EXEMPT_URLS": _DJANGO_TESTING_URLS,
-}
-
-NO_CONFIDENTIAL_CACHING = {
-    "WHITELIST_REGEXES": ["^/accounts/login$"],
-    "BLACKLIST_REGEXES": ["^/accounts/logout$"]
 }
 
 AUTHENTICATION_THROTTLING = {
@@ -176,3 +145,5 @@ LOGGING = {
         },
     },
 }
+
+CLEAR_SITE_DATA_URL_WHITELIST = ('/home/')

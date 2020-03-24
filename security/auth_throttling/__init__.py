@@ -92,7 +92,7 @@ def register_authentication_attempt(request):
     """
     username = _extract_username(request)
     ip = request.META["REMOTE_ADDR"]
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         reset_counters(username=username, ip=ip)
     else:
         increment_counters(username=username, ip=ip)

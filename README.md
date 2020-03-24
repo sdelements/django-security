@@ -12,10 +12,10 @@ Automatically generated documentation of `django-security` is available on Read 
 
 # Requirements
 
-* Python >= 2.7
-* Django >= 1.8
+* Python >= 3.6
+* Django >= 1.11
 
-For Django < 1.8 use django-security==0.9.4.
+For Django < 1.8 use django-security==0.9.4. For Django < 1.11 use django-security==0.11.3.
 
 Note: For versions prior to 0.10.0, `datetime` objects were being added to the session and required Django's PickleSerializer for (de)serializing. This has now been changed so that the strings of these `datetime`s are being stored instead. If you are still using PickleSerializer for this reason, we suggest switching to Django's default JSONSerializer (default since Django 1.6) for better security.
 
@@ -86,7 +86,7 @@ or minimum configuration.
 
 <tr>
 <td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.ContentNoSniff">ContentNoSniff</a>
-<td>Disable possibly insecure autodetection of MIME types in browsers. <em>Recommended.</em>
+<td><b>DEPRECATED: </b>Will be removed in future releases, consider <a href="https://docs.djangoproject.com/en/1.11/ref/middleware/#django.middleware.security.SecurityMiddleware">django.middleware.security.SecurityMiddleware</a> via <i>SECURE_CONTENT_TYPE_NOSNIFF</i> setting.<br/>Disable possibly insecure autodetection of MIME types in browsers. <em>Recommended.</em>
 <td>None.
 
 <tr>
@@ -116,7 +116,7 @@ or minimum configuration.
 
 <tr>
 <td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.P3PPolicyMiddleware">P3PPolicyMiddleware</a>
-<td>Adds the HTTP header attribute specifying compact P3P policy.
+<td><b>DEPRECATED: </b>Will be removed in future releases.<br/>Adds the HTTP header attribute specifying compact P3P policy.
 <td>Required.
 
 <tr>
@@ -126,7 +126,7 @@ or minimum configuration.
 
 <tr>
 <td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.StrictTransportSecurityMiddleware">StrictTransportSecurityMiddleware</a>
-<td>Enforce SSL/TLS connection and disable plaintext fall-back. <em>Recommended</em> for SSL/TLS sites.
+<td><b>DEPRECATED: </b>Will be removed in future releases, consider <a href="https://docs.djangoproject.com/en/1.11/ref/middleware/#django.middleware.security.SecurityMiddleware">django.middleware.security.SecurityMiddleware</a> via <i>SECURE_HSTS_SECONDS</i>, <i>SECURE_HSTS_INCLUDE_SUBDOMAINS</i> and <i>SECURE_HSTS_PRELOAD</i> settings.<br/>Enforce SSL/TLS connection and disable plaintext fall-back. <em>Recommended</em> for SSL/TLS sites.
 <td>Optional.
 
 <tr>
@@ -136,7 +136,7 @@ or minimum configuration.
 
 <tr>
 <td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.XssProtectMiddleware">XssProtectMiddleware</a>
-<td>Enforce browser's Cross Site Scripting protection. <em>Recommended.</em>
+<td><b>DEPRECATED: </b>Will be removed in future releases, consider <a href="https://docs.djangoproject.com/en/1.11/ref/middleware/#django.middleware.security.SecurityMiddleware">django.middleware.security.SecurityMiddleware</a> via <i>SECURE_BROWSER_XSS_FILTER</i> setting.<br/>Enforce browser's Cross Site Scripting protection. <em>Recommended.</em>
 <td>None.
 
 </table>

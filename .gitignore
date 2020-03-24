@@ -18,3 +18,6 @@ _build/
 # ignore coverage files
 .coverage
 htmlcov/
+
+# development tools
+.vscode/
