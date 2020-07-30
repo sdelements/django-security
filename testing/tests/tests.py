@@ -972,19 +972,19 @@ class ContentSecurityPolicyTests(TestCase):
 
     def test_enforced_by_default(self):
         with self.settings(CSP_MODE=None):
-            response = self.client.get('/accounts/login/')
+            response = self.client.get(settings.LOGIN_URL)
             self.assertIn('Content-Security-Policy', response)
             self.assertNotIn('Content-Security-Policy-Report-Only', response)
 
     def test_enforced_when_on(self):
         with self.settings(CSP_MODE='enforce'):
-            response = self.client.get('/accounts/login/')
+            response = self.client.get(settings.LOGIN_URL)
             self.assertIn('Content-Security-Policy', response)
             self.assertNotIn('Content-Security-Policy-Report-Only', response)
 
     def test_report_only_set(self):
         with self.settings(CSP_MODE='report-only'):
-            response = self.client.get('/accounts/login/')
+            response = self.client.get(settings.LOGIN_URL)
             self.assertNotIn('Content-Security-Policy', response)
             self.assertIn('Content-Security-Policy-Report-Only', response)
 
