@@ -1,6 +1,7 @@
 # python compiled files
 *.pyc
 *.pyo
+*.egg-info
 
 # back up files from VIM / Emacs
 *~

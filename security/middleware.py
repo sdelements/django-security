@@ -21,9 +21,11 @@ from ua_parser.user_agent_parser import ParseUserAgent
 
 
 logger = logging.getLogger(__name__)
-DJANGO_SECURITY_MIDDLEWARE_URL = ("https://docs.djangoproject.com/en/1.11/ref"
+DJANGO_SECURITY_MIDDLEWARE_URL = (
+    "https://docs.djangoproject.com/en/1.11/ref"
     "/middleware/#django.middleware.security.SecurityMiddleware")
-DJANGO_CLICKJACKING_MIDDLEWARE_URL = ("https://docs.djangoproject.com/en/1.11/"
+DJANGO_CLICKJACKING_MIDDLEWARE_URL = (
+    "https://docs.djangoproject.com/en/1.11/"
     "ref/clickjacking/")
 
 
@@ -47,12 +49,12 @@ class CustomLogoutMixin(object):
             return
 
         try:
-            module_path, function_name = self.CUSTOM_LOGOUT_MODULE.rsplit('.', 1)
+            module_path, func_name = self.CUSTOM_LOGOUT_MODULE.rsplit('.', 1)
         except ValueError:
             err = self.Messages.NOT_A_MODULE_PATH
             raise Exception(err.format(self.CUSTOM_LOGOUT_MODULE))
 
-        if not module_path or not function_name:
+        if not module_path or not func_name:
             err = self.Messages.NOT_A_MODULE_PATH
             raise Exception(err.format(self.CUSTOM_LOGOUT_MODULE))
 
@@ -63,10 +65,10 @@ class CustomLogoutMixin(object):
             raise Exception(err.format(module_path, e))
 
         try:
-            func = getattr(module, function_name)
+            func = getattr(module, func_name)
         except AttributeError:
             err = self.Messages.MISSING_FUNCTION
-            raise Exception(err.format(function_name, module_path))
+            raise Exception(err.format(func_name, module_path))
 
         return func(request)
 
@@ -91,10 +93,9 @@ class BaseMiddleware(MiddlewareMixin):
         raise NotImplementedError()
 
     def _on_setting_changed(self, sender, setting, value, **kwargs):
-        if (
-            setting in self.REQUIRED_SETTINGS or
-            setting in self.OPTIONAL_SETTINGS
-        ):
+        required = setting in self.REQUIRED_SETTINGS
+        optional = setting in self.OPTIONAL_SETTINGS
+        if required or optional:
             self.load_setting(setting, value)
 
     def __init__(self, get_response=None):
@@ -225,9 +226,11 @@ class XssProtectMiddleware(BaseMiddleware):
 
     def __init__(self, get_response=None):
         super().__init__(get_response)
-        warnings.warn('DEPRECATED: The middleware "{name}" will no longer be '
-        'supported in future releases of this library. Refer to {url} for an '
-        'alternative approach with regards to the settings: {settings}'.format(
+        warnings.warn((
+            'DEPRECATED: The middleware "{name}" will no longer be '
+            'supported in future releases of this library. Refer to {url} for '
+            'an alternative approach with regards to the settings: {settings}'
+        ).format(
             name=self.__class__.__name__,
             url=DJANGO_SECURITY_MIDDLEWARE_URL,
             settings="SECURE_BROWSER_XSS_FILTER"))
@@ -337,13 +340,14 @@ class ContentNoSniff(MiddlewareMixin):
 
     def __init__(self, get_response=None):
         super().__init__(get_response)
-        warnings.warn('DEPRECATED: The middleware "{name}" will no longer be '
-        'supported in future releases of this library. Refer to {url} for an '
-        'alternative approach with regards to the settings: {settings}'.format(
+        warnings.warn((
+            'DEPRECATED: The middleware "{name}" will no longer be '
+            'supported in future releases of this library. Refer to {url} for '
+            'an alternative approach with regards to the settings: {settings}'
+        ).format(
             name=self.__class__.__name__,
             url=DJANGO_SECURITY_MIDDLEWARE_URL,
             settings="SECURE_CONTENT_TYPE_NOSNIFF"))
-
 
     def process_response(self, request, response):
         """
@@ -530,8 +534,10 @@ class XFrameOptionsMiddleware(BaseMiddleware):
 
     def __init__(self, get_response=None):
         super().__init__(get_response)
-        warnings.warn('An official middleware "{name}" is supported by Django.'
-        ' Refer to {url} to see if its approach fits the use case.'.format(
+        warnings.warn((
+            'An official middleware "{name}" is supported by Django. '
+            'Refer to {url} to see if its approach fits the use case.'
+        ).format(
             name="XFrameOptionsMiddleware",
             url=DJANGO_CLICKJACKING_MIDDLEWARE_URL))
 
@@ -561,9 +567,8 @@ class XFrameOptionsMiddleware(BaseMiddleware):
                 self.exclude_urls = [compile(url) for url in value]
             except TypeError:
                 raise ImproperlyConfigured(
-                    self.__class__.__name__ +
-                    " invalid option for X_FRAME_OPTIONS_EXCLUDE_URLS",
-                )
+                    "{0} invalid option for X_FRAME_OPTIONS_EXCLUDE_URLS"
+                    .format(self.__class__.__name__))
 
     def process_response(self, request, response):
         """
@@ -576,6 +581,7 @@ class XFrameOptionsMiddleware(BaseMiddleware):
             response['X-Frame-Options'] = self.option
 
         return response
+
 
 # preserve older django-security API
 # new API uses "deny" as default to maintain compatibility
@@ -808,36 +814,84 @@ class ContentSecurityPolicyMiddleware(MiddlewareMixin):
         # sanity checks
         self.get_response = get_response
 
-        csp_mode = getattr(django.conf.settings, 'CSP_MODE', None)
+        conf_csp_mode = getattr(django.conf.settings, 'CSP_MODE', None)
+        self._csp_mode = conf_csp_mode or 'enforce'
         csp_string = getattr(django.conf.settings, 'CSP_STRING', None)
         csp_dict = getattr(django.conf.settings, 'CSP_DICT', None)
-        err_msg = 'Middleware requires either CSP_STRING or CSP_DICT setting'
+        csp_report_string = getattr(django.conf.settings, 'CSP_REPORT_STRING',
+                                    None)
+        csp_report_dict = getattr(django.conf.settings, 'CSP_REPORT_DICT',
+                                  None)
 
-        if not csp_mode or csp_mode == 'enforce':
-            self._enforce = True
-        elif csp_mode == 'report-only':
-            self._enforce = False
-        else:
-            logger.warn(
-                'Invalid CSP_MODE %s, "enforce" or "report-only" allowed',
-                csp_mode
+        set_csp_str = self._csp_mode in ['enforce', 'enforce-and-report-only']
+        set_csp_report_str = self._csp_mode in ['report-only',
+                                                'enforce-and-report-only']
+
+        if not (set_csp_str or set_csp_report_str):
+            logger.error(
+                'Invalid CSP_MODE %s, "enforce", "report-only" '
+                'or "enforce-and-report-only" allowed',
+                self._csp_mode
             )
             raise django.core.exceptions.MiddlewareNotUsed
 
+        if set_csp_str:
+            self._set_csp_str(csp_dict, csp_string)
+
+        if set_csp_report_str:
+            self._set_csp_report_str(csp_report_dict, csp_report_string)
+
+    def _set_csp_str(self, csp_dict, csp_string):
+        err_msg = 'Middleware requires either CSP_STRING or CSP_DICT setting'
         if not (csp_dict or csp_string):
-            logger.warning('%s, none found', err_msg)
+            logger.error('%s, none found', err_msg)
             raise django.core.exceptions.MiddlewareNotUsed
 
-        if csp_dict and csp_string:
-            logger.warning('%s, not both', err_msg)
-            raise django.core.exceptions.MiddlewareNotUsed
+        self._csp_string = self._choose_csp_str(csp_dict, csp_string,
+                                                err_msg + ', not both')
 
-        # build or copy CSP as string
-        if csp_string:
-            self._csp_string = csp_string
+    def _set_csp_report_str(self, csp_report_dict, csp_report_string):
+        report_err_msg = (
+            'Middleware requires either CSP_REPORT_STRING, '
+            'CSP_REPORT_DICT setting, or neither. If neither, '
+            'middleware requires CSP_STRING or CSP_DICT, '
+            'but not both.'
+        )
+
+        # Default to the regular CSP string if report string not configured
+        if not (csp_report_dict or csp_report_string):
+            self._csp_report_string = self._csp_string
+        else:
+            self._csp_report_string = self._choose_csp_str(
+                csp_report_dict,
+                csp_report_string,
+                report_err_msg
+            )
+
+    def _choose_csp_str(self, csp_dict, csp_str, err_msg):
+        """
+        Choose the Content-Security-Policy string to return.
+
+        Args:
+            csp_dict: a dictionary of values for building a CSP string
+            csp_str: the fallback CSP string if no dictionary is provided
+            err_msg: the message to log if both a dict and string are provided
+
+        Returns:
+        The Content-Security-Policy string by either building it from a
+        dictionary or using the provided string.
+        Log an error message if both are provided.
+        """
+        if csp_dict and csp_str:
+            logger.error('%s', err_msg)
+            raise django.core.exceptions.MiddlewareNotUsed
 
         if csp_dict:
-            self._csp_string = self._csp_builder(csp_dict)
+            return self._csp_builder(csp_dict)
+        elif csp_str:
+            return csp_str
+        else:
+            return ''
 
     def process_response(self, request, response):
         """
@@ -850,16 +904,19 @@ class ContentSecurityPolicyMiddleware(MiddlewareMixin):
             parsed_ua = ParseUserAgent(request.META['HTTP_USER_AGENT'])
             is_ie = parsed_ua['family'] == 'IE'
 
-        if self._enforce:
-            if is_ie:
-                header = 'X-Content-Security-Policy'
-            else:
-                header = 'Content-Security-Policy'
-        else:
-            header = 'Content-Security-Policy-Report-Only'
+        csp_header = 'Content-Security-Policy'
+        if is_ie:
+            csp_header = 'X-Content-Security-Policy'
+        report_only_header = 'Content-Security-Policy-Report-Only'
 
         # actually add appropriate headers
-        response[header] = self._csp_string
+        if self._csp_mode == 'enforce':
+            response[csp_header] = self._csp_string
+        elif self._csp_mode == 'report-only':
+            response[report_only_header] = self._csp_report_string
+        elif self._csp_mode == 'enforce-and-report-only':
+            response[csp_header] = self._csp_string
+            response[report_only_header] = self._csp_report_string
 
         return response
 
@@ -894,9 +951,11 @@ class StrictTransportSecurityMiddleware(MiddlewareMixin):
     - `Preloaded HSTS sites <http://www.chromium.org/sts>`_
     """
     def __init__(self, get_response=None):
-        warnings.warn('DEPRECATED: The middleware "{name}" will no longer be '
-        'supported in future releases of this library. Refer to {url} for an '
-        'alternative approach with regards to the settings: {settings}'.format(
+        warnings.warn((
+            'DEPRECATED: The middleware "{name}" will no longer be '
+            'supported in future releases of this library. Refer to {url} for '
+            'an alternative approach with regards to the settings: {settings}'
+        ).format(
             name=self.__class__.__name__,
             url=DJANGO_SECURITY_MIDDLEWARE_URL,
             settings=", ".join([
@@ -962,10 +1021,10 @@ class P3PPolicyMiddleware(BaseMiddleware):
 
     def __init__(self, get_response=None):
         super().__init__(get_response)
-        warnings.warn('DEPRECATED: The middleware "{name}" will no longer be '
-        'supported in future releases of this library.'.format(
-            name=self.__class__.__name__
-        ))
+        warnings.warn((
+            'DEPRECATED: The middleware "{name}" will no longer be '
+            'supported in future releases of this library.'
+        ).format(name=self.__class__.__name__))
 
     def load_setting(self, setting, value):
         if setting == 'P3P_COMPACT_POLICY':
@@ -1092,10 +1151,10 @@ class SessionExpiryPolicyMiddleware(CustomLogoutMixin, BaseMiddleware):
             return
 
         if (
-            self.START_TIME_KEY not in request.session or
-            self.LAST_ACTIVITY_KEY not in request.session or
-            timezone.is_naive(self.get_start_time(request)) or
-            timezone.is_naive(self.get_last_activity(request))
+            self.START_TIME_KEY not in request.session
+            or self.LAST_ACTIVITY_KEY not in request.session
+            or timezone.is_naive(self.get_start_time(request))
+            or timezone.is_naive(self.get_last_activity(request))
         ):
             response = self.process_new_session(request)
         else:

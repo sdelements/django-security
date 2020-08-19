@@ -17,9 +17,9 @@ def min_length(n):
             raise ValidationError(message)
     return validate
 
+
 # The error messages from the RegexValidators don't display properly unless we
 # explicitly supply an empty error code.
-
 lowercase = RegexValidator(
     r"[a-z]",
     _("It must contain at least one lowercase letter."),
