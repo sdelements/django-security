@@ -8,6 +8,7 @@
 
 # ignore setup.py build dir
 build/
+*.egg-info/
 
 # ignore sphinx built documentation
 _build/

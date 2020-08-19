@@ -184,6 +184,22 @@ class LoginRequiredMiddlewareTests(TestCase):
                 {"login_url": '/custom-login/'},
             )
 
+    def test_redirects_to_named_url_pattern(self):
+        with self.settings(
+            LOGIN_URL="login",  # <- use a named pattern from urls.py
+        ):
+            response = self.client.get('/home/')
+            self.assertRedirects(response, reverse('login') + '?next=/home/')
+            response = self.client.get(
+                '/home/',
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+            )
+            self.assertEqual(response.status_code, 401)
+            self.assertEqual(
+                json.loads(response.content.decode('utf-8')),
+                {"login_url": reverse('login')},
+            )
+
     def test_logs_out_inactive_users(self):
         user = User.objects.create_user(
             username="foo",
