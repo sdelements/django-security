@@ -12,6 +12,7 @@ from django.contrib.auth import logout
 from django.core.exceptions import ImproperlyConfigured
 from django.urls import reverse, resolve
 from django.http import HttpResponseRedirect, HttpResponse
+from django.shortcuts import resolve_url
 from django.test.signals import setting_changed
 from django.utils import timezone
 from django.utils.deprecation import MiddlewareMixin
@@ -1208,7 +1209,7 @@ class LoginRequiredMiddleware(BaseMiddleware, CustomLogoutMixin):
 
     def load_setting(self, setting, value):
         if setting == 'LOGIN_URL':
-            self.login_url = value
+            self.login_url = resolve_url(value)
         elif setting == 'LOGIN_EXEMPT_URLS':
             self.exempt_urls = [compile(expr) for expr in (value or ())]
         else:
