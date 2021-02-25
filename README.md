@@ -8,7 +8,7 @@ This package offers a number of models, views, middlewares and forms to facilita
 
 Automatically generated documentation of `django-security` is available on Read The Docs:
 
-* [Django-security documentation](http://django-security.readthedocs.org/en/latest/)
+* [Django-security documentation](http://django-security.readthedocs.org/en/master/)
 
 # Requirements
 
