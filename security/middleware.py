@@ -8,7 +8,7 @@ from re import compile
 import django.conf
 from django.contrib.auth import logout
 from django.core.exceptions import ImproperlyConfigured
-from django.core.urlresolvers import reverse, resolve
+from django.urls import reverse, resolve
 from django.http import HttpResponseRedirect, HttpResponse
 from django.test.signals import setting_changed
 from django.utils import timezone
