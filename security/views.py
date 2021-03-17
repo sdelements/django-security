@@ -58,7 +58,7 @@ def csp_report(request, csp_save=False, csp_log=True):
         return HttpResponseForbidden()
 
     content_type = request.META.get('CONTENT_TYPE', None)
-    if content_type != 'application/json':
+    if content_type != 'application/json' and content_type != 'application/csp-report':
         log.debug('Missing CSP report Content-Type %s', request.META)
         return HttpResponseForbidden()
 
