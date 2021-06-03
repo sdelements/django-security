@@ -120,6 +120,11 @@ or minimum configuration.
 <td>Required.
 
 <tr>
+<td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.ReferrerPolicyMiddleware">ReferrerPolicyMiddleware</a>
+<td>Specify when the browser will set a `Referer` header.
+<td>Optional.
+
+<tr>
 <td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.SessionExpiryPolicyMiddleware">SessionExpiryPolicyMiddleware</a>
 <td>Expire sessions on browser close, and on expiry times stored in the cookie itself.
 <td>Required.

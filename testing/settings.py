@@ -50,6 +50,7 @@ MIDDLEWARE = (
     'security.middleware.MandatoryPasswordChangeMiddleware',
     'security.middleware.NoConfidentialCachingMiddleware',
     'security.auth_throttling.Middleware',
+    'security.middleware.ReferrerPolicyMiddleware',
 )
 
 ROOT_URLCONF = 'testing.urls'

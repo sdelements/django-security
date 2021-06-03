@@ -24,7 +24,7 @@ from security.auth_throttling import (
 from security.middleware import (
     BaseMiddleware, ContentSecurityPolicyMiddleware, DoNotTrackMiddleware,
     SessionExpiryPolicyMiddleware, MandatoryPasswordChangeMiddleware,
-    XssProtectMiddleware, XFrameOptionsMiddleware,
+    XssProtectMiddleware, XFrameOptionsMiddleware, ReferrerPolicyMiddleware
 )
 from security.models import PasswordExpiry
 from security.password_expiry import never_expire_password
@@ -1064,24 +1064,70 @@ class DoNotTrackTests(TestCase):
         self.dnt.process_response(self.request, self.response)
         self.assertNotIn('DNT', self.response)
 
+class ReferrerPolicyTests(TestCase):
 
-@override_settings(MIDDLEWARE=(
-    'security.middleware.ClearSiteDataMiddleware',
-))
-class ClearSiteDataMiddlewareTests(TestCase):
-    def test_request_that_matches_the_whitelist_with_default_directives(self):
-        response = self.client.get('/home/')
-        self.assertEqual(response['Clear-Site-Data'], '"cookies", "storage"')
+    def test_option_set(self):
+        """
+        Verify the HTTP Referrer-Policy Header is set.
+        """
+        response = self.client.get('/accounts/login/')
+        self.assertNotEqual(response['Referrer-Policy'], None)
 
-    def test_request_that_misses_the_whitelist(self):
-        response = self.client.get('/test1/')
-        self.assertNotIn("Clear-Site-Data", response)
+    def test_default_setting(self):
+        with self.settings(REFERRER_POLICY=None):
+            response = self.client.get('/accounts/login/')
+            self.assertEqual(response['Referrer-Policy'], 'same-origin')
 
-    @override_settings(CLEAR_SITE_DATA_DIRECTIVES=(
-        'cache', 'cookies', 'executionContexts', '*'
-    ))
-    def test_request_that_matches_the_whitelist_with_custom_directives(self):
-        response = self.client.get('/home/')
-        self.assertEqual(
-            response['Clear-Site-Data'],
-            '"cache", "cookies", "executionContexts", "*"')
+    def test_no_referrer_setting(self):
+        with self.settings(REFERRER_POLICY='no-referrer'):
+            response = self.client.get('/accounts/login/')
+            self.assertEqual(response['Referrer-Policy'], 'no-referrer')
+
+    def test_no_referrer_when_downgrade_setting(self):
+        with self.settings(REFERRER_POLICY='no-referrer-when-downgrade'):
+            response = self.client.get('/accounts/login/')
+            self.assertEqual(response['Referrer-Policy'], 'no-referrer-when-downgrade')
+
+    def test_origin_setting(self):
+        with self.settings(REFERRER_POLICY='origin'):
+            response = self.client.get('/accounts/login/')
+            self.assertEqual(response['Referrer-Policy'], 'origin')
+
+    def test_origin_when_cross_origin_setting(self):
+        with self.settings(REFERRER_POLICY='origin-when-cross-origin'):
+            response = self.client.get('/accounts/login/')
+            self.assertEqual(response['Referrer-Policy'], 'origin-when-cross-origin')
+
+    def test_same_origin_setting(self):
+        with self.settings(REFERRER_POLICY='same-origin'):
+            response = self.client.get('/accounts/login/')
+            self.assertEqual(response['Referrer-Policy'], 'same-origin')
+
+    def test_strict_origin_setting(self):
+        with self.settings(REFERRER_POLICY='strict-origin'):
+            response = self.client.get('/accounts/login/')
+            self.assertEqual(response['Referrer-Policy'], 'strict-origin')
+
+    def test_strict_origin_when_cross_origin_setting(self):
+        with self.settings(REFERRER_POLICY='strict-origin-when-cross-origin'):
+            response = self.client.get('/accounts/login/')
+            self.assertEqual(response['Referrer-Policy'], 'strict-origin-when-cross-origin')
+
+    def test_unsafe_url_setting(self):
+        with self.settings(REFERRER_POLICY='unsafe-url'):
+            response = self.client.get('/accounts/login/')
+            self.assertEqual(response['Referrer-Policy'], 'unsafe-url')
+
+    def test_off_setting(self):
+        with self.settings(REFERRER_POLICY='off'):
+            response = self.client.get('/accounts/login/')
+            self.assertEqual('Referrer-Policy' in response, False)
+
+    def test_improper_configuration_raises(self):
+        referer_policy_middleware = ReferrerPolicyMiddleware()
+        self.assertRaises(
+            ImproperlyConfigured,
+            referer_policy_middleware.load_setting,
+            'REFERRER_POLICY',
+            'invalid',
+        )
