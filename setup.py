@@ -31,7 +31,7 @@ setup(
     long_description_content_type="text/markdown",
     maintainer="SD Elements",
     maintainer_email="django-security@sdelements.com",
-    version="0.13.2",
+    version="0.14.0",
     packages=[
         "security",
         "security.south_migrations",
