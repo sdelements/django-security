@@ -64,7 +64,7 @@ class CspReport(models.Model):
     were fired against the user and this raises a question how the malicious
     code appeared on your website.
 
-    CSP reports are available in Django admin view. To be logged into databse,
+    CSP reports are available in Django admin view. To be logged into database,
     CSP reports view needs to be configured properly. See csp_report_
     view for more information. Content Security Policy can be switched
     on for a web application using ContentSecurityPolicyMiddleware_ middleware.

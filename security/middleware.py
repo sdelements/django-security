@@ -252,7 +252,7 @@ class XssProtectMiddleware(BaseMiddleware):
 
     def process_response(self, request, response):
         """
-        Add X-XSS-Protection to the reponse header.
+        Add X-XSS-Protection to the response header.
         """
         header = self.OPTIONS[self.option]
         response['X-XSS-Protection'] = header
@@ -430,7 +430,7 @@ class NoConfidentialCachingMiddleware(BaseMiddleware):
     configured in ``NO_CONFIDENTIAL_CACHING`` dictionary in settings file with
     the following keys:
 
-        ``WHITELIST_ON``        all pages are confifendialt, except for pages
+        ``WHITELIST_ON``        all pages are confidential, except for pages
                                 explicitly whitelisted in ``WHITELIST_REGEXES``
 
         ``WHITELIST_REGEXES``   list of regular expressions defining pages
@@ -1362,7 +1362,7 @@ class ReferrerPolicyMiddleware(BaseMiddleware):
 
     def process_response(self, request, response):
         """
-        Add Referrer-Policy to the reponse header.
+        Add Referrer-Policy to the response header.
         """
         if self.option != 'off':
             header = self.option
