@@ -5,6 +5,7 @@ import importlib
 import json
 import logging
 import warnings
+from distutils.version import LooseVersion
 from re import compile
 
 import django.conf
@@ -15,9 +16,10 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.test.signals import setting_changed
 from django.utils import timezone
 from django.utils.deprecation import MiddlewareMixin
+from django.utils.encoding import smart_str
 import django.views.static
 
-from ua_parser import user_agent_parser
+from ua_checker import UserAgentChecker
 
 
 logger = logging.getLogger(__name__)
@@ -899,13 +901,14 @@ class ContentSecurityPolicyMiddleware(MiddlewareMixin):
         enforcement or report-only headers in all currently used variants.
         """
         # choose headers based enforcement mode
-        is_ie = False
-        if 'HTTP_USER_AGENT' in request.META:
-            parsed_ua = user_agent_parser.ParseUserAgent(request.META['HTTP_USER_AGENT'])
-            is_ie = parsed_ua['family'] == 'IE'
-
+        http_user_agent = smart_str(
+            request.META.get("HTTP_USER_AGENT") or " ",
+            encoding="ascii",
+            errors="ignore",
+        )
+        user_agent_checker = UserAgentChecker(http_user_agent)
         csp_header = 'Content-Security-Policy'
-        if is_ie:
+        if user_agent_checker.is_ie:
             csp_header = 'X-Content-Security-Policy'
         report_only_header = 'Content-Security-Policy-Report-Only'
 
@@ -1316,6 +1319,7 @@ class LoginRequiredMiddleware(BaseMiddleware, CustomLogoutMixin):
 
         return HttpResponseRedirect(login_url)
 
+
 class ReferrerPolicyMiddleware(BaseMiddleware):
     """
     Sends Referrer-Policy HTTP header that controls when the browser will set
@@ -1339,9 +1343,17 @@ class ReferrerPolicyMiddleware(BaseMiddleware):
 
     OPTIONAL_SETTINGS = ("REFERRER_POLICY",)
 
-    OPTIONS = [ 'no-referrer', 'no-referrer-when-downgrade', 'origin',
-    'origin-when-cross-origin', 'same-origin', 'strict-origin',
-    'strict-origin-when-cross-origin', 'unsafe-url', 'off' ]
+    OPTIONS = [
+        'no-referrer',
+        'no-referrer-when-downgrade',
+        'origin',
+        'origin-when-cross-origin',
+        'same-origin',
+        'strict-origin',
+        'strict-origin-when-cross-origin',
+        'unsafe-url',
+        'off'
+    ]
 
     DEFAULT = 'same-origin'
 
@@ -1367,4 +1379,98 @@ class ReferrerPolicyMiddleware(BaseMiddleware):
         if self.option != 'off':
             header = self.option
             response['Referrer-Policy'] = header
+        return response
+
+
+class SameSiteCookieMiddleware(BaseMiddleware):
+    """
+    Sets SameSite attribute for session and CSRF cookies in legacy versions of Django.
+
+    Django 3.1 introduces full support for the SameSite flag on session and CSRF cookies.
+    """
+
+    def get_config_setting(setting_name, default_value=None):
+        """
+        Load the Django setting with DCS_ prefix and fallback to the legacy name if not found.
+        """
+        return getattr(
+            django.conf.settings,
+            "DCS_{}".format(setting_name),
+            getattr(django.conf.settings, setting_name, default_value),
+        )
+
+    def __init__(self, *args, **kwargs):
+        self.protected_cookies = self.get_config_setting(
+            "SESSION_COOKIE_SAMESITE_KEYS", set()
+        )
+
+        if not isinstance(self.protected_cookies, (list, set, tuple)):
+            raise ValueError(
+                "SESSION_COOKIE_SAMESITE_KEYS should be a list, set or tuple."
+            )
+
+        self.protected_cookies = set(self.protected_cookies)
+        if self.get_config_setting("SESSION_COOKIE_SAMESITE_FORCE_CORE", True):
+            self.protected_cookies |= {
+                django.conf.settings.SESSION_COOKIE_NAME,
+                django.conf.settings.CSRF_COOKIE_NAME,
+            }
+
+        samesite_flag = self.get_config_setting("SESSION_COOKIE_SAMESITE", "")
+        self.samesite_flag = (
+            str(samesite_flag).capitalize() if samesite_flag is not None else ""
+        )
+        self.samesite_force_all = self.get_config_setting(
+            "SESSION_COOKIE_SAMESITE_FORCE_ALL"
+        )
+        # SAMESITE_DEVMODE=True means, use Lax if http request.
+        self.devmode = bool(self.get_config_setting("SAMESITE_DEVMODE"))
+
+        return super(CookiesSameSiteMiddleware, self).__init__(*args, **kwargs)
+
+    def update_cookie(self, cookie, request, response):
+        https = request.is_secure()
+        if self.devmode and not https:
+            flag = "Lax"
+        else:
+            flag = self.samesite_flag
+        response.cookies[cookie]["samesite"] = flag
+        if https:
+            response.cookies[cookie]["secure"] = True
+
+    def process_response(self, request, response):
+        # SameSite = None introduced in Chrome 80 breaks Chrome 51-66
+        # https://www.chromium.org/updates/same-site/incompatible-clients
+        # Some HTTP Clients have non-ascii characters in their User Agents; should ignore all non-ascii characters.
+        # Related: https://stackoverflow.com/questions/4400678/what-character-encoding-should-i-use-for-a-http-header
+        http_user_agent = smart_str(
+            request.META.get("HTTP_USER_AGENT") or " ",
+            encoding="ascii",
+            errors="ignore",
+        )
+        user_agent_checker = UserAgentChecker(http_user_agent)
+
+        if user_agent_checker.do_not_send_same_site_policy:
+            return response
+
+        if LooseVersion(django.get_version()) >= LooseVersion("3.1.0"):
+            raise DeprecationWarning(
+                "Your version of Django supports SameSite flag in the cookies mechanism."
+                "Consider removing CookiesSameSiteMiddleware and using the built-in method."
+            )
+
+        if not self.samesite_flag:
+            return response
+
+        if self.samesite_flag not in {"Lax", "None", "Strict"}:
+            raise ValueError('samesite must be "Lax", "None", or "Strict".')
+
+        if self.samesite_force_all:
+            for cookie in response.cookies:
+                self.update_cookie(cookie, request, response)
+        else:
+            for cookie in self.protected_cookies:
+                if cookie in response.cookies:
+                    self.update_cookie(cookie, request, response)
+
         return response
