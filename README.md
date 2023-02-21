@@ -47,7 +47,6 @@ Pre-Django 1.10, middleware modules can be added to `MIDDLEWARE_CLASSES` list in
         ...
         'security.middleware.DoNotTrackMiddleware',
         'security.middleware.ContentNoSniff',
-        'security.middleware.XssProtectMiddleware',
         'security.middleware.XFrameOptionsMiddleware',
     )
 
@@ -57,7 +56,6 @@ After Django 1.10, middleware modules can be added to `MIDDLEWARE` list in setti
         ...
         'security.middleware.DoNotTrackMiddleware',
         'security.middleware.ContentNoSniff',
-        'security.middleware.XssProtectMiddleware',
         'security.middleware.XFrameOptionsMiddleware',
     )
 
@@ -138,11 +136,6 @@ or minimum configuration.
 <td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.XFrameOptionsMiddleware">XFrameOptionsMiddleware</a>
 <td>Disable framing of the website, mitigating Clickjacking attacks. <em>Recommended.</em>
 <td>Optional.
-
-<tr>
-<td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.XssProtectMiddleware">XssProtectMiddleware</a>
-<td><b>DEPRECATED: </b>Will be removed in future releases, consider <a href="https://docs.djangoproject.com/en/1.11/ref/middleware/#django.middleware.security.SecurityMiddleware">django.middleware.security.SecurityMiddleware</a> via <i>SECURE_BROWSER_XSS_FILTER</i> setting.<br/>Enforce browser's Cross Site Scripting protection. <em>Recommended.</em>
-<td>None.
 
 </table>
 
