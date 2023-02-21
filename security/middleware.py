@@ -23,10 +23,11 @@ from ua_parser import user_agent_parser
 logger = logging.getLogger(__name__)
 DJANGO_SECURITY_MIDDLEWARE_URL = (
     "https://docs.djangoproject.com/en/1.11/ref"
-    "/middleware/#django.middleware.security.SecurityMiddleware")
+    "/middleware/#django.middleware.security.SecurityMiddleware"
+)
 DJANGO_CLICKJACKING_MIDDLEWARE_URL = (
-    "https://docs.djangoproject.com/en/1.11/"
-    "ref/clickjacking/")
+    "https://docs.djangoproject.com/en/1.11/" "ref/clickjacking/"
+)
 
 
 class CustomLogoutMixin(object):
@@ -36,20 +37,25 @@ class CustomLogoutMixin(object):
     """
 
     class Messages(object):
-        NOT_A_MODULE_PATH = (u"Invalid CUSTOM_LOGOUT_MODULE setting '{0}'. "
-                             u"Expected module path to a function")
-        FAILED_TO_LOAD = (u"Invalid CUSTOM_LOGOUT_MODULE setting. "
-                          u"Failed to load module '{0}': {1}")
-        MISSING_FUNCTION = (u"Invalid CUSTOM_LOGOUT_MODULE setting. "
-                            u"Could not find function '{0}' in module '{1}'")
+        NOT_A_MODULE_PATH = (
+            "Invalid CUSTOM_LOGOUT_MODULE setting '{0}'. "
+            "Expected module path to a function"
+        )
+        FAILED_TO_LOAD = (
+            "Invalid CUSTOM_LOGOUT_MODULE setting. " "Failed to load module '{0}': {1}"
+        )
+        MISSING_FUNCTION = (
+            "Invalid CUSTOM_LOGOUT_MODULE setting. "
+            "Could not find function '{0}' in module '{1}'"
+        )
 
     def perform_logout(self, request):
-        if not getattr(self, 'CUSTOM_LOGOUT_MODULE', None):
+        if not getattr(self, "CUSTOM_LOGOUT_MODULE", None):
             logout(request)
             return
 
         try:
-            module_path, func_name = self.CUSTOM_LOGOUT_MODULE.rsplit('.', 1)
+            module_path, func_name = self.CUSTOM_LOGOUT_MODULE.rsplit(".", 1)
         except ValueError:
             err = self.Messages.NOT_A_MODULE_PATH
             raise Exception(err.format(self.CUSTOM_LOGOUT_MODULE))
@@ -113,9 +119,7 @@ class BaseMiddleware(MiddlewareMixin):
                 )
 
         for key in self.OPTIONAL_SETTINGS:
-            self.load_setting(
-                key, getattr(django.conf.settings, key, None)
-            )
+            self.load_setting(key, getattr(django.conf.settings, key, None))
 
         setting_changed.connect(self._on_setting_changed)
 
@@ -169,8 +173,8 @@ class DoNotTrackMiddleware(MiddlewareMixin):
         Read DNT header from browser request and create request attribute
         """
         request.dnt = None
-        if 'HTTP_DNT' in request.META:
-            request.dnt = request.META['HTTP_DNT'] == '1'
+        if "HTTP_DNT" in request.META:
+            request.dnt = request.META["HTTP_DNT"] == "1"
             # returns None in normal conditions
 
     def process_response(self, request, response):
@@ -178,8 +182,8 @@ class DoNotTrackMiddleware(MiddlewareMixin):
         Echo DNT header in response per section 8.4 of draft-mayer-do-not-
         track-00
         """
-        if 'HTTP_DNT' in request.META:
-            response['DNT'] = request.META['HTTP_DNT']
+        if "HTTP_DNT" in request.META:
+            response["DNT"] = request.META["HTTP_DNT"]
         return response
 
 
@@ -217,23 +221,26 @@ class XssProtectMiddleware(BaseMiddleware):
     OPTIONAL_SETTINGS = ("XSS_PROTECT",)
 
     OPTIONS = {
-        'on': '1; mode=block',
-        'off': '0',
-        'sanitize': '1',
+        "on": "1; mode=block",
+        "off": "0",
+        "sanitize": "1",
     }
 
-    DEFAULT = 'sanitize'
+    DEFAULT = "sanitize"
 
     def __init__(self, get_response=None):
         super().__init__(get_response)
-        warnings.warn((
-            'DEPRECATED: The middleware "{name}" will no longer be '
-            'supported in future releases of this library. Refer to {url} for '
-            'an alternative approach with regards to the settings: {settings}'
-        ).format(
-            name=self.__class__.__name__,
-            url=DJANGO_SECURITY_MIDDLEWARE_URL,
-            settings="SECURE_BROWSER_XSS_FILTER"))
+        warnings.warn(
+            (
+                'DEPRECATED: The middleware "{name}" will no longer be '
+                "supported in future releases of this library. Refer to {url} for "
+                "an alternative approach with regards to the settings: {settings}"
+            ).format(
+                name=self.__class__.__name__,
+                url=DJANGO_SECURITY_MIDDLEWARE_URL,
+                settings="SECURE_BROWSER_XSS_FILTER",
+            )
+        )
 
     def load_setting(self, setting, value):
         if not value:
@@ -255,7 +262,7 @@ class XssProtectMiddleware(BaseMiddleware):
         Add X-XSS-Protection to the response header.
         """
         header = self.OPTIONS[self.option]
-        response['X-XSS-Protection'] = header
+        response["X-XSS-Protection"] = header
         return response
 
 
@@ -274,22 +281,18 @@ class ClearSiteDataMiddleware(BaseMiddleware):
       <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Clear-Site-Data>`_
     """
 
-    REQUIRED_SETTINGS = ('CLEAR_SITE_DATA_URL_WHITELIST',)
-    OPTIONAL_SETTINGS = ('CLEAR_SITE_DATA_DIRECTIVES')
+    REQUIRED_SETTINGS = ("CLEAR_SITE_DATA_URL_WHITELIST",)
+    OPTIONAL_SETTINGS = "CLEAR_SITE_DATA_DIRECTIVES"
 
-    DEFAULT_DIRECTIVES = ['cookies', 'storage']
-    ALLOWED_DIRECTIVES = (
-        'cache', 'cookies', 'storage', 'executionContexts', '*'
-    )
+    DEFAULT_DIRECTIVES = ["cookies", "storage"]
+    ALLOWED_DIRECTIVES = ("cache", "cookies", "storage", "executionContexts", "*")
 
     def load_setting(self, setting, value):
-        if setting == 'CLEAR_SITE_DATA_URL_WHITELIST':
+        if setting == "CLEAR_SITE_DATA_URL_WHITELIST":
             self.clear_site_urls = value
 
         directives = getattr(
-            django.conf.settings,
-            'CLEAR_SITE_DATA_DIRECTIVES',
-            self.DEFAULT_DIRECTIVES
+            django.conf.settings, "CLEAR_SITE_DATA_DIRECTIVES", self.DEFAULT_DIRECTIVES
         )
 
         directives = [
@@ -298,9 +301,8 @@ class ClearSiteDataMiddleware(BaseMiddleware):
             if directive.strip() in self.ALLOWED_DIRECTIVES
         ]
 
-        self.clear_site_directives = ', '.join(
-            '"{0}"'.format(directive)
-            for directive in directives
+        self.clear_site_directives = ", ".join(
+            '"{0}"'.format(directive) for directive in directives
         )
 
     def process_response(self, request, response):
@@ -310,7 +312,7 @@ class ClearSiteDataMiddleware(BaseMiddleware):
         """
 
         if request.path in self.clear_site_urls:
-            response['Clear-Site-Data'] = self.clear_site_directives
+            response["Clear-Site-Data"] = self.clear_site_directives
 
         return response
 
@@ -340,20 +342,23 @@ class ContentNoSniff(MiddlewareMixin):
 
     def __init__(self, get_response=None):
         super().__init__(get_response)
-        warnings.warn((
-            'DEPRECATED: The middleware "{name}" will no longer be '
-            'supported in future releases of this library. Refer to {url} for '
-            'an alternative approach with regards to the settings: {settings}'
-        ).format(
-            name=self.__class__.__name__,
-            url=DJANGO_SECURITY_MIDDLEWARE_URL,
-            settings="SECURE_CONTENT_TYPE_NOSNIFF"))
+        warnings.warn(
+            (
+                'DEPRECATED: The middleware "{name}" will no longer be '
+                "supported in future releases of this library. Refer to {url} for "
+                "an alternative approach with regards to the settings: {settings}"
+            ).format(
+                name=self.__class__.__name__,
+                url=DJANGO_SECURITY_MIDDLEWARE_URL,
+                settings="SECURE_CONTENT_TYPE_NOSNIFF",
+            )
+        )
 
     def process_response(self, request, response):
         """
         Add ``X-Content-Options: nosniff`` to the response header.
         """
-        response['X-Content-Options'] = 'nosniff'
+        response["X-Content-Options"] = "nosniff"
         return response
 
 
@@ -402,7 +407,7 @@ class MandatoryPasswordChangeMiddleware(BaseMiddleware):
         # because the reason the URL is exempt may be because a special URL
         # config is in use (i.e. during a test) that doesn't have URL_NAME.
 
-        path = request.path_info.lstrip('/')
+        path = request.path_info.lstrip("/")
 
         if any(m.match(path) for m in self.exempt_urls):
             return
@@ -418,6 +423,7 @@ class MandatoryPasswordChangeMiddleware(BaseMiddleware):
             return
 
         from .password_expiry import password_is_expired
+
         if password_is_expired(request.user):
             return HttpResponseRedirect(password_change_url)
 
@@ -460,12 +466,14 @@ class NoConfidentialCachingMiddleware(BaseMiddleware):
         value = value or {}
         self.whitelist = value.get("WHITELIST_ON", False)
         if self.whitelist:
-            self.whitelist_url_regexes = \
-                [compile(x) for x in value['WHITELIST_REGEXES']]
+            self.whitelist_url_regexes = [
+                compile(x) for x in value["WHITELIST_REGEXES"]
+            ]
         self.blacklist = value.get("BLACKLIST_ON", False)
         if self.blacklist:
-            self.blacklist_url_regexes = \
-                [compile(x) for x in value['BLACKLIST_REGEXES']]
+            self.blacklist_url_regexes = [
+                compile(x) for x in value["BLACKLIST_REGEXES"]
+            ]
 
     def process_response(self, request, response):
         """
@@ -473,7 +481,7 @@ class NoConfidentialCachingMiddleware(BaseMiddleware):
         whitelist non-confidential pages and treat all others as non-
         confidential, or specifically blacklist pages as confidential
         """
-        path = request.path.lstrip('/')
+        path = request.path.lstrip("/")
         if self.whitelist:
             if not any(re.match(path) for re in self.whitelist_url_regexes):
                 self._remove_response_caching(response)
@@ -487,10 +495,9 @@ class NoConfidentialCachingMiddleware(BaseMiddleware):
         """
         Overwrites specific headers to make the HTTP response confidential.
         """
-        response['Cache-control'] = \
-            'no-cache, no-store, max-age=0, must-revalidate'
-        response['Pragma'] = "no-cache"
-        response['Expires'] = -1
+        response["Cache-control"] = "no-cache, no-store, max-age=0, must-revalidate"
+        response["Pragma"] = "no-cache"
+        response["Expires"] = -1
 
 
 # http://tools.ietf.org/html/draft-ietf-websec-x-frame-options-01
@@ -528,29 +535,31 @@ class XFrameOptionsMiddleware(BaseMiddleware):
         <http://tools.ietf.org/html/rfc7034>`_
     """
 
-    OPTIONAL_SETTINGS = ('X_FRAME_OPTIONS', 'X_FRAME_OPTIONS_EXCLUDE_URLS')
+    OPTIONAL_SETTINGS = ("X_FRAME_OPTIONS", "X_FRAME_OPTIONS_EXCLUDE_URLS")
 
-    DEFAULT = 'deny'
+    DEFAULT = "deny"
 
     def __init__(self, get_response=None):
         super().__init__(get_response)
-        warnings.warn((
-            'An official middleware "{name}" is supported by Django. '
-            'Refer to {url} to see if its approach fits the use case.'
-        ).format(
-            name="XFrameOptionsMiddleware",
-            url=DJANGO_CLICKJACKING_MIDDLEWARE_URL))
+        warnings.warn(
+            (
+                'An official middleware "{name}" is supported by Django. '
+                "Refer to {url} to see if its approach fits the use case."
+            ).format(
+                name="XFrameOptionsMiddleware", url=DJANGO_CLICKJACKING_MIDDLEWARE_URL
+            )
+        )
 
     def load_setting(self, setting, value):
-        if setting == 'X_FRAME_OPTIONS':
+        if setting == "X_FRAME_OPTIONS":
             if not value:
                 self.option = XFrameOptionsMiddleware.DEFAULT
                 return
 
             value = value.lower()
-            options = ['sameorigin', 'deny']
+            options = ["sameorigin", "deny"]
 
-            if value in options or value.startswith('allow-from:'):
+            if value in options or value.startswith("allow-from:"):
                 self.option = value
                 return
 
@@ -558,7 +567,7 @@ class XFrameOptionsMiddleware(BaseMiddleware):
                 self.__class__.__name__ + " invalid option for X_FRAME_OPTIONS"
             )
 
-        elif setting == 'X_FRAME_OPTIONS_EXCLUDE_URLS':
+        elif setting == "X_FRAME_OPTIONS_EXCLUDE_URLS":
             if not value:
                 self.exclude_urls = []
                 return
@@ -567,8 +576,10 @@ class XFrameOptionsMiddleware(BaseMiddleware):
                 self.exclude_urls = [compile(url) for url in value]
             except TypeError:
                 raise ImproperlyConfigured(
-                    "{0} invalid option for X_FRAME_OPTIONS_EXCLUDE_URLS"
-                    .format(self.__class__.__name__))
+                    "{0} invalid option for X_FRAME_OPTIONS_EXCLUDE_URLS".format(
+                        self.__class__.__name__
+                    )
+                )
 
     def process_response(self, request, response):
         """
@@ -578,7 +589,7 @@ class XFrameOptionsMiddleware(BaseMiddleware):
             if url.match(request.path):
                 break
         else:
-            response['X-Frame-Options'] = self.option
+            response["X-Frame-Options"] = self.option
 
         return response
 
@@ -680,43 +691,44 @@ class ContentSecurityPolicyMiddleware(MiddlewareMixin):
     - `HTML5.1 - Sandboxing <http://www.w3.org/html/wg/drafts/html/master
       /single-page.html#sandboxing>`_
     """
+
     # these types accept CSP locations as arguments
     _CSP_LOC_TYPES = [
-        'default-src',
-        'connect-src',
-        'child-src',
-        'font-src',
-        'form-action',
-        'frame-ancestors',
-        'frame-src',
-        'img-src',
-        'media-src',
-        'object-src',
-        'script-src',
-        'style-src',
-        'plugin-types',
-        'worker-src'
+        "default-src",
+        "connect-src",
+        "child-src",
+        "font-src",
+        "form-action",
+        "frame-ancestors",
+        "frame-src",
+        "img-src",
+        "media-src",
+        "object-src",
+        "script-src",
+        "style-src",
+        "plugin-types",
+        "worker-src",
     ]
 
     # arguments to location types
-    _CSP_LOCATIONS = ['self', 'none', 'unsafe-eval', 'unsafe-inline']
+    _CSP_LOCATIONS = ["self", "none", "unsafe-eval", "unsafe-inline"]
 
     # sandbox allowed arguments
     # http://www.w3.org/html/wg/drafts/html/master/single-page.html#sandboxing
     # https://www.w3.org/TR/CSP2/
     _CSP_SANDBOX_ARGS = [
-        '',
-        'allow-forms',
-        'allow-pointer-lock',
-        'allow-popups',
-        'allow-same-origin',
-        'allow-scripts',
-        'allow-top-navigation',
+        "",
+        "allow-forms",
+        "allow-pointer-lock",
+        "allow-popups",
+        "allow-same-origin",
+        "allow-scripts",
+        "allow-top-navigation",
     ]
 
     # reflected-xss allowed arguments
     # http://www.w3.org/TR/CSP11/#directive-reflected-xss
-    _CSP_XSS_ARGS = ['allow', 'block', 'filter']
+    _CSP_XSS_ARGS = ["allow", "block", "filter"]
 
     # referrer allowed arguments
     # http://www.w3.org/TR/CSP11/#directive-referrer
@@ -734,24 +746,24 @@ class ContentSecurityPolicyMiddleware(MiddlewareMixin):
 
     def _csp_loc_builder(self, key, value):
         if not isinstance(value, (list, tuple)):
-            logger.warn('Arguments to %s must be given as list or tuple', key)
+            logger.warn("Arguments to %s must be given as list or tuple", key)
             raise django.core.exceptions.MiddlewareNotUsed
 
         csp_loc_string = "{0}".format(key)
         for loc in value:
             if loc in self._CSP_LOCATIONS:
                 csp_loc_string += " '{0}'".format(loc)  # quoted
-            elif loc == '*':
-                csp_loc_string += ' *'                   # not quoted
+            elif loc == "*":
+                csp_loc_string += " *"  # not quoted
             else:
                 # XXX: check for valid hostname or URL
-                csp_loc_string += " {0}".format(loc)   # not quoted
+                csp_loc_string += " {0}".format(loc)  # not quoted
 
         return csp_loc_string
 
     def _csp_sandbox_builder(self, key, value):
         if not isinstance(value, (list, tuple)):
-            logger.warn('Arguments to %s must be given as list or tuple', key)
+            logger.warn("Arguments to %s must be given as list or tuple", key)
             raise django.core.exceptions.MiddlewareNotUsed
 
         csp_sandbox_string = "{0}".format(key)
@@ -759,25 +771,25 @@ class ContentSecurityPolicyMiddleware(MiddlewareMixin):
             if opt in self._CSP_SANDBOX_ARGS:
                 csp_sandbox_string += " {0}".format(opt)
             else:
-                logger.warn('Invalid CSP sandbox argument %s', opt)
+                logger.warn("Invalid CSP sandbox argument %s", opt)
                 raise django.core.exceptions.MiddlewareNotUsed
 
         return csp_sandbox_string
 
     def _csp_report_uri_builder(self, key, value):
         # XXX: add valid URL check
-        return '{0} {1}'.format(key, value)
+        return "{0} {1}".format(key, value)
 
     def _csp_referrer_builder(self, key, value):
         if value not in self._CSP_REF_ARGS:
-            logger.warning('Invalid CSP %s value %s', key, value)
+            logger.warning("Invalid CSP %s value %s", key, value)
             raise django.core.exceptions.MiddlewareNotUsed
 
         return "{0} {1}".format(key, value)
 
     def _csp_reflected_xss_builder(self, key, value):
         if value not in self._CSP_XSS_ARGS:
-            logger.warning('Invalid CSP %s value %s', key, value)
+            logger.warning("Invalid CSP %s value %s", key, value)
             raise django.core.exceptions.MiddlewareNotUsed
 
         return "{0} {1}".format(key, value)
@@ -786,52 +798,51 @@ class ContentSecurityPolicyMiddleware(MiddlewareMixin):
         csp_components = []
 
         for key, value in csp_dict.items():
-
             if key in self._CSP_LOC_TYPES:
                 csp_components.append(self._csp_loc_builder(key, value))
 
-            elif key == 'sandbox':
+            elif key == "sandbox":
                 csp_components.append(self._csp_sandbox_builder(key, value))
 
-            elif key == 'report-uri':
+            elif key == "report-uri":
                 csp_components.append(self._csp_report_uri_builder(key, value))
 
-            elif key == 'referrer':
+            elif key == "referrer":
                 csp_components.append(self._csp_referrer_builder(key, value))
 
-            elif key == 'reflected-xss':
+            elif key == "reflected-xss":
                 csp_components.append(
                     self._csp_reflected_xss_builder(key, value),
                 )
 
             else:
-                logger.warning('Invalid CSP type %s', key)
+                logger.warning("Invalid CSP type %s", key)
                 raise django.core.exceptions.MiddlewareNotUsed
 
-        return '; '.join(csp_components)
+        return "; ".join(csp_components)
 
     def __init__(self, get_response=None):
         # sanity checks
         self.get_response = get_response
 
-        conf_csp_mode = getattr(django.conf.settings, 'CSP_MODE', None)
-        self._csp_mode = conf_csp_mode or 'enforce'
-        csp_string = getattr(django.conf.settings, 'CSP_STRING', None)
-        csp_dict = getattr(django.conf.settings, 'CSP_DICT', None)
-        csp_report_string = getattr(django.conf.settings, 'CSP_REPORT_STRING',
-                                    None)
-        csp_report_dict = getattr(django.conf.settings, 'CSP_REPORT_DICT',
-                                  None)
+        conf_csp_mode = getattr(django.conf.settings, "CSP_MODE", None)
+        self._csp_mode = conf_csp_mode or "enforce"
+        csp_string = getattr(django.conf.settings, "CSP_STRING", None)
+        csp_dict = getattr(django.conf.settings, "CSP_DICT", None)
+        csp_report_string = getattr(django.conf.settings, "CSP_REPORT_STRING", None)
+        csp_report_dict = getattr(django.conf.settings, "CSP_REPORT_DICT", None)
 
-        set_csp_str = self._csp_mode in ['enforce', 'enforce-and-report-only']
-        set_csp_report_str = self._csp_mode in ['report-only',
-                                                'enforce-and-report-only']
+        set_csp_str = self._csp_mode in ["enforce", "enforce-and-report-only"]
+        set_csp_report_str = self._csp_mode in [
+            "report-only",
+            "enforce-and-report-only",
+        ]
 
         if not (set_csp_str or set_csp_report_str):
             logger.error(
                 'Invalid CSP_MODE %s, "enforce", "report-only" '
                 'or "enforce-and-report-only" allowed',
-                self._csp_mode
+                self._csp_mode,
             )
             raise django.core.exceptions.MiddlewareNotUsed
 
@@ -842,20 +853,21 @@ class ContentSecurityPolicyMiddleware(MiddlewareMixin):
             self._set_csp_report_str(csp_report_dict, csp_report_string)
 
     def _set_csp_str(self, csp_dict, csp_string):
-        err_msg = 'Middleware requires either CSP_STRING or CSP_DICT setting'
+        err_msg = "Middleware requires either CSP_STRING or CSP_DICT setting"
         if not (csp_dict or csp_string):
-            logger.error('%s, none found', err_msg)
+            logger.error("%s, none found", err_msg)
             raise django.core.exceptions.MiddlewareNotUsed
 
-        self._csp_string = self._choose_csp_str(csp_dict, csp_string,
-                                                err_msg + ', not both')
+        self._csp_string = self._choose_csp_str(
+            csp_dict, csp_string, err_msg + ", not both"
+        )
 
     def _set_csp_report_str(self, csp_report_dict, csp_report_string):
         report_err_msg = (
-            'Middleware requires either CSP_REPORT_STRING, '
-            'CSP_REPORT_DICT setting, or neither. If neither, '
-            'middleware requires CSP_STRING or CSP_DICT, '
-            'but not both.'
+            "Middleware requires either CSP_REPORT_STRING, "
+            "CSP_REPORT_DICT setting, or neither. If neither, "
+            "middleware requires CSP_STRING or CSP_DICT, "
+            "but not both."
         )
 
         # Default to the regular CSP string if report string not configured
@@ -863,9 +875,7 @@ class ContentSecurityPolicyMiddleware(MiddlewareMixin):
             self._csp_report_string = self._csp_string
         else:
             self._csp_report_string = self._choose_csp_str(
-                csp_report_dict,
-                csp_report_string,
-                report_err_msg
+                csp_report_dict, csp_report_string, report_err_msg
             )
 
     def _choose_csp_str(self, csp_dict, csp_str, err_msg):
@@ -883,7 +893,7 @@ class ContentSecurityPolicyMiddleware(MiddlewareMixin):
         Log an error message if both are provided.
         """
         if csp_dict and csp_str:
-            logger.error('%s', err_msg)
+            logger.error("%s", err_msg)
             raise django.core.exceptions.MiddlewareNotUsed
 
         if csp_dict:
@@ -891,7 +901,7 @@ class ContentSecurityPolicyMiddleware(MiddlewareMixin):
         elif csp_str:
             return csp_str
         else:
-            return ''
+            return ""
 
     def process_response(self, request, response):
         """
@@ -900,21 +910,23 @@ class ContentSecurityPolicyMiddleware(MiddlewareMixin):
         """
         # choose headers based enforcement mode
         is_ie = False
-        if 'HTTP_USER_AGENT' in request.META:
-            parsed_ua = user_agent_parser.ParseUserAgent(request.META['HTTP_USER_AGENT'])
-            is_ie = parsed_ua['family'] == 'IE'
+        if "HTTP_USER_AGENT" in request.META:
+            parsed_ua = user_agent_parser.ParseUserAgent(
+                request.META["HTTP_USER_AGENT"]
+            )
+            is_ie = parsed_ua["family"] == "IE"
 
-        csp_header = 'Content-Security-Policy'
+        csp_header = "Content-Security-Policy"
         if is_ie:
-            csp_header = 'X-Content-Security-Policy'
-        report_only_header = 'Content-Security-Policy-Report-Only'
+            csp_header = "X-Content-Security-Policy"
+        report_only_header = "Content-Security-Policy-Report-Only"
 
         # actually add appropriate headers
-        if self._csp_mode == 'enforce':
+        if self._csp_mode == "enforce":
             response[csp_header] = self._csp_string
-        elif self._csp_mode == 'report-only':
+        elif self._csp_mode == "report-only":
             response[report_only_header] = self._csp_report_string
-        elif self._csp_mode == 'enforce-and-report-only':
+        elif self._csp_mode == "enforce-and-report-only":
             response[csp_header] = self._csp_string
             response[report_only_header] = self._csp_report_string
 
@@ -950,19 +962,25 @@ class StrictTransportSecurityMiddleware(MiddlewareMixin):
      <https://datatracker.ietf.org/doc/rfc6797/>`_
     - `Preloaded HSTS sites <http://www.chromium.org/sts>`_
     """
+
     def __init__(self, get_response=None):
-        warnings.warn((
-            'DEPRECATED: The middleware "{name}" will no longer be '
-            'supported in future releases of this library. Refer to {url} for '
-            'an alternative approach with regards to the settings: {settings}'
-        ).format(
-            name=self.__class__.__name__,
-            url=DJANGO_SECURITY_MIDDLEWARE_URL,
-            settings=", ".join([
-                "SECURE_HSTS_SECONDS",
-                "SECURE_HSTS_INCLUDE_SUBDOMAINS",
-                "SECURE_HSTS_PRELOAD",
-            ])))
+        warnings.warn(
+            (
+                'DEPRECATED: The middleware "{name}" will no longer be '
+                "supported in future releases of this library. Refer to {url} for "
+                "an alternative approach with regards to the settings: {settings}"
+            ).format(
+                name=self.__class__.__name__,
+                url=DJANGO_SECURITY_MIDDLEWARE_URL,
+                settings=", ".join(
+                    [
+                        "SECURE_HSTS_SECONDS",
+                        "SECURE_HSTS_INCLUDE_SUBDOMAINS",
+                        "SECURE_HSTS_PRELOAD",
+                    ]
+                ),
+            )
+        )
 
         self.get_response = get_response
 
@@ -981,19 +999,19 @@ class StrictTransportSecurityMiddleware(MiddlewareMixin):
         except AttributeError:
             self.preload = True
 
-        self.value = 'max-age={0}'.format(self.max_age)
+        self.value = "max-age={0}".format(self.max_age)
 
         if self.subdomains:
-            self.value += ' ; includeSubDomains'
+            self.value += " ; includeSubDomains"
 
         if self.preload:
-            self.value += ' ; preload'
+            self.value += " ; preload"
 
     def process_response(self, request, response):
         """
         Add Strict-Transport-Security header.
         """
-        response['Strict-Transport-Security'] = self.value
+        response["Strict-Transport-Security"] = self.value
         return response
 
 
@@ -1021,22 +1039,24 @@ class P3PPolicyMiddleware(BaseMiddleware):
 
     def __init__(self, get_response=None):
         super().__init__(get_response)
-        warnings.warn((
-            'DEPRECATED: The middleware "{name}" will no longer be '
-            'supported in future releases of this library.'
-        ).format(name=self.__class__.__name__))
+        warnings.warn(
+            (
+                'DEPRECATED: The middleware "{name}" will no longer be '
+                "supported in future releases of this library."
+            ).format(name=self.__class__.__name__)
+        )
 
     def load_setting(self, setting, value):
-        if setting == 'P3P_COMPACT_POLICY':
+        if setting == "P3P_COMPACT_POLICY":
             self.policy = value
-        elif setting == 'P3P_POLICY_URL':
-            self.policy_url = value or '/w3c/p3p.xml'
+        elif setting == "P3P_POLICY_URL":
+            self.policy_url = value or "/w3c/p3p.xml"
 
     def process_response(self, request, response):
         """
         Add P3P policy to the response header.
         """
-        response['P3P'] = 'policyref="{0}" CP="{1}"'.format(
+        response["P3P"] = 'policyref="{0}" CP="{1}"'.format(
             self.policy_url,
             self.policy,
         )
@@ -1067,15 +1087,19 @@ class SessionExpiryPolicyMiddleware(CustomLogoutMixin, BaseMiddleware):
     e.g. 'django.contrib.auth.logout'.
     """
 
-    OPTIONAL_SETTINGS = ('SESSION_COOKIE_AGE', 'SESSION_INACTIVITY_TIMEOUT',
-                         'SESSION_EXPIRY_EXEMPT_URLS', 'CUSTOM_LOGOUT_MODULE')
+    OPTIONAL_SETTINGS = (
+        "SESSION_COOKIE_AGE",
+        "SESSION_INACTIVITY_TIMEOUT",
+        "SESSION_EXPIRY_EXEMPT_URLS",
+        "CUSTOM_LOGOUT_MODULE",
+    )
 
     SECONDS_PER_DAY = 86400
     SECONDS_PER_30MINS = 1800
 
     # Session keys
-    START_TIME_KEY = 'starttime'
-    LAST_ACTIVITY_KEY = 'lastactivity'
+    START_TIME_KEY = "starttime"
+    LAST_ACTIVITY_KEY = "lastactivity"
 
     @classmethod
     def _get_datetime_in_session(cls, key, session):
@@ -1087,47 +1111,34 @@ class SessionExpiryPolicyMiddleware(CustomLogoutMixin, BaseMiddleware):
 
     @classmethod
     def get_start_time(cls, request):
-        return cls._get_datetime_in_session(
-            cls.START_TIME_KEY,
-            request.session
-        )
+        return cls._get_datetime_in_session(cls.START_TIME_KEY, request.session)
 
     @classmethod
     def set_start_time(cls, request, date):
-        cls._set_datetime_in_session(
-            cls.START_TIME_KEY,
-            date,
-            request.session
-        )
+        cls._set_datetime_in_session(cls.START_TIME_KEY, date, request.session)
 
     @classmethod
     def get_last_activity(cls, request):
-        return cls._get_datetime_in_session(
-            cls.LAST_ACTIVITY_KEY,
-            request.session
-        )
+        return cls._get_datetime_in_session(cls.LAST_ACTIVITY_KEY, request.session)
 
     @classmethod
     def set_last_activity(cls, request, date):
-        cls._set_datetime_in_session(
-            cls.LAST_ACTIVITY_KEY,
-            date,
-            request.session
-        )
+        cls._set_datetime_in_session(cls.LAST_ACTIVITY_KEY, date, request.session)
 
     def load_setting(self, setting, value):
-        if setting == 'SESSION_COOKIE_AGE':
+        if setting == "SESSION_COOKIE_AGE":
             self.SESSION_COOKIE_AGE = value or self.SECONDS_PER_DAY
-            logger.debug("Max Session Cookie Age is %d seconds",
-                         self.SESSION_COOKIE_AGE
-                         )
-        elif setting == 'SESSION_INACTIVITY_TIMEOUT':
+            logger.debug(
+                "Max Session Cookie Age is %d seconds", self.SESSION_COOKIE_AGE
+            )
+        elif setting == "SESSION_INACTIVITY_TIMEOUT":
             # half an hour in seconds
             self.SESSION_INACTIVITY_TIMEOUT = value or self.SECONDS_PER_30MINS
-            logger.debug("Session Inactivity Timeout is %d seconds",
-                         self.SESSION_INACTIVITY_TIMEOUT
-                         )
-        elif setting == 'SESSION_EXPIRY_EXEMPT_URLS':
+            logger.debug(
+                "Session Inactivity Timeout is %d seconds",
+                self.SESSION_INACTIVITY_TIMEOUT,
+            )
+        elif setting == "SESSION_EXPIRY_EXEMPT_URLS":
             self.exempt_urls = [compile(expr) for expr in (value or ())]
         else:
             setattr(self, setting, value)
@@ -1139,13 +1150,13 @@ class SessionExpiryPolicyMiddleware(CustomLogoutMixin, BaseMiddleware):
         is the case. We set the last activity time to now() if the session
         is still active.
         """
-        if not hasattr(request, 'user'):
+        if not hasattr(request, "user"):
             raise ImproperlyConfigured(
                 "The Login Required middleware "
                 "requires authentication middleware to be installed."
             )
 
-        path = request.path_info.lstrip('/')
+        path = request.path_info.lstrip("/")
 
         if any(m.match(path) for m in self.exempt_urls):
             return
@@ -1177,14 +1188,10 @@ class SessionExpiryPolicyMiddleware(CustomLogoutMixin, BaseMiddleware):
         start_time = self.get_start_time(request)
         last_activity_time = self.get_last_activity(request)
 
-        logger.debug("Session %s started: %s",
-                     session.session_key,
-                     start_time
-                     )
-        logger.debug("Session %s last active: %s",
-                     session.session_key,
-                     last_activity_time
-                     )
+        logger.debug("Session %s started: %s", session.session_key, start_time)
+        logger.debug(
+            "Session %s last active: %s", session.session_key, last_activity_time
+        )
 
         session_age = self.get_diff_in_seconds(now, start_time)
         session_too_old = session_age > self.SESSION_COOKIE_AGE
@@ -1212,6 +1219,7 @@ class SessionExpiryPolicyMiddleware(CustomLogoutMixin, BaseMiddleware):
         diff = now - time
         age = diff.days * self.SECONDS_PER_DAY + diff.seconds
         return age
+
 
 # Modified a little bit by us.
 
@@ -1262,19 +1270,19 @@ class LoginRequiredMiddleware(BaseMiddleware, CustomLogoutMixin):
     e.g. 'django.contrib.auth.logout'.
     """
 
-    REQUIRED_SETTINGS = ('LOGIN_URL',)
-    OPTIONAL_SETTINGS = ('LOGIN_EXEMPT_URLS', 'CUSTOM_LOGOUT_MODULE')
+    REQUIRED_SETTINGS = ("LOGIN_URL",)
+    OPTIONAL_SETTINGS = ("LOGIN_EXEMPT_URLS", "CUSTOM_LOGOUT_MODULE")
 
     def load_setting(self, setting, value):
-        if setting == 'LOGIN_URL':
+        if setting == "LOGIN_URL":
             self.login_url = value
-        elif setting == 'LOGIN_EXEMPT_URLS':
+        elif setting == "LOGIN_EXEMPT_URLS":
             self.exempt_urls = [compile(expr) for expr in (value or ())]
         else:
             setattr(self, setting, value)
 
     def assert_authentication_middleware_installed(self, request):
-        if not hasattr(request, 'user'):
+        if not hasattr(request, "user"):
             raise ImproperlyConfigured(
                 "The Login Required middleware "
                 "requires authentication middleware to be installed."
@@ -1292,12 +1300,12 @@ class LoginRequiredMiddleware(BaseMiddleware, CustomLogoutMixin):
         if request.user.is_authenticated:
             return
 
-        path = request.path_info.lstrip('/')
+        path = request.path_info.lstrip("/")
 
         if any(m.match(path) for m in self.exempt_urls):
             return
 
-        if hasattr(request, 'login_url'):
+        if hasattr(request, "login_url"):
             login_url = request.login_url
             next_url = None
         else:
@@ -1312,9 +1320,10 @@ class LoginRequiredMiddleware(BaseMiddleware, CustomLogoutMixin):
             )
 
         if next_url:
-            login_url = login_url + '?next=' + next_url
+            login_url = login_url + "?next=" + next_url
 
         return HttpResponseRedirect(login_url)
+
 
 class ReferrerPolicyMiddleware(BaseMiddleware):
     """
@@ -1339,11 +1348,19 @@ class ReferrerPolicyMiddleware(BaseMiddleware):
 
     OPTIONAL_SETTINGS = ("REFERRER_POLICY",)
 
-    OPTIONS = [ 'no-referrer', 'no-referrer-when-downgrade', 'origin',
-    'origin-when-cross-origin', 'same-origin', 'strict-origin',
-    'strict-origin-when-cross-origin', 'unsafe-url', 'off' ]
+    OPTIONS = [
+        "no-referrer",
+        "no-referrer-when-downgrade",
+        "origin",
+        "origin-when-cross-origin",
+        "same-origin",
+        "strict-origin",
+        "strict-origin-when-cross-origin",
+        "unsafe-url",
+        "off",
+    ]
 
-    DEFAULT = 'same-origin'
+    DEFAULT = "same-origin"
 
     def load_setting(self, setting, value):
         if not value:
@@ -1364,7 +1381,7 @@ class ReferrerPolicyMiddleware(BaseMiddleware):
         """
         Add Referrer-Policy to the response header.
         """
-        if self.option != 'off':
+        if self.option != "off":
             header = self.option
-            response['Referrer-Policy'] = header
+            response["Referrer-Policy"] = header
         return response
