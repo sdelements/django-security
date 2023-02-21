@@ -46,7 +46,6 @@ MIDDLEWARE = (
     "security.middleware.ContentSecurityPolicyMiddleware",
     "security.middleware.StrictTransportSecurityMiddleware",
     "security.middleware.P3PPolicyMiddleware",
-    "security.middleware.XssProtectMiddleware",
     "security.middleware.MandatoryPasswordChangeMiddleware",
     "security.middleware.NoConfidentialCachingMiddleware",
     "security.auth_throttling.Middleware",
