@@ -89,6 +89,8 @@ doctest:
 	      "results in $(BUILDDIR)/doctest/output.txt."
 
 lint:
+	poetry run black .
+	poetry run isort .
 	poetry run flake8 . --extend-ignore=D,E501,W601 --extend-exclude=docs/ --statistics --count
 
 test:

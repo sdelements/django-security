@@ -607,6 +607,16 @@ files = [
 ]
 
 [[package]]
+name = "south"
+version = "1.0.2"
+description = "South: Migrations for Django"
+optional = false
+python-versions = "*"
+files = [
+    {file = "South-1.0.2.tar.gz", hash = "sha256:d360bd31898f9df59f6faa786551065bba45b35e7ee3c39b381b4fbfef7392f4"},
+]
+
+[[package]]
 name = "sqlparse"
 version = "0.5.0"
 description = "A non-validating SQL parser."
@@ -691,4 +701,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.12"
-content-hash = "c5019f4f595336373225afefbaaab821e78ea4acd009c4ccb1898ea1b241e943"
+content-hash = "035ae5f00aa880116e169b83eda8bb722a1675fee3eeab783fe558f64bef5e43"

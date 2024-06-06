@@ -41,16 +41,6 @@ Adding to Django application's `settings.py` file:
         ...
     )
 
-Pre-Django 1.10, middleware modules can be added to `MIDDLEWARE_CLASSES` list in settings file:
-
-    MIDDLEWARE_CLASSES = (
-        ...
-        'security.middleware.DoNotTrackMiddleware',
-        'security.middleware.ContentNoSniff',
-        'security.middleware.XssProtectMiddleware',
-        'security.middleware.XFrameOptionsMiddleware',
-    )
-
 After Django 1.10, middleware modules can be added to `MIDDLEWARE` list in settings file:
 
     MIDDLEWARE = (
