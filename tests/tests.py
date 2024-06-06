@@ -327,7 +327,7 @@ class DecoratorTest(TestCase):
     def require_ajax_test(self):
         @require_ajax
         def ajax_only_view(request):
-            self.assertTrue(request.is_ajax())
+            self.assertTrue(request.headers.get('x-requested-with') == 'XMLHttpRequest')
 
         request = HttpRequest()
         response = ajax_only_view(request)
@@ -1031,9 +1031,9 @@ class ContentSecurityPolicyTests(TestCase):
 class DoNotTrackTests(TestCase):
 
     def setUp(self):
-        self.dnt = DoNotTrackMiddleware()
         self.request = HttpRequest()
         self.response = HttpResponse()
+        self.dnt = DoNotTrackMiddleware(self.response)
 
     def test_set_DNT_on(self):
         self.request.META['HTTP_DNT'] = '1'

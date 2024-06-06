@@ -1304,7 +1304,7 @@ class LoginRequiredMiddleware(BaseMiddleware, CustomLogoutMixin):
             login_url = self.login_url
             next_url = request.path
 
-        if request.is_ajax():
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return HttpResponse(
                 json.dumps({"login_url": login_url}),
                 status=401,

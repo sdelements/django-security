@@ -18,7 +18,7 @@ def require_ajax(view):
     is not an AJAX request.
     """
     def check_ajax(request, *args, **kwargs):
-        if request.is_ajax():
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return view(request, *args, **kwargs)
         else:
             return HttpResponseForbidden()
