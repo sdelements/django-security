@@ -1,16 +1,21 @@
 # Copyright (c) 2011, SD Elements. See LICENSE.txt for details.
 
+import cProfile
 import importlib
 import json
 import logging
+import pstats
 import warnings
+from io import StringIO
 from re import compile
 
 import dateutil.parser
 import django.conf
 import django.views.static
+import sqlparse
 from django.contrib.auth import logout
-from django.core.exceptions import ImproperlyConfigured
+from django.core.exceptions import ImproperlyConfigured, MiddlewareNotUsed
+from django.db import connection
 from django.http import HttpResponse, HttpResponseRedirect
 from django.test.signals import setting_changed
 from django.urls import resolve, reverse
@@ -1388,4 +1393,90 @@ class ReferrerPolicyMiddleware(BaseMiddleware):
         if self.option != "off":
             header = self.option
             response["Referrer-Policy"] = header
+        return response
+
+
+class ProfilingMiddleware(BaseMiddleware):
+    """
+    Adds the ability to profile requests via a header.
+
+    Usage:
+    Add the middleware to the MIDDLEWARE list. New boolean setting
+    "ENABLE_PROFILING" will be required to be set in the settings file. When
+    set to False, the middleware will deactivate itself. When set to True, the
+    middleware will be active.
+
+    When the middleware is active, it will log the data for any request that
+    supplies the X-Profile header in the HTTP request. This data will be logged
+    to the 'profiling' logger, so in order to see the results of this profiling
+    the Django logging will need to configure handlers for the 'profiling'
+    logger. Profiling will be configured at the DEBUG level.
+    """
+
+    REQUIRED_SETTINGS = ("ENABLE_PROFILING", "DEBUG")
+    request_separator = f"\n{'=' * 80}\n"
+    query_separator = f"\n{'*' * 80}\n"
+
+    def __init__(self, get_response=None):
+        super().__init__(get_response)
+        if not self.enable_profiling:
+            raise MiddlewareNotUsed()
+
+    def load_setting(self, setting, value):
+        setattr(self, setting.lower(), value)
+
+    def format_queries_and_time_for_logs(self, queries):
+        formatted_queries = []
+        total_time = 0
+        for query in queries:
+            formatted_sql = sqlparse.format(
+                query["sql"], reindent=True, keyword_case="upper"
+            )
+
+            formatted_queries.append("{}:\n{}".format(query["time"], formatted_sql))
+            total_time += float(query["time"])
+
+        log_messages = [
+            f"\n{len(queries)} Queries\nTotal time for queries: {total_time}"
+        ] + formatted_queries
+        return self.query_separator.join(log_messages)
+
+    def __call__(self, request):
+        # Only profile requests that have a 'X-Profile' HTTP header
+        if "HTTP_X_PROFILE" not in request.META:
+            return self.get_response(request)
+
+        out = StringIO()
+        out.write(self.request_separator)
+
+        # Add method & path info to differentiate requests
+        out.write(f"{request.method} {request.path}\n\n")
+
+        # We can only profile queries in debug mode
+        if self.debug:
+            num_previous_queries = len(connection.queries)
+
+        # Begin collecting time profiling data
+        profile = cProfile.Profile()
+        profile.enable()
+
+        # Continue down the middleware chain
+        response = self.get_response(request)
+
+        # Get the profile stats & pull out the top cumulative & total time
+        # data
+        profile_stats = pstats.Stats(profile, stream=out)
+        profile_stats = profile_stats.sort_stats("cumulative")
+        profile_stats.print_stats(128)
+        profile_stats.sort_stats("tottime")
+        profile_stats.print_stats(15)
+
+        # Print out our queries
+        if self.debug:
+            queries = connection.queries[num_previous_queries:]
+            out.write(self.format_queries_and_time_for_logs(queries))
+
+        out.write(self.request_separator)
+        logger.debug(out.getvalue())
+
         return response

@@ -54,76 +54,83 @@ Provided middleware modules will modify web application's output and input and i
 or minimum configuration.
 
 <table>
+
 <tr>
-<th>Middleware
-<th>Description
-<th>Configuration
+<th>Middleware</th>
+<th>Description</th>
+<th>Configuration</th>
 </tr>
 
 <tr>
-<td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.ClearSiteDataMiddleware">ClearSiteDataMiddleware</a>
-<td>Send Clear-Site-Data header in HTTP response for any page that has been whitelisted. <em>Recommended</em>.
-<td>Required.
+<td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.ClearSiteDataMiddleware">ClearSiteDataMiddleware</a></td>
+<td>Send Clear-Site-Data header in HTTP response for any page that has been whitelisted. <em>Recommended</em>.</td>
+<td>Required.</td>
 </tr>
 
 <tr>
-<td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.ContentSecurityPolicyMiddleware">ContentSecurityPolicyMiddleware</a>
-<td>Send Content Security Policy (CSP) header in HTTP response. <em>Recommended,</em> requires careful tuning.
-<td>Required.
+<td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.ContentSecurityPolicyMiddleware">ContentSecurityPolicyMiddleware</a></td>
+<td>Send Content Security Policy (CSP) header in HTTP response. <em>Recommended,</em> requires careful tuning.</td>
+<td>Required.</td>
 </tr>
 
 <tr>
-<td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.DoNotTrackMiddleware">DoNotTrackMiddleware</a>
-<td>Read user browser's DoNotTrack preference and pass it to application.  <em>Recommended,</em> requires implementation in views and templates.
-<td>None.
+<td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.DoNotTrackMiddleware">DoNotTrackMiddleware</a></td>
+<td>Read user browser's DoNotTrack preference and pass it to application.  <em>Recommended,</em> requires implementation in views and templates.</td>
+<td>None.</td>
 </tr>
 
 <tr>
-<td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.LoginRequiredMiddleware">LoginRequiredMiddleware</a>
-<td>Requires a user to be authenticated to view any page on the site that hasn't been white listed.
-<td>Required.
+<td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.LoginRequiredMiddleware">LoginRequiredMiddleware</a></td>
+<td>Requires a user to be authenticated to view any page on the site that hasn't been white listed.</td>
+<td>Required.</td>
 </tr>
 
 <tr>
-<td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.MandatoryPasswordChangeMiddleware">MandatoryPasswordChangeMiddleware</a>
-<td>Redirects any request from an authenticated user to the password change form if that user's password has expired.
-<td>Required.
+<td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.MandatoryPasswordChangeMiddleware">MandatoryPasswordChangeMiddleware</a></td>
+<td>Redirects any request from an authenticated user to the password change form if that user's password has expired.</td>
+<td>Required.</td>
 </tr>
 
 <tr>
-<td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.NoConfidentialCachingMiddleware">NoConfidentialCachingMiddleware</a>
-<td>Adds No-Cache and No-Store headers to confidential pages.
-<td>Required.
+<td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.NoConfidentialCachingMiddleware">NoConfidentialCachingMiddleware</a></td>
+<td>Adds No-Cache and No-Store headers to confidential pages.</td>
+<td>Required.</td>
 </tr>
 
 <tr>
-<td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.P3PPolicyMiddleware">P3PPolicyMiddleware</a>
-<td><b>DEPRECATED: </b>Will be removed in future releases.<br/>Adds the HTTP header attribute specifying compact P3P policy.
-<td>Required.
+<td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.P3PPolicyMiddleware">P3PPolicyMiddleware</a></td>
+<td><b>DEPRECATED: </b>Will be removed in future releases.<br/>Adds the HTTP header attribute specifying compact P3P policy.</td>
+<td>Required.</td>
 </tr>
 
 <tr>
-<td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.ReferrerPolicyMiddleware">ReferrerPolicyMiddleware</a>
-<td>Specify when the browser will set a `Referer` header.
-<td>Optional.
+<td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.ReferrerPolicyMiddleware">ReferrerPolicyMiddleware</a></td>
+<td>Specify when the browser will set a `Referer` header.</td>
+<td>Optional.</td>
 </tr>
 
 <tr>
-<td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.SessionExpiryPolicyMiddleware">SessionExpiryPolicyMiddleware</a>
-<td>Expire sessions on browser close, and on expiry times stored in the cookie itself.
-<td>Required.
+<td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.SessionExpiryPolicyMiddleware">SessionExpiryPolicyMiddleware</a></td>
+<td>Expire sessions on browser close, and on expiry times stored in the cookie itself.</td>
+<td>Required.</td>
 </tr>
 
 <tr>
-<td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.StrictTransportSecurityMiddleware">StrictTransportSecurityMiddleware</a>
-<td><b>DEPRECATED: </b>Will be removed in future releases, consider <a href="https://docs.djangoproject.com/en/1.11/ref/middleware/#django.middleware.security.SecurityMiddleware">django.middleware.security.SecurityMiddleware</a> via <i>SECURE_HSTS_SECONDS</i>, <i>SECURE_HSTS_INCLUDE_SUBDOMAINS</i> and <i>SECURE_HSTS_PRELOAD</i> settings.<br/>Enforce SSL/TLS connection and disable plaintext fall-back. <em>Recommended</em> for SSL/TLS sites.
-<td>Optional.
+<td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.StrictTransportSecurityMiddleware">StrictTransportSecurityMiddleware</a></td>
+<td><b>DEPRECATED: </b>Will be removed in future releases, consider <a href="https://docs.djangoproject.com/en/1.11/ref/middleware/#django.middleware.security.SecurityMiddleware">django.middleware.security.SecurityMiddleware</a> via <i>SECURE_HSTS_SECONDS</i>, <i>SECURE_HSTS_INCLUDE_SUBDOMAINS</i> and <i>SECURE_HSTS_PRELOAD</i> settings.<br/>Enforce SSL/TLS connection and disable plaintext fall-back. <em>Recommended</em> for SSL/TLS sites.</td>
+<td>Optional.</td>
 </tr>
 
 <tr>
-<td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.XFrameOptionsMiddleware">XFrameOptionsMiddleware</a>
-<td>Disable framing of the website, mitigating Clickjacking attacks. <em>Recommended.</em>
-<td>Optional.
+<td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.XFrameOptionsMiddleware">XFrameOptionsMiddleware</a></td>
+<td>Disable framing of the website, mitigating Clickjacking attacks. <em>Recommended.</em></td>
+<td>Optional.</td>
+</tr>
+
+<tr>
+<td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.ProfilingMiddleware">ProfilingMiddleware</a></td>
+<td>A simple middleware to capture useful profiling information in Django.</td>
+<td>Optional.</td>
 </tr>
 
 </table>
