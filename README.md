@@ -12,13 +12,8 @@ Automatically generated documentation of `django-security` is available on Read 
 
 # Requirements
 
-* Python >= 3.6
-* Django >= 1.11
-
-For Django < 1.8 use django-security==0.9.4. For Django < 1.11 use django-security==0.11.3.
-
-Note: For versions prior to 0.10.0, `datetime` objects were being added to the session and required Django's PickleSerializer for (de)serializing. This has now been changed so that the strings of these `datetime`s are being stored instead. If you are still using PickleSerializer for this reason, we suggest switching to Django's default JSONSerializer (default since Django 1.6) for better security.
-
+* Python >=3.12
+* Django  ~4.2
 
 # Installation
 
@@ -31,7 +26,7 @@ If you prefer the latest development version, install from
 
     git clone https://github.com/sdelements/django-security.git
     cd django-security
-    sudo python setup.py install
+    poetry install
 
 Adding to Django application's `settings.py` file:
 
@@ -50,8 +45,6 @@ After Django 1.10, middleware modules can be added to `MIDDLEWARE` list in setti
         'security.middleware.XssProtectMiddleware',
         'security.middleware.XFrameOptionsMiddleware',
     )
-
-
 
 Unlike the modules listed above, some other modules **require**  configuration settings,
 fully described in [django-security documentation](http://django-security.readthedocs.org/en/latest/).
