@@ -30,10 +30,8 @@ jobs:
           poetry install
       - name: Linting
         run: |
-          poetry run isort .
-          poetry run black .
-          poetry run flake8 . --extend-ignore=D,E501,W601 --extend-exclude=docs/ --statistics --count
+          make lint
       - name: Security
-        run: poetry run bandit -c pyproject.toml -r .
+        run: make bandit
       - name: Testing
-        run: poetry run python ./runtests.py
+        run: make tests
