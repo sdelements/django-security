@@ -1,24 +1,58 @@
-# python compiled files
-*.pyc
-*.pyo
-*.egg-info
-
-# back up files from VIM / Emacs
-*~
+*.py[co]
 *.swp
+*.bak
 
-# ignore setup.py build dir
-build/
+# docs
+_build
 
-# ignore sphinx built documentation
-_build/
+# Packages
+*.egg
+*.egg-info
+dist
+build
+eggs
+parts
+bin
+var
+sdist
+develop-eggs
+.installed.cfg
 
-# ignore tox files
-.tox/
+# Installer logs
+pip-log.txt
 
-# ignore coverage files
+# Unit test / coverage reports
 .coverage
+.tox
+
+.idea
+
+.DS_Store
+
+#Translations
+*.mo
+
+#Mr Developer
+.mr.developer.cfg
+
+# Configuration
+sdelint.cnf
+
+#generated data
+usecases/output.csv
+
+# Test files
+info.log
 htmlcov/
 
-# development tools
-.vscode/
+#ides
+.idea
+.vscode
+
+#custom cert bundle
+my_root_certs.crt
+
+# symbolic links
+.flake8
+
+conf/

@@ -1,0 +1,68 @@
+[tool.poetry]
+name = "django-security"
+version = "1.0.0"
+homepage = "https://github.com/sdelements/django-security"
+description = "A simple key-value-store for Django"
+authors = ["Security Compass <contact@securitycompass.com>"]
+license = "BSD License"
+readme = "README.md"
+# See https://pypi.python.org/pypi?%3Aaction=list_classifiers
+classifiers=[
+    # How mature is this project? Common values are
+    #   3 - Alpha
+    #   4 - Beta
+    #   5 - Production/Stable
+    'Development Status :: 5 - Production/Stable',
+
+    # Indicate who your project is intended for
+    'Intended Audience :: Developers',
+    'Topic :: Software Development :: Libraries :: Python Modules',
+
+    # Pick your license as you wish (should match "license" above)
+    'License :: OSI Approved :: BSD License',
+
+    # Supported Languages
+    'Natural Language :: English',
+    'Operating System :: OS Independent',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.12',
+    'Framework :: Django',
+]
+packages = [
+  { include = "security" },
+  { include = "tests", format = "sdist" },
+]
+exclude = [
+  "security/**/tests",
+  "tests"
+]
+
+[tool.poetry.dependencies]
+python = "~3.12"
+django = "~4.2"
+ua_parser = "0.18.0"
+python-dateutil = "2.9.0.post0"
+
+[tool.poetry.dev-dependencies]
+pre-commit = "3.7.1"
+# lint
+black = "24.4.2"
+flake8 = "7.0.0"
+flake8-bandit = "4.1.1"
+flake8-bugbear = "24.4.26"
+flake8-docstrings = "1.7.0"
+flake8-polyfill = "1.0.2"
+isort = "5.13.2"
+# security
+bandit = "1.7.8"
+# test
+django-upgrade = "1.18.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.bandit]
+exclude_dirs = [
+  './tests/',
+]

@@ -1,0 +1,39 @@
+name: Validate
+
+on:
+  push:
+    branches:
+      - develop
+      - master
+      - main
+      - 'release/**'
+  pull_request:
+    branches:
+      - '*'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools poetry
+          poetry install
+      - name: Linting
+        run: |
+          poetry run isort .
+          poetry run black .
+          poetry run flake8 . --extend-ignore=D,E501,W601 --extend-exclude=docs/ --statistics --count
+      - name: Security
+        run: poetry run bandit -c pyproject.toml -r .
+      - name: Testing
+        run: poetry run python ./runtests.py
