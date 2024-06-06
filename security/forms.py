@@ -3,7 +3,7 @@
 from django import forms
 import django.contrib.auth.forms
 
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 from . import auth
 from .password_expiry import password_is_expired, never_expire_password
