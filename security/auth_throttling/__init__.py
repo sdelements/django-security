@@ -2,8 +2,8 @@
 
 import hashlib
 import logging
-from math import ceil
 import time  # Monkeypatched by the tests.
+from math import ceil
 
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.contrib.auth.forms import AuthenticationForm
@@ -55,7 +55,7 @@ def _key(counter_type, counter_name):
         counter_type,
         counter_name,
     )
-    return hashlib.sha1(key.encode('ascii')).hexdigest()
+    return hashlib.sha256(key.encode("ascii")).hexdigest()
 
 
 def reset_counters(**counters):
@@ -185,8 +185,7 @@ class Middleware(BaseMiddleware):
     REQUIRED_SETTINGS = ("AUTHENTICATION_THROTTLING",)
 
     def load_setting(self, setting, value):
-        """
-        """
+        """ """
         value = value or {}
 
         try:
@@ -239,15 +238,15 @@ class Middleware(BaseMiddleware):
             current_site = get_current_site(request)
             # Template-compatible with 'django.contrib.auth.views.login'.
             return csrf_protect(
-                lambda request: render(
+                lambda request, template_name=template_name, form=form, redirect_url=redirect_url, current_site=current_site: render(
                     request,
                     template_name,
                     {
                         "form": form,
                         self.redirect_field_name: redirect_url,
                         "site": current_site,
-                        "site_name": current_site.name
-                    }
+                        "site_name": current_site.name,
+                    },
                 ),
             )(request)
 
@@ -258,6 +257,10 @@ class Middleware(BaseMiddleware):
 
 
 __all__ = [
-    delay_message, increment_counters, reset_counters, attempt_count,
-    default_delay_function, throttling_delay
+    delay_message,
+    increment_counters,
+    reset_counters,
+    attempt_count,
+    default_delay_function,
+    throttling_delay,
 ]

@@ -11,10 +11,12 @@ def min_length(n):
     because django.core.validators.MinLengthValidator doesn't take a message
     argument.
     """
+
     def validate(password):
         if len(password) < n:
             message = _("It must contain at least %d characters.") % n
             raise ValidationError(message)
+
     return validate
 
 
@@ -23,17 +25,17 @@ def min_length(n):
 lowercase = RegexValidator(
     r"[a-z]",
     _("It must contain at least one lowercase letter."),
-    '',
+    "",
 )
 
 uppercase = RegexValidator(
     r"[A-Z]",
     _("It must contain at least one uppercase letter."),
-    '',
+    "",
 )
 
 digit = RegexValidator(
     r"[0-9]",
     _("It must contain at least one decimal digit."),
-    '',
+    "",
 )
