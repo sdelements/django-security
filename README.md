@@ -36,7 +36,7 @@ Adding to Django application's `settings.py` file:
         ...
     )
 
-After Django 1.10, middleware modules can be added to `MIDDLEWARE` list in settings file:
+Middleware modules can be added to `MIDDLEWARE` list in settings file:
 
     MIDDLEWARE = (
         ...
