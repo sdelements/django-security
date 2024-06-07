@@ -2,7 +2,7 @@
 name = "django-security"
 version = "1.0.0"
 homepage = "https://github.com/sdelements/django-security"
-description = "A simple key-value-store for Django"
+description = "Models, views, middlewares and forms to facilitate security hardening of Django applications."
 authors = ["Security Compass <contact@securitycompass.com>"]
 license = "BSD License"
 readme = "README.md"

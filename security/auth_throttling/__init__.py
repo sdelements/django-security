@@ -55,7 +55,7 @@ def _key(counter_type, counter_name):
         counter_type,
         counter_name,
     )
-    return hashlib.sha256(key.encode("ascii")).hexdigest()
+    return hashlib.sha1(key.encode("ascii")).hexdigest()  # noqa: S324 # nosec: B324
 
 
 def reset_counters(**counters):
