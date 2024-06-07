@@ -1,4 +1,4 @@
-Copyright (c) 2011, SD Elements
+Copyright (c), SD Elements
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without

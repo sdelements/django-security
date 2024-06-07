@@ -1,5 +1,3 @@
-# Copyright (c) 2011, SD Elements. See LICENSE.txt for details.
-
 import datetime
 import json
 import time  # We monkeypatch this.

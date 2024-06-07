@@ -1,5 +1,3 @@
-# Copyright (c) 2011, SD Elements. See ../LICENSE.txt for details.
-
 from django.contrib.auth.views import LoginView, PasswordChangeView
 from django.http import HttpResponse
 from django.urls import path, re_path

@@ -12,21 +12,23 @@
 # serve to show the default.
 
 import os
-import sys
+
+import django
+
+# import sys
+
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.append(os.path.dirname(__file__))
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "tests.settings")
+django.setup()
 
 # -- General configuration -----------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = [
-    "sphinx.ext.autodoc",
-]
+extensions = ["sphinx.ext.autodoc", "sphinx_rtd_theme"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -42,7 +44,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "django-security"
-copyright = "2013, SD Elements"
+copyright = "2024, SD Elements"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -95,7 +97,7 @@ pygments_style = "sphinx"
 
 # The theme to use for HTML and HTML Help pages.  Major themes that come with
 # Sphinx are currently 'default' and 'sphinxdoc'.
-html_theme = "default"
+html_theme = "sphinx_rtd_theme"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
