@@ -1,14 +1,14 @@
 # Copyright (c) 2011, SD Elements. See LICENSE.txt for details.
 
 import json
+import logging
 
-from django.http import HttpResponseForbidden, HttpResponse
+from django.http import HttpResponse, HttpResponseForbidden
 from django.views.decorators.csrf import csrf_exempt
 
-import logging
 log = logging.getLogger(__name__)
 
-ACCEPTABLE_CONTENT_TYPES = ['application/json', 'application/csp-report']
+ACCEPTABLE_CONTENT_TYPES = ["application/json", "application/csp-report"]
 
 
 def require_ajax(view):
@@ -17,8 +17,9 @@ def require_ajax(view):
     by view is an AJAX request. We return a 403 error if the request
     is not an AJAX request.
     """
+
     def check_ajax(request, *args, **kwargs):
-        if request.is_ajax():
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
             return view(request, *args, **kwargs)
         else:
             return HttpResponseForbidden()
@@ -55,46 +56,48 @@ def csp_report(request, csp_save=False, csp_log=True):
     """
 
     # http://www.w3.org/TR/CSP/#sample-violation-report
-    if not request.method == 'POST':
-        log.debug('Unexpect CSP report method %s', request.method)
+    if not request.method == "POST":
+        log.debug("Unexpect CSP report method %s", request.method)
         return HttpResponseForbidden()
 
-    content_type = request.META.get('CONTENT_TYPE', None)
+    content_type = request.META.get("CONTENT_TYPE", None)
     if content_type not in ACCEPTABLE_CONTENT_TYPES:
-        log.debug('Missing CSP report Content-Type %s', request.META)
+        log.debug("Missing CSP report Content-Type %s", request.META)
         return HttpResponseForbidden()
 
     try:
         csp_dict = json.loads(request.body)
     except ValueError:
-        log.debug('Cannot JSON decode CSP report %s', request.body)
+        log.debug("Cannot JSON decode CSP report %s", request.body)
         return HttpResponseForbidden()
 
-    if 'csp-report' not in csp_dict:
-        log.debug('Invalid CSP report structure %s', csp_dict)
+    if "csp-report" not in csp_dict:
+        log.debug("Invalid CSP report structure %s", csp_dict)
         return HttpResponseForbidden()
 
-    report = csp_dict['csp-report']
-    reporting_ip = request.META['REMOTE_ADDR']
-    reporting_ua = request.META['HTTP_USER_AGENT']
+    report = csp_dict["csp-report"]
+    reporting_ip = request.META["REMOTE_ADDR"]
+    reporting_ua = request.META["HTTP_USER_AGENT"]
 
     # log message about received CSP violation to Django log
     if csp_log:
         log.warn(
-            'Content Security Policy violation: '
-            '%s, reporting IP %s, user agent %s',
-            report, reporting_ip, reporting_ua
+            "Content Security Policy violation: " "%s, reporting IP %s, user agent %s",
+            report,
+            reporting_ip,
+            reporting_ua,
         )
 
     # save received CSP violation to database
     if csp_save:
         from security.models import CspReport
+
         csp_report = CspReport(
-            document_uri=report.get('document-uri'),
-            referrer=report.get('referrer'),
-            blocked_uri=report.get('blocked-uri'),
-            violated_directive=report.get('violated-directive'),
-            original_policy=report.get('original-policy'),
+            document_uri=report.get("document-uri"),
+            referrer=report.get("referrer"),
+            blocked_uri=report.get("blocked-uri"),
+            violated_directive=report.get("violated-directive"),
+            original_policy=report.get("original-policy"),
             sender_ip=reporting_ip,
             user_agent=reporting_ua,
         )

@@ -1,0 +1,37 @@
+name: Validate
+
+on:
+  push:
+    branches:
+      - develop
+      - master
+      - main
+      - 'release/**'
+  pull_request:
+    branches:
+      - '*'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools poetry
+          poetry install
+      - name: Linting
+        run: |
+          make lint
+      - name: Security
+        run: make bandit
+      - name: Testing
+        run: make tests

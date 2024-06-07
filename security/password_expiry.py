@@ -1,15 +1,16 @@
 # Copyright (c) 2011, SD Elements. See LICENSE.txt for details.
 
-from .models import PasswordExpiry
 from django.conf import settings
+
+from .models import PasswordExpiry
 
 
 def password_is_expired(user):
 
     password_expiry, _ = PasswordExpiry.objects.get_or_create(user=user)
 
-    password_settings = getattr(settings, 'MANDATORY_PASSWORD_CHANGE', {})
-    include_superusers = password_settings.get('INCLUDE_SUPERUSERS', False)
+    password_settings = getattr(settings, "MANDATORY_PASSWORD_CHANGE", {})
+    include_superusers = password_settings.get("INCLUDE_SUPERUSERS", False)
 
     if include_superusers:
         return password_expiry.is_expired()

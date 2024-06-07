@@ -1,0 +1,28 @@
+# Defines the coding style for different editors and IDEs.
+# http://editorconfig.org
+
+# top-most EditorConfig file
+root = true
+
+# Rules for source code.
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+indent_size = 2
+indent_style = space
+trim_trailing_whitespace = true
+
+# Rules for Python code.
+[*.py]
+indent_size = 4
+
+# Rules for markdown documents.
+[*.md]
+indent_size = 4
+trim_trailing_whitespace = false
+
+# Rules for makefile
+[Makefile]
+indent_style = tab
+indent_size = 4

@@ -1,12 +1,11 @@
 # Copyright (c) 2011, SD Elements. See LICENSE.txt for details.
 
-from django import forms
 import django.contrib.auth.forms
-
-from django.utils.translation import ugettext_lazy as _
+from django import forms
+from django.utils.translation import gettext_lazy as _
 
 from . import auth
-from .password_expiry import password_is_expired, never_expire_password
+from .password_expiry import never_expire_password, password_is_expired
 
 
 class PasswordChangeForm(django.contrib.auth.forms.PasswordChangeForm):

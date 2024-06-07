@@ -1,14 +1,13 @@
 # Copyright (c) 2011, SD Elements. See LICENSE.txt for details.
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
-from django.conf import settings
-
 
 # Finding proper User model that we can set Foreign key to.
 # In newer versions of Django default user model can be specified in settings
 # as `AUTH_USER_MODEL`
-USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', User)
+USER_MODEL = getattr(settings, "AUTH_USER_MODEL", User)
 
 
 class PasswordExpiry(models.Model):
@@ -23,16 +22,13 @@ class PasswordExpiry(models.Model):
     class Meta(object):
         verbose_name_plural = "PasswordExpiries"
 
-    user = models.OneToOneField(
-        USER_MODEL,
-        on_delete=models.deletion.CASCADE
-    )
+    user = models.OneToOneField(USER_MODEL, on_delete=models.deletion.CASCADE)
 
     password_expiry_date = models.DateTimeField(
         auto_now_add=True,
         null=True,
         help_text="The date and time when the user's password expires. If "
-                  "this is empty, the password never expires.",
+        "this is empty, the password never expires.",
     )
 
     def is_expired(self):
@@ -46,7 +42,7 @@ class PasswordExpiry(models.Model):
         self.save()
 
     def __unicode__(self):
-        return u'Password Expiry: {0}'.format(self.user)
+        return "Password Expiry: {0}".format(self.user)
 
 
 # http://www.w3.org/TR/CSP/#sample-violation-report
@@ -73,7 +69,7 @@ class CspReport(models.Model):
     document_uri = models.URLField(
         max_length=1000,
         help_text="The address of the protected resource, "
-                  "with any fragment component removed",
+        "with any fragment component removed",
     )
     referrer = models.URLField(
         max_length=1000,
@@ -82,7 +78,7 @@ class CspReport(models.Model):
     blocked_uri = models.URLField(
         max_length=1000,
         help_text="URI of the resource that was prevented from loading due to "
-                  "the policy violation, with any fragment component removed",
+        "the policy violation, with any fragment component removed",
     )
     violated_directive = models.CharField(
         max_length=1000,
@@ -107,7 +103,7 @@ class CspReport(models.Model):
     )
 
     def __unicode__(self):
-        return u'CSP Report: {0} from {1}'.format(
+        return "CSP Report: {0} from {1}".format(
             self.blocked_uri,
             self.document_uri,
         )
