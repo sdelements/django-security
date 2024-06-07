@@ -1,5 +1,3 @@
-# Copyright (c) 2011, SD Elements. See LICENSE.txt for details.
-
 import django.contrib.auth.forms
 from django import forms
 from django.utils.translation import gettext_lazy as _

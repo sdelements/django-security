@@ -1,5 +1,3 @@
-# Copyright (c) 2011, SD Elements. See LICENSE.txt for details.
-
 from django.conf import settings
 
 from .models import PasswordExpiry

@@ -1,8 +1,6 @@
-# Copyright (c) 2011, SD Elements. See ../LICENSE.txt for details.
-
 import hashlib
 import logging
-import time  # Monkeypatched by the tests.
+import time
 from math import ceil
 
 from django.contrib.auth import REDIRECT_FIELD_NAME

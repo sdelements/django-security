@@ -1,5 +1,3 @@
-# Copyright (c) 2011, SD Elements. See LICENSE.txt for details.
-
 import cProfile
 import importlib
 import json
@@ -1077,20 +1075,19 @@ class ReferrerPolicyMiddleware(BaseMiddleware):
     Sends Referrer-Policy HTTP header that controls when the browser will set
     the `Referer` header. Use REFERRER_POLICY option in settings file
     with the following values:
-
-      - ``no-referrer``
-      - ``no-referrer-when-downgrade``
-      - ``origin``
-      - ``origin-when-cross-origin``
-      - ``same-origin`` (*default*)
-      - ``strict-origin``
-      - ``strict-origin-when-cross-origin``
-      - ``unsafe-url``
-      - ``off``
+    - ``no-referrer``
+    - ``no-referrer-when-downgrade``
+    - ``origin``
+    - ``origin-when-cross-origin``
+    - ``same-origin`` (*default*)
+    - ``strict-origin``
+    - ``strict-origin-when-cross-origin``
+    - ``unsafe-url``
+    - ``off``
 
     Reference:
     - `Referrer-Policy from Mozilla Developer Network
-      <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy>`
+    <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy>`
     """
 
     OPTIONAL_SETTINGS = ("REFERRER_POLICY",)
