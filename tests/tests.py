@@ -27,7 +27,7 @@ from security.middleware import (BaseMiddleware,
                                  MandatoryPasswordChangeMiddleware,
                                  ReferrerPolicyMiddleware,
                                  SessionExpiryPolicyMiddleware,
-                                 XFrameOptionsMiddleware, XssProtectMiddleware)
+                                 XFrameOptionsMiddleware)
 from security.models import PasswordExpiry
 from security.password_expiry import never_expire_password
 from security.views import csp_report, require_ajax
@@ -532,60 +532,6 @@ class XFrameOptionsDenyTests(TestCase):
         )
 
 
-@override_settings(MIDDLEWARE=("security.middleware.XssProtectMiddleware",))
-class XXssProtectTests(TestCase):
-
-    def test_option_set(self):
-        """
-        Verify the HTTP Response Header is set.
-        """
-        response = self.client.get("/accounts/login/")
-        self.assertNotEqual(response["X-XSS-Protection"], None)
-
-    def test_default_setting(self):
-        with self.settings(XSS_PROTECT=None):
-            response = self.client.get("/accounts/login/")
-            self.assertEqual(response["X-XSS-Protection"], "1")  # sanitize
-
-    def test_option_off(self):
-        with self.settings(XSS_PROTECT="off"):
-            response = self.client.get("/accounts/login/")
-            self.assertEqual(response["X-XSS-Protection"], "0")  # off
-
-    def test_improper_configuration_raises(self):
-        xss = XssProtectMiddleware()
-        self.assertRaises(
-            ImproperlyConfigured,
-            xss.load_setting,
-            "XSS_PROTECT",
-            "invalid",
-        )
-
-
-@override_settings(MIDDLEWARE=("security.middleware.ContentNoSniff",))
-class ContentNoSniffTests(TestCase):
-
-    def test_option_set(self):
-        """
-        Verify the HTTP Response Header is set.
-        """
-        response = self.client.get("/accounts/login/")
-        self.assertEqual(response["X-Content-Options"], "nosniff")
-
-
-@override_settings(
-    MIDDLEWARE=("security.middleware.StrictTransportSecurityMiddleware",)
-)
-class StrictTransportSecurityTests(TestCase):
-
-    def test_option_set(self):
-        """
-        Verify the HTTP Response Header is set.
-        """
-        response = self.client.get("/accounts/login/")
-        self.assertNotEqual(response["Strict-Transport-Security"], None)
-
-
 @override_settings(
     AUTHENTICATION_THROTTLING={
         "DELAY_FUNCTION": lambda x, _: (2 ** (x - 1) if x else 0, 0),
@@ -781,19 +727,6 @@ class AuthenticationThrottlingTests(TestCase):
         )
 
         self.assertEqual(resp.status_code, 404)
-
-
-@override_settings(MIDDLEWARE=("security.middleware.P3PPolicyMiddleware",))
-class P3PPolicyTests(TestCase):
-
-    def setUp(self):
-        self.policy = "NN AD BLAH"
-        settings.P3P_COMPACT_POLICY = self.policy
-
-    def test_p3p_header(self):
-        expected_header = 'policyref="/w3c/p3p.xml" CP="%s"' % self.policy
-        response = self.client.get("/accounts/login/")
-        self.assertEqual(response["P3P"], expected_header)
 
 
 class AuthTests(TestCase):

@@ -42,11 +42,7 @@ MIDDLEWARE = (
     "security.middleware.SessionExpiryPolicyMiddleware",
     "security.middleware.LoginRequiredMiddleware",
     "security.middleware.XFrameOptionsMiddleware",
-    "security.middleware.ContentNoSniff",
     "security.middleware.ContentSecurityPolicyMiddleware",
-    "security.middleware.StrictTransportSecurityMiddleware",
-    "security.middleware.P3PPolicyMiddleware",
-    "security.middleware.XssProtectMiddleware",
     "security.middleware.MandatoryPasswordChangeMiddleware",
     "security.middleware.NoConfidentialCachingMiddleware",
     "security.auth_throttling.Middleware",
@@ -133,8 +129,6 @@ X_FRAME_OPTIONS = "allow-from: http://example.com"
 X_FRAME_OPTIONS_EXCLUDE_URLS = (r"^/test\d/$",)
 CSP_STRING = "allow 'self'; script-src *.google.com"
 CSP_MODE = "enforce"
-P3P_POLICY_URL = "/w3c/p3p.xml"
-P3P_COMPACT_POLICY = "PRIVATE"
 
 LOGGING = {
     "version": 1,
