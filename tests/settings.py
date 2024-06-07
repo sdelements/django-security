@@ -51,6 +51,7 @@ MIDDLEWARE = (
     "security.middleware.NoConfidentialCachingMiddleware",
     "security.auth_throttling.Middleware",
     "security.middleware.ReferrerPolicyMiddleware",
+    "security.middleware.ProfilingMiddleware",
 )
 
 ROOT_URLCONF = "tests.urls"

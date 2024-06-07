@@ -18,16 +18,23 @@ from django.utils import timezone
 
 from security.auth import min_length
 from security.auth_throttling import Middleware as AuthThrottlingMiddleware
-from security.auth_throttling import (attempt_count, default_delay_function,
-                                      delay_message, increment_counters,
-                                      reset_counters)
-from security.middleware import (BaseMiddleware,
-                                 ContentSecurityPolicyMiddleware,
-                                 DoNotTrackMiddleware,
-                                 MandatoryPasswordChangeMiddleware,
-                                 ReferrerPolicyMiddleware,
-                                 SessionExpiryPolicyMiddleware,
-                                 XFrameOptionsMiddleware, XssProtectMiddleware)
+from security.auth_throttling import (
+    attempt_count,
+    default_delay_function,
+    delay_message,
+    increment_counters,
+    reset_counters,
+)
+from security.middleware import (
+    BaseMiddleware,
+    ContentSecurityPolicyMiddleware,
+    DoNotTrackMiddleware,
+    MandatoryPasswordChangeMiddleware,
+    ReferrerPolicyMiddleware,
+    SessionExpiryPolicyMiddleware,
+    XFrameOptionsMiddleware,
+    XssProtectMiddleware,
+)
 from security.models import PasswordExpiry
 from security.password_expiry import never_expire_password
 from security.views import csp_report, require_ajax

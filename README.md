@@ -117,7 +117,7 @@ or minimum configuration.
 
 <tr>
 <td><a href="http://django-security.readthedocs.org/en/latest/#security.middleware.StrictTransportSecurityMiddleware">StrictTransportSecurityMiddleware</a></td>
-<td><b>DEPRECATED: </b>Will be removed in future releases, consider <a href="https://docs.djangoproject.com/en/1.11/ref/middleware/#django.middleware.security.SecurityMiddleware">django.middleware.security.SecurityMiddleware</a> via <i>SECURE_HSTS_SECONDS</i>, <i>SECURE_HSTS_INCLUDE_SUBDOMAINS</i> and <i>SECURE_HSTS_PRELOAD</i> settings.<br/>Enforce SSL/TLS connection and disable plaintext fall-back. <em>Recommended</em> for SSL/TLS sites.</td>
+<td><b>DEPRECATED: </b>Will be removed in future releases, consider <a href="https://docs.djangoproject.com/en/4.2/ref/middleware/#django.middleware.security.SecurityMiddleware">django.middleware.security.SecurityMiddleware</a> via <i>SECURE_HSTS_SECONDS</i>, <i>SECURE_HSTS_INCLUDE_SUBDOMAINS</i> and <i>SECURE_HSTS_PRELOAD</i> settings.<br/>Enforce SSL/TLS connection and disable plaintext fall-back. <em>Recommended</em> for SSL/TLS sites.</td>
 <td>Optional.</td>
 </tr>
 

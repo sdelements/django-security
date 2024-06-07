@@ -24,12 +24,9 @@ from django.utils.deprecation import MiddlewareMixin
 from ua_parser import user_agent_parser
 
 logger = logging.getLogger(__name__)
-DJANGO_SECURITY_MIDDLEWARE_URL = (
-    "https://docs.djangoproject.com/en/1.11/ref"
-    "/middleware/#django.middleware.security.SecurityMiddleware"
-)
+DJANGO_SECURITY_MIDDLEWARE_URL = "https://docs.djangoproject.com/en/4.2/ref/middleware/#django.middleware.security.SecurityMiddleware"
 DJANGO_CLICKJACKING_MIDDLEWARE_URL = (
-    "https://docs.djangoproject.com/en/1.11/" "ref/clickjacking/"
+    "https://docs.djangoproject.com/en/4.2/ref/clickjacking/"
 )
 
 
