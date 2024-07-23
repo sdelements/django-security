@@ -1,6 +1,7 @@
 import hashlib
 import logging
 import time
+import urllib.parse
 from math import ceil
 
 from django.contrib.auth import REDIRECT_FIELD_NAME
@@ -43,6 +44,13 @@ def delay_message(remainder):
         return _("%d seconds") % ceil(remainder)
 
 
+def _to_ascii_compatible(value: str):
+    if not value.isascii():
+        value = urllib.parse.quote(value)
+
+    return value
+
+
 def _key(counter_type, counter_name):
     """
     We store a hashed version of the key because what we generate can be
@@ -50,8 +58,8 @@ def _key(counter_type, counter_name):
     that memcache doesn't like.
     """
     key = "security.authentication_throttling.%s:%s" % (
-        counter_type,
-        counter_name,
+        _to_ascii_compatible(counter_type),
+        _to_ascii_compatible(counter_name),
     )
     return hashlib.sha256(key.encode("ascii")).hexdigest()
 
