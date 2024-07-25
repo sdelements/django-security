@@ -1074,13 +1074,17 @@ class ReferrerPolicyTests(TestCase):
 
 
 class UnicodeDataTests(TestCase):
-    def test_unicode_data_in_cache_key(self):
-        username = "ñoñó1234"
+    USERNAME = "ñoñó1234"
+    IP_ADDRESS = "127.0.0.1"
 
+    def test_unicode_data_in_cache_key(self):
+        self._execute_with_unicode_data(self.USERNAME, self.IP_ADDRESS)
+
+    def _execute_with_unicode_data(self, username, ip):
         try:
-            increment_counters(username=username, ip="127.0.0.1")
-            reset_counters(username=username, ip="127.0.0.1")
-            throttling_delay(username=username, ip="127.0.0.1")
+            increment_counters(username=username, ip=ip)
+            reset_counters(username=username, ip=ip)
+            throttling_delay(username=username, ip=ip)
             attempt_count(attempt_type="auth", id=username)
         except Exception:
-            self.fail("Unicodedata not allowed")
+            self.fail("Unicode data not allowed")
