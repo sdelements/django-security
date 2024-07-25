@@ -22,7 +22,7 @@ from django.utils.deprecation import MiddlewareMixin
 from ua_parser import user_agent_parser
 
 logger = logging.getLogger(__name__)
-profiling_logger = logger.getLogger("profiling")
+profiling_logger = logging.getLogger("profiling")
 
 DJANGO_CLICKJACKING_MIDDLEWARE_URL = (
     "https://docs.djangoproject.com/en/4.2/ref/clickjacking/"
