@@ -18,7 +18,7 @@ from security.auth import min_length
 from security.auth_throttling import Middleware as AuthThrottlingMiddleware
 from security.auth_throttling import (attempt_count, default_delay_function,
                                       delay_message, increment_counters,
-                                      reset_counters)
+                                      reset_counters, throttling_delay)
 from security.middleware import (BaseMiddleware,
                                  ContentSecurityPolicyMiddleware,
                                  DoNotTrackMiddleware,
@@ -1071,3 +1071,20 @@ class ReferrerPolicyTests(TestCase):
             "REFERRER_POLICY",
             "invalid",
         )
+
+
+class UnicodeDataTests(TestCase):
+    USERNAME = "ñoñó1234"
+    IP_ADDRESS = "127.0.0.1"
+
+    def test_unicode_data_in_cache_key(self):
+        self._execute_with_unicode_data(self.USERNAME, self.IP_ADDRESS)
+
+    def _execute_with_unicode_data(self, username, ip):
+        try:
+            increment_counters(username=username, ip=ip)
+            reset_counters(username=username, ip=ip)
+            throttling_delay(username=username, ip=ip)
+            attempt_count(attempt_type="auth", id=username)
+        except Exception:
+            self.fail("Unicode data not allowed")
