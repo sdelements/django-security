@@ -1,6 +1,7 @@
 import hashlib
 import logging
 import time
+import typing
 import urllib.parse
 from math import ceil
 
@@ -44,8 +45,8 @@ def delay_message(remainder):
         return _("%d seconds") % ceil(remainder)
 
 
-def _to_ascii_compatible(value: str):
-    if not value.isascii():
+def _to_ascii_compatible(value: typing.Any):
+    if isinstance(value, str) and not value.isascii():
         value = urllib.parse.quote(value)
 
     return value
