@@ -1078,13 +1078,28 @@ class UnicodeDataTests(TestCase):
     IP_ADDRESS = "127.0.0.1"
 
     def test_unicode_data_in_cache_key(self):
-        self._execute_with_unicode_data(self.USERNAME, self.IP_ADDRESS)
+        self._execute_with_data(self.USERNAME, self.IP_ADDRESS)
 
-    def _execute_with_unicode_data(self, username, ip):
+    def test_types_in_cache_key(self):
+        """
+        We can send any kind of data for the downstream functions,
+        usually strings (maybe the username or email) and ints (maybe the userId)
+        """
+
+        self._execute_with_data(1, self.IP_ADDRESS)
+        self._execute_with_data(2.67, self.IP_ADDRESS)
+        self._execute_with_data(bool, self.IP_ADDRESS)
+        self._execute_with_data({"key": "value"}, self.IP_ADDRESS)
+        self._execute_with_data([1], self.IP_ADDRESS)
+        self._execute_with_data({1, 2}, self.IP_ADDRESS)
+        self._execute_with_data((1, 2), self.IP_ADDRESS)
+        self._execute_with_data("some_string", self.IP_ADDRESS)
+
+    def _execute_with_data(self, data, ip):
         try:
-            increment_counters(username=username, ip=ip)
-            reset_counters(username=username, ip=ip)
-            throttling_delay(username=username, ip=ip)
-            attempt_count(attempt_type="auth", id=username)
+            increment_counters(key=data, ip=ip)
+            reset_counters(key=data, ip=ip)
+            throttling_delay(username=data, ip=ip)
+            attempt_count(attempt_type="auth", id=data)
         except Exception:
-            self.fail("Unicode data not allowed")
+            self.fail("Unicode or incompatible data not allowed")
