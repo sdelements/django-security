@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "django-security"
-version = "1.0.5"
+version = "1.0.6"
 homepage = "https://github.com/sdelements/django-security"
 description = "Models, views, middlewares and forms to facilitate security hardening of Django applications."
 authors = ["Security Compass <contact@securitycompass.com>"]
