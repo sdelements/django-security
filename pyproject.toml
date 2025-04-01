@@ -39,7 +39,7 @@ exclude = [
 
 [tool.poetry.dependencies]
 python = "~3.12"
-django = "~4.2"
+django = ">=4.2,<5.2"
 python-dateutil = "2.9.0.post0"
 south = "1.0.2"
 ua_parser = "0.18.0"
