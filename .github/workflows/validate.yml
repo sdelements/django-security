@@ -6,10 +6,10 @@ on:
       - develop
       - master
       - main
-      - 'release/**'
+      - "release/**"
   pull_request:
     branches:
-      - '*'
+      - "*"
   workflow_dispatch:
 
 jobs:
@@ -34,4 +34,4 @@ jobs:
       - name: Security
         run: make bandit
       - name: Testing
-        run: make tests
+        run: make test
