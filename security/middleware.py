@@ -3,6 +3,7 @@ import importlib
 import json
 import logging
 import pstats
+from urllib.parse import quote_plus
 import warnings
 from io import StringIO
 from re import compile
@@ -1058,6 +1059,8 @@ class LoginRequiredMiddleware(BaseMiddleware, CustomLogoutMixin):
         else:
             login_url = self.login_url
             next_url = request.path
+            if len(request.META["QUERY_STRING"]):
+                next_url += quote_plus("?" + request.META["QUERY_STRING"])
 
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             return HttpResponse(

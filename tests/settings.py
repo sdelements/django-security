@@ -50,6 +50,8 @@ MIDDLEWARE = (
     "security.middleware.ProfilingMiddleware",
 )
 
+ENABLE_PROFILING = True
+
 ROOT_URLCONF = "tests.urls"
 
 TEMPLATES = [

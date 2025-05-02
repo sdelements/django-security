@@ -1,6 +1,7 @@
 import datetime
 import json
 import time  # We monkeypatch this.
+from urllib.parse import quote_plus
 
 from django.conf import settings
 from django.contrib.auth import logout
@@ -16,16 +17,23 @@ from django.utils import timezone
 
 from security.auth import min_length
 from security.auth_throttling import Middleware as AuthThrottlingMiddleware
-from security.auth_throttling import (attempt_count, default_delay_function,
-                                      delay_message, increment_counters,
-                                      reset_counters, throttling_delay)
-from security.middleware import (BaseMiddleware,
-                                 ContentSecurityPolicyMiddleware,
-                                 DoNotTrackMiddleware,
-                                 MandatoryPasswordChangeMiddleware,
-                                 ReferrerPolicyMiddleware,
-                                 SessionExpiryPolicyMiddleware,
-                                 XFrameOptionsMiddleware)
+from security.auth_throttling import (
+    attempt_count,
+    default_delay_function,
+    delay_message,
+    increment_counters,
+    reset_counters,
+    throttling_delay,
+)
+from security.middleware import (
+    BaseMiddleware,
+    ContentSecurityPolicyMiddleware,
+    DoNotTrackMiddleware,
+    MandatoryPasswordChangeMiddleware,
+    ReferrerPolicyMiddleware,
+    SessionExpiryPolicyMiddleware,
+    XFrameOptionsMiddleware,
+)
 from security.models import PasswordExpiry
 from security.password_expiry import never_expire_password
 from security.views import csp_report, require_ajax
@@ -151,6 +159,14 @@ class LoginRequiredMiddlewareTests(TestCase):
     def test_redirects_unauthenticated_request(self):
         response = self.client.get("/home/")
         self.assertRedirects(response, self.login_url + "?next=/home/")
+
+    def test_redirects_unauthenticated_request_to_custom_path_with_query_url(self):
+        path = "/custom-path/"
+        query = "priority=7,8,9,10&type=Custom"
+        response = self.client.get(f"{path}?{query}")
+
+        expected_redirect = f"{self.login_url}?next={path}{quote_plus("?" + query)}"
+        self.assertRedirects(response, expected_redirect)
 
     def test_redirects_unauthenticated_ajax_request(self):
         response = self.client.get(
