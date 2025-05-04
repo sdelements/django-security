@@ -59,7 +59,7 @@ flake8-docstrings = "1.7.0"
 flake8-polyfill = "1.0.2"
 isort = "5.13.2"
 # security
-bandit = "1.7.8"
+bandit = "1.8.3"
 # test
 django-upgrade = "1.18.0"
 
