@@ -105,7 +105,7 @@ class BaseMiddleware(MiddlewareMixin):
             self.load_setting(setting, value)
 
     def __init__(self, get_response=None):
-        self.get_response = get_response
+        super().__init__(get_response)
 
         if not self.REQUIRED_SETTINGS and not self.OPTIONAL_SETTINGS:
             return
@@ -701,7 +701,7 @@ class ContentSecurityPolicyMiddleware(MiddlewareMixin):
 
     def __init__(self, get_response=None):
         # sanity checks
-        self.get_response = get_response
+        super().__init__(get_response=get_response)
 
         conf_csp_mode = getattr(django.conf.settings, "CSP_MODE", None)
         self._csp_mode = conf_csp_mode or "enforce"

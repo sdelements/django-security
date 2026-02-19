@@ -46,6 +46,7 @@ except ImportError:
     from mock import MagicMock
 
 mocked_custom_logout = MagicMock(side_effect=logout)
+mocked_get_response = MagicMock()
 
 
 def login_user(func):
@@ -134,7 +135,7 @@ class BaseMiddlewareTests(TestCase):
             self.assertEqual(123, response.loaded_settings["R1"])
 
     def test_load_setting_abstract_method(self):
-        base = BaseMiddleware()
+        base = BaseMiddleware(mocked_get_response)
         self.assertRaises(NotImplementedError, base.load_setting, None, None)
 
 
@@ -328,7 +329,7 @@ class RequirePasswordChangeTests(TestCase):
             user.delete()
 
     def test_raises_improperly_configured(self):
-        change = MandatoryPasswordChangeMiddleware()
+        change = MandatoryPasswordChangeMiddleware(mocked_get_response)
         self.assertRaises(
             ImproperlyConfigured,
             change.load_setting,
@@ -400,7 +401,7 @@ class SessionExpiryTests(TestCase):
         Pretend we are 1 second passed the session age time and make sure out
         session is cleared.
         """
-        delta = SessionExpiryPolicyMiddleware().SESSION_COOKIE_AGE + 1
+        delta = SessionExpiryPolicyMiddleware(mocked_get_response).SESSION_COOKIE_AGE + 1
         expired = timezone.now() - datetime.timedelta(seconds=delta)
         self.session_expiry_test(SessionExpiryPolicyMiddleware.START_TIME_KEY, expired)
 
@@ -410,16 +411,16 @@ class SessionExpiryTests(TestCase):
         Pretend we are 1 second passed the session inactivity timeout and make
         sure the session is cleared.
         """
-        delta = SessionExpiryPolicyMiddleware().SESSION_INACTIVITY_TIMEOUT + 1
+        delta = SessionExpiryPolicyMiddleware(mocked_get_response).SESSION_INACTIVITY_TIMEOUT + 1
         expired = timezone.now() - datetime.timedelta(seconds=delta)
         self.session_expiry_test(
-            SessionExpiryPolicyMiddleware().LAST_ACTIVITY_KEY,
+            SessionExpiryPolicyMiddleware(mocked_get_response).LAST_ACTIVITY_KEY,
             expired,
         )
 
     @login_user
     def test_exempted_session_expiry_urls(self):
-        delta = SessionExpiryPolicyMiddleware().SESSION_INACTIVITY_TIMEOUT + 1
+        delta = SessionExpiryPolicyMiddleware(mocked_get_response).SESSION_INACTIVITY_TIMEOUT + 1
         expired = timezone.now() - datetime.timedelta(seconds=delta)
 
         self.assertTrue(self.client.get("/home/").status_code, 200)
@@ -438,10 +439,10 @@ class SessionExpiryTests(TestCase):
 
     @login_user
     def test_custom_logout(self):
-        delta = SessionExpiryPolicyMiddleware().SESSION_INACTIVITY_TIMEOUT + 1
+        delta = SessionExpiryPolicyMiddleware(mocked_get_response).SESSION_INACTIVITY_TIMEOUT + 1
         expired = timezone.now() - datetime.timedelta(seconds=delta)
         self.session_expiry_test(
-            SessionExpiryPolicyMiddleware().LAST_ACTIVITY_KEY,
+            SessionExpiryPolicyMiddleware(mocked_get_response).LAST_ACTIVITY_KEY,
             expired,
         )
         assert mocked_custom_logout.called
@@ -513,7 +514,7 @@ class XFrameOptionsDenyTests(TestCase):
         self.assertNotIn("X-Frame-Options", response)
 
     def test_improperly_configured(self):
-        xframe = XFrameOptionsMiddleware()
+        xframe = XFrameOptionsMiddleware(mocked_get_response)
         self.assertRaises(
             ImproperlyConfigured,
             xframe.load_setting,
@@ -718,7 +719,7 @@ class AuthenticationThrottlingTests(TestCase):
         }
     )
     def test_improperly_configured_middleware(self):
-        self.assertRaises(ImproperlyConfigured, AuthThrottlingMiddleware)
+        self.assertRaises(ImproperlyConfigured, AuthThrottlingMiddleware, mocked_get_response)
 
     def test_throttle_reset_404_on_unauthorized(self):
         resp = self.client.post(
@@ -844,7 +845,7 @@ class ContentSecurityPolicyTests(TestCase):
             "font-src fonts.example.com"
         )
 
-        csp = ContentSecurityPolicyMiddleware()
+        csp = ContentSecurityPolicyMiddleware(mocked_get_response)
         generated = csp._csp_builder(csp_dict)
 
         # We can't assume the iteration order on the csp_dict, so we split the
@@ -859,7 +860,7 @@ class ContentSecurityPolicyTests(TestCase):
         csp_dict = {"default-src": ("none",), "script-src": ["none"]}
         expected = "default-src 'none'; script-src 'none'"
 
-        csp = ContentSecurityPolicyMiddleware()
+        csp = ContentSecurityPolicyMiddleware(mocked_get_response)
         generated = csp._csp_builder(csp_dict)
 
         expected_list = sorted(x.strip() for x in expected.split(";"))
@@ -878,7 +879,7 @@ class ContentSecurityPolicyTests(TestCase):
 
         expected = "script-src " "'self' www.google-analytics.com ajax.googleapis.com"
 
-        csp = ContentSecurityPolicyMiddleware()
+        csp = ContentSecurityPolicyMiddleware(mocked_get_response)
         generated = csp._csp_builder(csp_dict)
 
         self.assertEqual(generated, expected)
@@ -887,40 +888,40 @@ class ContentSecurityPolicyTests(TestCase):
         # argument not passed as array, expect failure
         csp_dict = {"default-src": "self"}
 
-        csp = ContentSecurityPolicyMiddleware()
+        csp = ContentSecurityPolicyMiddleware(mocked_get_response)
         self.assertRaises(MiddlewareNotUsed, csp._csp_builder, csp_dict)
 
     def test_csp_gen_err2(self):
         csp_dict = {"invalid": "self"}  # invalid directive
 
-        csp = ContentSecurityPolicyMiddleware()
+        csp = ContentSecurityPolicyMiddleware(mocked_get_response)
         self.assertRaises(MiddlewareNotUsed, csp._csp_builder, csp_dict)
 
     def test_csp_gen_err3(self):
         csp_dict = {"sandbox": "none"}  # not a list or tuple, expect failure
 
-        csp = ContentSecurityPolicyMiddleware()
+        csp = ContentSecurityPolicyMiddleware(mocked_get_response)
         self.assertRaises(MiddlewareNotUsed, csp._csp_builder, csp_dict)
 
     def test_csp_gen_err4(self):
         # Not an allowed directive, expect failure
         csp_dict = {"sandbox": ("invalid",)}
 
-        csp = ContentSecurityPolicyMiddleware()
+        csp = ContentSecurityPolicyMiddleware(mocked_get_response)
         self.assertRaises(MiddlewareNotUsed, csp._csp_builder, csp_dict)
 
     def test_csp_gen_err5(self):
         # Not an allowed directive, expect failure
         csp_dict = {"referrer": "invalid"}
 
-        csp = ContentSecurityPolicyMiddleware()
+        csp = ContentSecurityPolicyMiddleware(mocked_get_response)
         self.assertRaises(MiddlewareNotUsed, csp._csp_builder, csp_dict)
 
     def test_csp_gen_err6(self):
         # Not an allowed directive, expect failure
         csp_dict = {"reflected-xss": "invalid"}
 
-        csp = ContentSecurityPolicyMiddleware()
+        csp = ContentSecurityPolicyMiddleware(mocked_get_response)
         self.assertRaises(MiddlewareNotUsed, csp._csp_builder, csp_dict)
 
     def test_enforced_by_default(self):
@@ -952,6 +953,7 @@ class ContentSecurityPolicyTests(TestCase):
             self.assertRaises(
                 MiddlewareNotUsed,
                 ContentSecurityPolicyMiddleware,
+                mocked_get_response
             )
 
     def test_no_csp_options_set(self):
@@ -959,6 +961,7 @@ class ContentSecurityPolicyTests(TestCase):
             self.assertRaises(
                 MiddlewareNotUsed,
                 ContentSecurityPolicyMiddleware,
+                mocked_get_response
             )
 
     def test_both_csp_options_set(self):
@@ -966,6 +969,7 @@ class ContentSecurityPolicyTests(TestCase):
             self.assertRaises(
                 MiddlewareNotUsed,
                 ContentSecurityPolicyMiddleware,
+                mocked_get_response
             )
 
     def test_sets_from_csp_dict(self):
@@ -1080,7 +1084,7 @@ class ReferrerPolicyTests(TestCase):
             self.assertEqual("Referrer-Policy" in response, False)
 
     def test_improper_configuration_raises(self):
-        referer_policy_middleware = ReferrerPolicyMiddleware()
+        referer_policy_middleware = ReferrerPolicyMiddleware(mocked_get_response)
         self.assertRaises(
             ImproperlyConfigured,
             referer_policy_middleware.load_setting,
